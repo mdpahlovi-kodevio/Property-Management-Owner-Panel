@@ -1,0 +1,174 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-sans: 'Geist', sans-serif;
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --font-brand: var(--font-brand);
+    --color-brand: var(--brand);
+    --color-brand-foreground: var(--brand-foreground);
+    --color-card-mint: var(--card-mint);
+    --color-card-mint-foreground: var(--card-mint-foreground);
+    --color-card-blue: var(--card-blue);
+    --color-card-blue-foreground: var(--card-blue-foreground);
+    --color-card-pink: var(--card-pink);
+    --color-card-pink-foreground: var(--card-pink-foreground);
+    --color-card-peach: var(--card-peach);
+    --color-card-peach-foreground: var(--card-peach-foreground);
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+
+    --animate-support-card-in: support-card-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+    @keyframes support-card-in {
+        from {
+            opacity: 0;
+            transform: translateY(16px) scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+}
+
+:root {
+    --background: rgb(255, 255, 255);
+    --foreground: rgb(17, 17, 17);
+    --card: rgb(255, 255, 255);
+    --card-foreground: rgb(17, 17, 17);
+    --popover: rgb(255, 255, 255);
+    --popover-foreground: rgb(17, 17, 17);
+    --primary: rgb(30, 58, 138);
+    --primary-foreground: rgb(255, 255, 255);
+    --secondary: rgb(74, 49, 245);
+    --secondary-foreground: rgb(255, 255, 255);
+    --muted: rgb(248, 248, 248);
+    --muted-foreground: rgba(17, 17, 17, 0.6);
+    --accent: rgb(243, 248, 255);
+    --accent-foreground: rgb(17, 17, 17);
+    --destructive: rgb(211, 0, 4);
+    --border: rgba(17, 17, 17, 0.12);
+    --input: rgba(17, 17, 17, 0.12);
+    --ring: rgba(17, 17, 17, 0.3);
+
+    /* Brand */
+    --brand: oklch(0.62 0.22 350);
+    --brand-foreground: oklch(1 0 0);
+
+    /* Revenue card surfaces (pastel) */
+    --card-mint: oklch(0.93 0.06 160);
+    --card-mint-foreground: oklch(0.28 0.08 160);
+    --card-blue: oklch(0.92 0.04 250);
+    --card-blue-foreground: oklch(0.3 0.08 250);
+    --card-pink: oklch(0.93 0.05 350);
+    --card-pink-foreground: oklch(0.3 0.1 350);
+    --card-peach: oklch(0.92 0.05 40);
+    --card-peach-foreground: oklch(0.3 0.1 40);
+
+    /* Chart palette (subscriptions / rentals + holiday donut) */
+    --chart-1: oklch(0.6 0.17 250); /* blue  - Subscriptions / Halloween */
+    --chart-2: oklch(0.62 0.25 350); /* pink  - Rentals / Christmas */
+    --chart-3: oklch(0.78 0.16 60); /* orange - Diwali */
+    --chart-4: oklch(0.78 0.1 140); /* green  - Others */
+    --chart-5: oklch(0.78 0.08 350); /* light pink - Valentine */
+
+    --radius: 0.625rem;
+    --sidebar: rgb(255, 255, 255);
+    --sidebar-foreground: rgb(17, 17, 17);
+    --sidebar-primary: rgb(30, 58, 138);
+    --sidebar-primary-foreground: rgb(255, 255, 255);
+    --sidebar-accent: rgb(248, 248, 248);
+    --sidebar-accent-foreground: rgb(17, 17, 17);
+    --sidebar-border: rgba(17, 17, 17, 0.12);
+    --sidebar-ring: rgba(17, 17, 17, 0.12);
+}
+
+.dark {
+    --background: rgb(17, 17, 17);
+    --foreground: rgb(255, 255, 255);
+    --card: rgb(26, 26, 26);
+    --card-foreground: rgb(255, 255, 255);
+    --popover: rgb(26, 26, 26);
+    --popover-foreground: rgb(255, 255, 255);
+    --primary: rgb(30, 58, 138);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: rgb(74, 49, 245);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.396 0.141 25.723);
+    --destructive-foreground: oklch(0.637 0.237 25.331);
+    --border: oklch(0.269 0 0);
+    --input: oklch(0.269 0 0);
+    --ring: oklch(0.439 0 0);
+    --chart-1: oklch(0.488 0.243 264.376);
+    --chart-2: oklch(0.696 0.17 162.48);
+    --chart-3: oklch(0.769 0.188 70.08);
+    --chart-4: oklch(0.627 0.265 303.9);
+    --chart-5: oklch(0.645 0.246 16.439);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: rgb(30, 58, 138);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(0.269 0 0);
+    --sidebar-ring: oklch(0.439 0 0);
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+    body {
+        @apply bg-muted text-foreground;
+    }
+    html {
+        @apply font-sans;
+    }
+    a,
+    button {
+        @apply cursor-pointer;
+    }
+}
