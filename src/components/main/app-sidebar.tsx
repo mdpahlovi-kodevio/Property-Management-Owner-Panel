@@ -11,7 +11,7 @@ export const data = {
         name: 'shadcn',
         email: 'm@example.com',
         avatar: '/avatars/shadcn.jpg',
-        role: 'SuperAdmin',
+        role: 'Property Owner',
     },
     navMain: [
         {

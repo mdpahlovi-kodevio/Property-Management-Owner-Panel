@@ -9,18 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WebsiteBuilderEditorRouteImport } from './routes/website-builder-editor'
 import { Route as _mainRouteRouteImport } from './routes/__main/route'
 import { Route as _authRouteRouteImport } from './routes/__auth/route'
 import { Route as _mainIndexRouteImport } from './routes/__main/index'
-import { Route as _mainWebsiteBuilderRouteImport } from './routes/__main/website-builder'
-import { Route as _mainUsersRouteImport } from './routes/__main/users'
 import { Route as _mainSettingsRouteImport } from './routes/__main/settings'
 import { Route as _mainRoleManagementRouteImport } from './routes/__main/role-management'
-import { Route as _mainReservationsRouteImport } from './routes/__main/reservations'
-import { Route as _mainReportsRouteImport } from './routes/__main/reports'
-import { Route as _mainPropertyOwnersRouteImport } from './routes/__main/property-owners'
-import { Route as _mainPropertiesRouteImport } from './routes/__main/properties'
 import { Route as _mainEmployeesRouteImport } from './routes/__main/employees'
 import { Route as _authVerificationRouteImport } from './routes/__auth/verification'
 import { Route as _authSigninRouteImport } from './routes/__auth/signin'
@@ -29,11 +22,6 @@ import { Route as _authForgotPasswordRouteImport } from './routes/__auth/forgot-
 import { Route as _mainSupportIndexRouteImport } from './routes/__main/support.index'
 import { Route as _mainSupportIdRouteImport } from './routes/__main/support.$id'
 
-const WebsiteBuilderEditorRoute = WebsiteBuilderEditorRouteImport.update({
-  id: '/website-builder-editor',
-  path: '/website-builder-editor',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const _mainRouteRoute = _mainRouteRouteImport.update({
   id: '/__main',
   getParentRoute: () => rootRouteImport,
@@ -47,16 +35,6 @@ const _mainIndexRoute = _mainIndexRouteImport.update({
   path: '/',
   getParentRoute: () => _mainRouteRoute,
 } as any)
-const _mainWebsiteBuilderRoute = _mainWebsiteBuilderRouteImport.update({
-  id: '/website-builder',
-  path: '/website-builder',
-  getParentRoute: () => _mainRouteRoute,
-} as any)
-const _mainUsersRoute = _mainUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => _mainRouteRoute,
-} as any)
 const _mainSettingsRoute = _mainSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -65,26 +43,6 @@ const _mainSettingsRoute = _mainSettingsRouteImport.update({
 const _mainRoleManagementRoute = _mainRoleManagementRouteImport.update({
   id: '/role-management',
   path: '/role-management',
-  getParentRoute: () => _mainRouteRoute,
-} as any)
-const _mainReservationsRoute = _mainReservationsRouteImport.update({
-  id: '/reservations',
-  path: '/reservations',
-  getParentRoute: () => _mainRouteRoute,
-} as any)
-const _mainReportsRoute = _mainReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => _mainRouteRoute,
-} as any)
-const _mainPropertyOwnersRoute = _mainPropertyOwnersRouteImport.update({
-  id: '/property-owners',
-  path: '/property-owners',
-  getParentRoute: () => _mainRouteRoute,
-} as any)
-const _mainPropertiesRoute = _mainPropertiesRouteImport.update({
-  id: '/properties',
-  path: '/properties',
   getParentRoute: () => _mainRouteRoute,
 } as any)
 const _mainEmployeesRoute = _mainEmployeesRouteImport.update({
@@ -125,39 +83,25 @@ const _mainSupportIdRoute = _mainSupportIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof _mainIndexRoute
-  '/website-builder-editor': typeof WebsiteBuilderEditorRoute
   '/forgot-password': typeof _authForgotPasswordRoute
   '/reset-password': typeof _authResetPasswordRoute
   '/signin': typeof _authSigninRoute
   '/verification': typeof _authVerificationRoute
   '/employees': typeof _mainEmployeesRoute
-  '/properties': typeof _mainPropertiesRoute
-  '/property-owners': typeof _mainPropertyOwnersRoute
-  '/reports': typeof _mainReportsRoute
-  '/reservations': typeof _mainReservationsRoute
   '/role-management': typeof _mainRoleManagementRoute
   '/settings': typeof _mainSettingsRoute
-  '/users': typeof _mainUsersRoute
-  '/website-builder': typeof _mainWebsiteBuilderRoute
   '/support/$id': typeof _mainSupportIdRoute
   '/support/': typeof _mainSupportIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof _mainIndexRoute
-  '/website-builder-editor': typeof WebsiteBuilderEditorRoute
   '/forgot-password': typeof _authForgotPasswordRoute
   '/reset-password': typeof _authResetPasswordRoute
   '/signin': typeof _authSigninRoute
   '/verification': typeof _authVerificationRoute
   '/employees': typeof _mainEmployeesRoute
-  '/properties': typeof _mainPropertiesRoute
-  '/property-owners': typeof _mainPropertyOwnersRoute
-  '/reports': typeof _mainReportsRoute
-  '/reservations': typeof _mainReservationsRoute
   '/role-management': typeof _mainRoleManagementRoute
   '/settings': typeof _mainSettingsRoute
-  '/users': typeof _mainUsersRoute
-  '/website-builder': typeof _mainWebsiteBuilderRoute
   '/support/$id': typeof _mainSupportIdRoute
   '/support': typeof _mainSupportIndexRoute
 }
@@ -165,20 +109,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/__auth': typeof _authRouteRouteWithChildren
   '/__main': typeof _mainRouteRouteWithChildren
-  '/website-builder-editor': typeof WebsiteBuilderEditorRoute
   '/__auth/forgot-password': typeof _authForgotPasswordRoute
   '/__auth/reset-password': typeof _authResetPasswordRoute
   '/__auth/signin': typeof _authSigninRoute
   '/__auth/verification': typeof _authVerificationRoute
   '/__main/employees': typeof _mainEmployeesRoute
-  '/__main/properties': typeof _mainPropertiesRoute
-  '/__main/property-owners': typeof _mainPropertyOwnersRoute
-  '/__main/reports': typeof _mainReportsRoute
-  '/__main/reservations': typeof _mainReservationsRoute
   '/__main/role-management': typeof _mainRoleManagementRoute
   '/__main/settings': typeof _mainSettingsRoute
-  '/__main/users': typeof _mainUsersRoute
-  '/__main/website-builder': typeof _mainWebsiteBuilderRoute
   '/__main/': typeof _mainIndexRoute
   '/__main/support/$id': typeof _mainSupportIdRoute
   '/__main/support/': typeof _mainSupportIndexRoute
@@ -187,59 +124,38 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/website-builder-editor'
     | '/forgot-password'
     | '/reset-password'
     | '/signin'
     | '/verification'
     | '/employees'
-    | '/properties'
-    | '/property-owners'
-    | '/reports'
-    | '/reservations'
     | '/role-management'
     | '/settings'
-    | '/users'
-    | '/website-builder'
     | '/support/$id'
     | '/support/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/website-builder-editor'
     | '/forgot-password'
     | '/reset-password'
     | '/signin'
     | '/verification'
     | '/employees'
-    | '/properties'
-    | '/property-owners'
-    | '/reports'
-    | '/reservations'
     | '/role-management'
     | '/settings'
-    | '/users'
-    | '/website-builder'
     | '/support/$id'
     | '/support'
   id:
     | '__root__'
     | '/__auth'
     | '/__main'
-    | '/website-builder-editor'
     | '/__auth/forgot-password'
     | '/__auth/reset-password'
     | '/__auth/signin'
     | '/__auth/verification'
     | '/__main/employees'
-    | '/__main/properties'
-    | '/__main/property-owners'
-    | '/__main/reports'
-    | '/__main/reservations'
     | '/__main/role-management'
     | '/__main/settings'
-    | '/__main/users'
-    | '/__main/website-builder'
     | '/__main/'
     | '/__main/support/$id'
     | '/__main/support/'
@@ -248,18 +164,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   _authRouteRoute: typeof _authRouteRouteWithChildren
   _mainRouteRoute: typeof _mainRouteRouteWithChildren
-  WebsiteBuilderEditorRoute: typeof WebsiteBuilderEditorRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/website-builder-editor': {
-      id: '/website-builder-editor'
-      path: '/website-builder-editor'
-      fullPath: '/website-builder-editor'
-      preLoaderRoute: typeof WebsiteBuilderEditorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/__main': {
       id: '/__main'
       path: ''
@@ -281,20 +189,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof _mainIndexRouteImport
       parentRoute: typeof _mainRouteRoute
     }
-    '/__main/website-builder': {
-      id: '/__main/website-builder'
-      path: '/website-builder'
-      fullPath: '/website-builder'
-      preLoaderRoute: typeof _mainWebsiteBuilderRouteImport
-      parentRoute: typeof _mainRouteRoute
-    }
-    '/__main/users': {
-      id: '/__main/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof _mainUsersRouteImport
-      parentRoute: typeof _mainRouteRoute
-    }
     '/__main/settings': {
       id: '/__main/settings'
       path: '/settings'
@@ -307,34 +201,6 @@ declare module '@tanstack/react-router' {
       path: '/role-management'
       fullPath: '/role-management'
       preLoaderRoute: typeof _mainRoleManagementRouteImport
-      parentRoute: typeof _mainRouteRoute
-    }
-    '/__main/reservations': {
-      id: '/__main/reservations'
-      path: '/reservations'
-      fullPath: '/reservations'
-      preLoaderRoute: typeof _mainReservationsRouteImport
-      parentRoute: typeof _mainRouteRoute
-    }
-    '/__main/reports': {
-      id: '/__main/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof _mainReportsRouteImport
-      parentRoute: typeof _mainRouteRoute
-    }
-    '/__main/property-owners': {
-      id: '/__main/property-owners'
-      path: '/property-owners'
-      fullPath: '/property-owners'
-      preLoaderRoute: typeof _mainPropertyOwnersRouteImport
-      parentRoute: typeof _mainRouteRoute
-    }
-    '/__main/properties': {
-      id: '/__main/properties'
-      path: '/properties'
-      fullPath: '/properties'
-      preLoaderRoute: typeof _mainPropertiesRouteImport
       parentRoute: typeof _mainRouteRoute
     }
     '/__main/employees': {
@@ -409,14 +275,8 @@ const _authRouteRouteWithChildren = _authRouteRoute._addFileChildren(
 
 interface _mainRouteRouteChildren {
   _mainEmployeesRoute: typeof _mainEmployeesRoute
-  _mainPropertiesRoute: typeof _mainPropertiesRoute
-  _mainPropertyOwnersRoute: typeof _mainPropertyOwnersRoute
-  _mainReportsRoute: typeof _mainReportsRoute
-  _mainReservationsRoute: typeof _mainReservationsRoute
   _mainRoleManagementRoute: typeof _mainRoleManagementRoute
   _mainSettingsRoute: typeof _mainSettingsRoute
-  _mainUsersRoute: typeof _mainUsersRoute
-  _mainWebsiteBuilderRoute: typeof _mainWebsiteBuilderRoute
   _mainIndexRoute: typeof _mainIndexRoute
   _mainSupportIdRoute: typeof _mainSupportIdRoute
   _mainSupportIndexRoute: typeof _mainSupportIndexRoute
@@ -424,14 +284,8 @@ interface _mainRouteRouteChildren {
 
 const _mainRouteRouteChildren: _mainRouteRouteChildren = {
   _mainEmployeesRoute: _mainEmployeesRoute,
-  _mainPropertiesRoute: _mainPropertiesRoute,
-  _mainPropertyOwnersRoute: _mainPropertyOwnersRoute,
-  _mainReportsRoute: _mainReportsRoute,
-  _mainReservationsRoute: _mainReservationsRoute,
   _mainRoleManagementRoute: _mainRoleManagementRoute,
   _mainSettingsRoute: _mainSettingsRoute,
-  _mainUsersRoute: _mainUsersRoute,
-  _mainWebsiteBuilderRoute: _mainWebsiteBuilderRoute,
   _mainIndexRoute: _mainIndexRoute,
   _mainSupportIdRoute: _mainSupportIdRoute,
   _mainSupportIndexRoute: _mainSupportIndexRoute,
@@ -444,7 +298,6 @@ const _mainRouteRouteWithChildren = _mainRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   _authRouteRoute: _authRouteRouteWithChildren,
   _mainRouteRoute: _mainRouteRouteWithChildren,
-  WebsiteBuilderEditorRoute: WebsiteBuilderEditorRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
