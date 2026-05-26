@@ -1,7 +1,6 @@
 import { useAppForm } from '@/components/form/form-context'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
-import type { DataTableColumn } from '@/components/ui/data-table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
@@ -13,6 +12,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Check, ChevronDown, Edit, Plus, Trash2, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import * as z from 'zod'
+import type { DataTableColumn } from '@/components/ui/data-table';
 
 export const Route = createFileRoute('/__main/user-management')({
   component: RouteComponent,
@@ -202,7 +202,7 @@ function RouteComponent() {
                   email: editingUser.email,
                   phone: editingUser.phone,
                   bookings: editingUser.bookings,
-                  status: editingUser.status as 'Active' | 'Blocked',
+                  status: editingUser.status,
                 }
                 : { name: '', email: '', phone: '', bookings: 0, status: 'Active' }
             }
