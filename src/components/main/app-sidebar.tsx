@@ -3,9 +3,27 @@
 import { NavMain } from '@/components/main/nav-main'
 import { NavUser } from '@/components/main/nav-user'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
-import { Contact, Headphones, LayoutDashboard, ShieldAlert } from 'lucide-react'
+import { Headphones, LayoutDashboard, ShieldAlert, CircleCheck, Calendar1, House, MessageCircleMore, User, CreditCard, IdCardLanyard, ShieldUser, Star, FileText, Settings, } from 'lucide-react'
 import * as React from 'react'
 
+/** sidebar menus: 
+* Dashboard
+* Reservations
+* Calendar
+* Inbox
+* Rentals
+* Users Management
+* Payments
+* Channel Manager
+* Employee
+* Role Management
+* Reviews
+* Reports
+* Support
+* Settings
+* Logout
+
+*/
 export const data = {
     user: {
         name: 'shadcn',
@@ -20,20 +38,71 @@ export const data = {
             icon: <LayoutDashboard />,
         },
         {
+            title: 'Reservations',
+            url: '/reservations',
+            icon: <CircleCheck />,
+        },
+        {
+            title: 'Calendar',
+            url: '/calendar',
+            icon: <Calendar1 />,
+        },
+        {
+            title: 'Inbox',
+            url: '/inbox',
+            icon: <MessageCircleMore />,
+        },
+        {
+            title: 'Rentals',
+            url: '/rentals',
+            icon: <House />,
+        },
+        {
+            title: 'Users Management',
+            url: '/users-management',
+            icon: <User />,
+        },
+        {
+            title: 'Payments',
+            url: '/payments',
+            icon: <CreditCard />,
+        },
+        {
+            title: 'Channel Manager',
+            url: '/channel-manager',
+            icon: <CircleCheck />,
+        },
+        {
             title: 'Employee',
             url: '/employees',
-            icon: <Contact />,
+            icon: <IdCardLanyard />,
         },
         {
             title: 'Role Management',
             url: '/role-management',
-            icon: <ShieldAlert />,
+            icon: <ShieldUser />,
+        },
+        {
+            title: 'Reviews',
+            url: '/reviews',
+            icon: <Star />,
+        },
+        {
+            title: 'Reports',
+            url: '/reports',
+            icon: <FileText />,
         },
         {
             title: 'Support',
             url: '/support',
             icon: <Headphones />,
         },
+        {
+            title: 'Settings',
+            url: '/settings',
+            icon: <Settings />,
+        },
+
     ],
 }
 
