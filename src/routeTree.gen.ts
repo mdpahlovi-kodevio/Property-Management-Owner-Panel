@@ -12,9 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as _mainRouteRouteImport } from './routes/__main/route'
 import { Route as _authRouteRouteImport } from './routes/__auth/route'
 import { Route as _mainIndexRouteImport } from './routes/__main/index'
+import { Route as _mainUserManagementRouteImport } from './routes/__main/user-management'
 import { Route as _mainSettingsRouteImport } from './routes/__main/settings'
 import { Route as _mainRoleManagementRouteImport } from './routes/__main/role-management'
+import { Route as _mainReservationsRouteImport } from './routes/__main/reservations'
+import { Route as _mainReportsRouteImport } from './routes/__main/reports'
+import { Route as _mainPaymentsRouteImport } from './routes/__main/payments'
+import { Route as _mainInboxRouteImport } from './routes/__main/inbox'
 import { Route as _mainEmployeesRouteImport } from './routes/__main/employees'
+import { Route as _mainCalendarRouteImport } from './routes/__main/calendar'
 import { Route as _authVerificationRouteImport } from './routes/__auth/verification'
 import { Route as _authSigninRouteImport } from './routes/__auth/signin'
 import { Route as _authResetPasswordRouteImport } from './routes/__auth/reset-password'
@@ -35,6 +41,11 @@ const _mainIndexRoute = _mainIndexRouteImport.update({
   path: '/',
   getParentRoute: () => _mainRouteRoute,
 } as any)
+const _mainUserManagementRoute = _mainUserManagementRouteImport.update({
+  id: '/user-management',
+  path: '/user-management',
+  getParentRoute: () => _mainRouteRoute,
+} as any)
 const _mainSettingsRoute = _mainSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -45,9 +56,34 @@ const _mainRoleManagementRoute = _mainRoleManagementRouteImport.update({
   path: '/role-management',
   getParentRoute: () => _mainRouteRoute,
 } as any)
+const _mainReservationsRoute = _mainReservationsRouteImport.update({
+  id: '/reservations',
+  path: '/reservations',
+  getParentRoute: () => _mainRouteRoute,
+} as any)
+const _mainReportsRoute = _mainReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => _mainRouteRoute,
+} as any)
+const _mainPaymentsRoute = _mainPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => _mainRouteRoute,
+} as any)
+const _mainInboxRoute = _mainInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => _mainRouteRoute,
+} as any)
 const _mainEmployeesRoute = _mainEmployeesRouteImport.update({
   id: '/employees',
   path: '/employees',
+  getParentRoute: () => _mainRouteRoute,
+} as any)
+const _mainCalendarRoute = _mainCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
   getParentRoute: () => _mainRouteRoute,
 } as any)
 const _authVerificationRoute = _authVerificationRouteImport.update({
@@ -87,9 +123,15 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof _authResetPasswordRoute
   '/signin': typeof _authSigninRoute
   '/verification': typeof _authVerificationRoute
+  '/calendar': typeof _mainCalendarRoute
   '/employees': typeof _mainEmployeesRoute
+  '/inbox': typeof _mainInboxRoute
+  '/payments': typeof _mainPaymentsRoute
+  '/reports': typeof _mainReportsRoute
+  '/reservations': typeof _mainReservationsRoute
   '/role-management': typeof _mainRoleManagementRoute
   '/settings': typeof _mainSettingsRoute
+  '/user-management': typeof _mainUserManagementRoute
   '/support/$id': typeof _mainSupportIdRoute
   '/support/': typeof _mainSupportIndexRoute
 }
@@ -99,9 +141,15 @@ export interface FileRoutesByTo {
   '/reset-password': typeof _authResetPasswordRoute
   '/signin': typeof _authSigninRoute
   '/verification': typeof _authVerificationRoute
+  '/calendar': typeof _mainCalendarRoute
   '/employees': typeof _mainEmployeesRoute
+  '/inbox': typeof _mainInboxRoute
+  '/payments': typeof _mainPaymentsRoute
+  '/reports': typeof _mainReportsRoute
+  '/reservations': typeof _mainReservationsRoute
   '/role-management': typeof _mainRoleManagementRoute
   '/settings': typeof _mainSettingsRoute
+  '/user-management': typeof _mainUserManagementRoute
   '/support/$id': typeof _mainSupportIdRoute
   '/support': typeof _mainSupportIndexRoute
 }
@@ -113,9 +161,15 @@ export interface FileRoutesById {
   '/__auth/reset-password': typeof _authResetPasswordRoute
   '/__auth/signin': typeof _authSigninRoute
   '/__auth/verification': typeof _authVerificationRoute
+  '/__main/calendar': typeof _mainCalendarRoute
   '/__main/employees': typeof _mainEmployeesRoute
+  '/__main/inbox': typeof _mainInboxRoute
+  '/__main/payments': typeof _mainPaymentsRoute
+  '/__main/reports': typeof _mainReportsRoute
+  '/__main/reservations': typeof _mainReservationsRoute
   '/__main/role-management': typeof _mainRoleManagementRoute
   '/__main/settings': typeof _mainSettingsRoute
+  '/__main/user-management': typeof _mainUserManagementRoute
   '/__main/': typeof _mainIndexRoute
   '/__main/support/$id': typeof _mainSupportIdRoute
   '/__main/support/': typeof _mainSupportIndexRoute
@@ -128,9 +182,15 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signin'
     | '/verification'
+    | '/calendar'
     | '/employees'
+    | '/inbox'
+    | '/payments'
+    | '/reports'
+    | '/reservations'
     | '/role-management'
     | '/settings'
+    | '/user-management'
     | '/support/$id'
     | '/support/'
   fileRoutesByTo: FileRoutesByTo
@@ -140,9 +200,15 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signin'
     | '/verification'
+    | '/calendar'
     | '/employees'
+    | '/inbox'
+    | '/payments'
+    | '/reports'
+    | '/reservations'
     | '/role-management'
     | '/settings'
+    | '/user-management'
     | '/support/$id'
     | '/support'
   id:
@@ -153,9 +219,15 @@ export interface FileRouteTypes {
     | '/__auth/reset-password'
     | '/__auth/signin'
     | '/__auth/verification'
+    | '/__main/calendar'
     | '/__main/employees'
+    | '/__main/inbox'
+    | '/__main/payments'
+    | '/__main/reports'
+    | '/__main/reservations'
     | '/__main/role-management'
     | '/__main/settings'
+    | '/__main/user-management'
     | '/__main/'
     | '/__main/support/$id'
     | '/__main/support/'
@@ -189,6 +261,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof _mainIndexRouteImport
       parentRoute: typeof _mainRouteRoute
     }
+    '/__main/user-management': {
+      id: '/__main/user-management'
+      path: '/user-management'
+      fullPath: '/user-management'
+      preLoaderRoute: typeof _mainUserManagementRouteImport
+      parentRoute: typeof _mainRouteRoute
+    }
     '/__main/settings': {
       id: '/__main/settings'
       path: '/settings'
@@ -203,11 +282,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof _mainRoleManagementRouteImport
       parentRoute: typeof _mainRouteRoute
     }
+    '/__main/reservations': {
+      id: '/__main/reservations'
+      path: '/reservations'
+      fullPath: '/reservations'
+      preLoaderRoute: typeof _mainReservationsRouteImport
+      parentRoute: typeof _mainRouteRoute
+    }
+    '/__main/reports': {
+      id: '/__main/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof _mainReportsRouteImport
+      parentRoute: typeof _mainRouteRoute
+    }
+    '/__main/payments': {
+      id: '/__main/payments'
+      path: '/payments'
+      fullPath: '/payments'
+      preLoaderRoute: typeof _mainPaymentsRouteImport
+      parentRoute: typeof _mainRouteRoute
+    }
+    '/__main/inbox': {
+      id: '/__main/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof _mainInboxRouteImport
+      parentRoute: typeof _mainRouteRoute
+    }
     '/__main/employees': {
       id: '/__main/employees'
       path: '/employees'
       fullPath: '/employees'
       preLoaderRoute: typeof _mainEmployeesRouteImport
+      parentRoute: typeof _mainRouteRoute
+    }
+    '/__main/calendar': {
+      id: '/__main/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof _mainCalendarRouteImport
       parentRoute: typeof _mainRouteRoute
     }
     '/__auth/verification': {
@@ -274,18 +388,30 @@ const _authRouteRouteWithChildren = _authRouteRoute._addFileChildren(
 )
 
 interface _mainRouteRouteChildren {
+  _mainCalendarRoute: typeof _mainCalendarRoute
   _mainEmployeesRoute: typeof _mainEmployeesRoute
+  _mainInboxRoute: typeof _mainInboxRoute
+  _mainPaymentsRoute: typeof _mainPaymentsRoute
+  _mainReportsRoute: typeof _mainReportsRoute
+  _mainReservationsRoute: typeof _mainReservationsRoute
   _mainRoleManagementRoute: typeof _mainRoleManagementRoute
   _mainSettingsRoute: typeof _mainSettingsRoute
+  _mainUserManagementRoute: typeof _mainUserManagementRoute
   _mainIndexRoute: typeof _mainIndexRoute
   _mainSupportIdRoute: typeof _mainSupportIdRoute
   _mainSupportIndexRoute: typeof _mainSupportIndexRoute
 }
 
 const _mainRouteRouteChildren: _mainRouteRouteChildren = {
+  _mainCalendarRoute: _mainCalendarRoute,
   _mainEmployeesRoute: _mainEmployeesRoute,
+  _mainInboxRoute: _mainInboxRoute,
+  _mainPaymentsRoute: _mainPaymentsRoute,
+  _mainReportsRoute: _mainReportsRoute,
+  _mainReservationsRoute: _mainReservationsRoute,
   _mainRoleManagementRoute: _mainRoleManagementRoute,
   _mainSettingsRoute: _mainSettingsRoute,
+  _mainUserManagementRoute: _mainUserManagementRoute,
   _mainIndexRoute: _mainIndexRoute,
   _mainSupportIdRoute: _mainSupportIdRoute,
   _mainSupportIndexRoute: _mainSupportIndexRoute,
