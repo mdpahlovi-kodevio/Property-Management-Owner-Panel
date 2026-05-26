@@ -15,6 +15,7 @@ import { Route as _mainIndexRouteImport } from './routes/__main/index'
 import { Route as _mainUserManagementRouteImport } from './routes/__main/user-management'
 import { Route as _mainSettingsRouteImport } from './routes/__main/settings'
 import { Route as _mainRoleManagementRouteImport } from './routes/__main/role-management'
+import { Route as _mainReviewsRouteImport } from './routes/__main/reviews'
 import { Route as _mainReservationsRouteImport } from './routes/__main/reservations'
 import { Route as _mainReportsRouteImport } from './routes/__main/reports'
 import { Route as _mainPaymentsRouteImport } from './routes/__main/payments'
@@ -54,6 +55,11 @@ const _mainSettingsRoute = _mainSettingsRouteImport.update({
 const _mainRoleManagementRoute = _mainRoleManagementRouteImport.update({
   id: '/role-management',
   path: '/role-management',
+  getParentRoute: () => _mainRouteRoute,
+} as any)
+const _mainReviewsRoute = _mainReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
   getParentRoute: () => _mainRouteRoute,
 } as any)
 const _mainReservationsRoute = _mainReservationsRouteImport.update({
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/payments': typeof _mainPaymentsRoute
   '/reports': typeof _mainReportsRoute
   '/reservations': typeof _mainReservationsRoute
+  '/reviews': typeof _mainReviewsRoute
   '/role-management': typeof _mainRoleManagementRoute
   '/settings': typeof _mainSettingsRoute
   '/user-management': typeof _mainUserManagementRoute
@@ -147,6 +154,7 @@ export interface FileRoutesByTo {
   '/payments': typeof _mainPaymentsRoute
   '/reports': typeof _mainReportsRoute
   '/reservations': typeof _mainReservationsRoute
+  '/reviews': typeof _mainReviewsRoute
   '/role-management': typeof _mainRoleManagementRoute
   '/settings': typeof _mainSettingsRoute
   '/user-management': typeof _mainUserManagementRoute
@@ -167,6 +175,7 @@ export interface FileRoutesById {
   '/__main/payments': typeof _mainPaymentsRoute
   '/__main/reports': typeof _mainReportsRoute
   '/__main/reservations': typeof _mainReservationsRoute
+  '/__main/reviews': typeof _mainReviewsRoute
   '/__main/role-management': typeof _mainRoleManagementRoute
   '/__main/settings': typeof _mainSettingsRoute
   '/__main/user-management': typeof _mainUserManagementRoute
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/payments'
     | '/reports'
     | '/reservations'
+    | '/reviews'
     | '/role-management'
     | '/settings'
     | '/user-management'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/payments'
     | '/reports'
     | '/reservations'
+    | '/reviews'
     | '/role-management'
     | '/settings'
     | '/user-management'
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/__main/payments'
     | '/__main/reports'
     | '/__main/reservations'
+    | '/__main/reviews'
     | '/__main/role-management'
     | '/__main/settings'
     | '/__main/user-management'
@@ -280,6 +292,13 @@ declare module '@tanstack/react-router' {
       path: '/role-management'
       fullPath: '/role-management'
       preLoaderRoute: typeof _mainRoleManagementRouteImport
+      parentRoute: typeof _mainRouteRoute
+    }
+    '/__main/reviews': {
+      id: '/__main/reviews'
+      path: '/reviews'
+      fullPath: '/reviews'
+      preLoaderRoute: typeof _mainReviewsRouteImport
       parentRoute: typeof _mainRouteRoute
     }
     '/__main/reservations': {
@@ -394,6 +413,7 @@ interface _mainRouteRouteChildren {
   _mainPaymentsRoute: typeof _mainPaymentsRoute
   _mainReportsRoute: typeof _mainReportsRoute
   _mainReservationsRoute: typeof _mainReservationsRoute
+  _mainReviewsRoute: typeof _mainReviewsRoute
   _mainRoleManagementRoute: typeof _mainRoleManagementRoute
   _mainSettingsRoute: typeof _mainSettingsRoute
   _mainUserManagementRoute: typeof _mainUserManagementRoute
@@ -409,6 +429,7 @@ const _mainRouteRouteChildren: _mainRouteRouteChildren = {
   _mainPaymentsRoute: _mainPaymentsRoute,
   _mainReportsRoute: _mainReportsRoute,
   _mainReservationsRoute: _mainReservationsRoute,
+  _mainReviewsRoute: _mainReviewsRoute,
   _mainRoleManagementRoute: _mainRoleManagementRoute,
   _mainSettingsRoute: _mainSettingsRoute,
   _mainUserManagementRoute: _mainUserManagementRoute,
