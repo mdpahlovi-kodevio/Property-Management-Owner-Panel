@@ -18,9 +18,11 @@ import { Route as _mainRoleManagementRouteImport } from './routes/__main/role-ma
 import { Route as _mainReviewsRouteImport } from './routes/__main/reviews'
 import { Route as _mainReservationsRouteImport } from './routes/__main/reservations'
 import { Route as _mainReportsRouteImport } from './routes/__main/reports'
+import { Route as _mainRentalsRouteImport } from './routes/__main/rentals'
 import { Route as _mainPaymentsRouteImport } from './routes/__main/payments'
 import { Route as _mainInboxRouteImport } from './routes/__main/inbox'
 import { Route as _mainEmployeesRouteImport } from './routes/__main/employees'
+import { Route as _mainChannelManagerRouteImport } from './routes/__main/channel-manager'
 import { Route as _mainCalendarRouteImport } from './routes/__main/calendar'
 import { Route as _authVerificationRouteImport } from './routes/__auth/verification'
 import { Route as _authSigninRouteImport } from './routes/__auth/signin'
@@ -72,6 +74,11 @@ const _mainReportsRoute = _mainReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => _mainRouteRoute,
 } as any)
+const _mainRentalsRoute = _mainRentalsRouteImport.update({
+  id: '/rentals',
+  path: '/rentals',
+  getParentRoute: () => _mainRouteRoute,
+} as any)
 const _mainPaymentsRoute = _mainPaymentsRouteImport.update({
   id: '/payments',
   path: '/payments',
@@ -85,6 +92,11 @@ const _mainInboxRoute = _mainInboxRouteImport.update({
 const _mainEmployeesRoute = _mainEmployeesRouteImport.update({
   id: '/employees',
   path: '/employees',
+  getParentRoute: () => _mainRouteRoute,
+} as any)
+const _mainChannelManagerRoute = _mainChannelManagerRouteImport.update({
+  id: '/channel-manager',
+  path: '/channel-manager',
   getParentRoute: () => _mainRouteRoute,
 } as any)
 const _mainCalendarRoute = _mainCalendarRouteImport.update({
@@ -130,9 +142,11 @@ export interface FileRoutesByFullPath {
   '/signin': typeof _authSigninRoute
   '/verification': typeof _authVerificationRoute
   '/calendar': typeof _mainCalendarRoute
+  '/channel-manager': typeof _mainChannelManagerRoute
   '/employees': typeof _mainEmployeesRoute
   '/inbox': typeof _mainInboxRoute
   '/payments': typeof _mainPaymentsRoute
+  '/rentals': typeof _mainRentalsRoute
   '/reports': typeof _mainReportsRoute
   '/reservations': typeof _mainReservationsRoute
   '/reviews': typeof _mainReviewsRoute
@@ -149,9 +163,11 @@ export interface FileRoutesByTo {
   '/signin': typeof _authSigninRoute
   '/verification': typeof _authVerificationRoute
   '/calendar': typeof _mainCalendarRoute
+  '/channel-manager': typeof _mainChannelManagerRoute
   '/employees': typeof _mainEmployeesRoute
   '/inbox': typeof _mainInboxRoute
   '/payments': typeof _mainPaymentsRoute
+  '/rentals': typeof _mainRentalsRoute
   '/reports': typeof _mainReportsRoute
   '/reservations': typeof _mainReservationsRoute
   '/reviews': typeof _mainReviewsRoute
@@ -170,9 +186,11 @@ export interface FileRoutesById {
   '/__auth/signin': typeof _authSigninRoute
   '/__auth/verification': typeof _authVerificationRoute
   '/__main/calendar': typeof _mainCalendarRoute
+  '/__main/channel-manager': typeof _mainChannelManagerRoute
   '/__main/employees': typeof _mainEmployeesRoute
   '/__main/inbox': typeof _mainInboxRoute
   '/__main/payments': typeof _mainPaymentsRoute
+  '/__main/rentals': typeof _mainRentalsRoute
   '/__main/reports': typeof _mainReportsRoute
   '/__main/reservations': typeof _mainReservationsRoute
   '/__main/reviews': typeof _mainReviewsRoute
@@ -192,9 +210,11 @@ export interface FileRouteTypes {
     | '/signin'
     | '/verification'
     | '/calendar'
+    | '/channel-manager'
     | '/employees'
     | '/inbox'
     | '/payments'
+    | '/rentals'
     | '/reports'
     | '/reservations'
     | '/reviews'
@@ -211,9 +231,11 @@ export interface FileRouteTypes {
     | '/signin'
     | '/verification'
     | '/calendar'
+    | '/channel-manager'
     | '/employees'
     | '/inbox'
     | '/payments'
+    | '/rentals'
     | '/reports'
     | '/reservations'
     | '/reviews'
@@ -231,9 +253,11 @@ export interface FileRouteTypes {
     | '/__auth/signin'
     | '/__auth/verification'
     | '/__main/calendar'
+    | '/__main/channel-manager'
     | '/__main/employees'
     | '/__main/inbox'
     | '/__main/payments'
+    | '/__main/rentals'
     | '/__main/reports'
     | '/__main/reservations'
     | '/__main/reviews'
@@ -315,6 +339,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof _mainReportsRouteImport
       parentRoute: typeof _mainRouteRoute
     }
+    '/__main/rentals': {
+      id: '/__main/rentals'
+      path: '/rentals'
+      fullPath: '/rentals'
+      preLoaderRoute: typeof _mainRentalsRouteImport
+      parentRoute: typeof _mainRouteRoute
+    }
     '/__main/payments': {
       id: '/__main/payments'
       path: '/payments'
@@ -334,6 +365,13 @@ declare module '@tanstack/react-router' {
       path: '/employees'
       fullPath: '/employees'
       preLoaderRoute: typeof _mainEmployeesRouteImport
+      parentRoute: typeof _mainRouteRoute
+    }
+    '/__main/channel-manager': {
+      id: '/__main/channel-manager'
+      path: '/channel-manager'
+      fullPath: '/channel-manager'
+      preLoaderRoute: typeof _mainChannelManagerRouteImport
       parentRoute: typeof _mainRouteRoute
     }
     '/__main/calendar': {
@@ -408,9 +446,11 @@ const _authRouteRouteWithChildren = _authRouteRoute._addFileChildren(
 
 interface _mainRouteRouteChildren {
   _mainCalendarRoute: typeof _mainCalendarRoute
+  _mainChannelManagerRoute: typeof _mainChannelManagerRoute
   _mainEmployeesRoute: typeof _mainEmployeesRoute
   _mainInboxRoute: typeof _mainInboxRoute
   _mainPaymentsRoute: typeof _mainPaymentsRoute
+  _mainRentalsRoute: typeof _mainRentalsRoute
   _mainReportsRoute: typeof _mainReportsRoute
   _mainReservationsRoute: typeof _mainReservationsRoute
   _mainReviewsRoute: typeof _mainReviewsRoute
@@ -424,9 +464,11 @@ interface _mainRouteRouteChildren {
 
 const _mainRouteRouteChildren: _mainRouteRouteChildren = {
   _mainCalendarRoute: _mainCalendarRoute,
+  _mainChannelManagerRoute: _mainChannelManagerRoute,
   _mainEmployeesRoute: _mainEmployeesRoute,
   _mainInboxRoute: _mainInboxRoute,
   _mainPaymentsRoute: _mainPaymentsRoute,
+  _mainRentalsRoute: _mainRentalsRoute,
   _mainReportsRoute: _mainReportsRoute,
   _mainReservationsRoute: _mainReservationsRoute,
   _mainReviewsRoute: _mainReviewsRoute,

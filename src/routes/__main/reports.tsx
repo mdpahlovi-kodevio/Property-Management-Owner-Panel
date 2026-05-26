@@ -2,10 +2,10 @@ import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
 import type { DataTableColumn } from '@/components/ui/data-table';
 import { PageHeader } from '@/components/ui/page-header'
+import { StatCard } from '@/components/ui/stat-card'
 import { createFileRoute } from '@tanstack/react-router'
-import { Filter } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, BedDouble, CalendarCheck, CalendarX, Filter, Home, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import React from 'react'
 
 export const Route = createFileRoute('/__main/reports')({
     component: RouteComponent,
@@ -144,11 +144,11 @@ function RouteComponent() {
     )
 
     return (
-        <div className="space-y-6">
-            <PageHeader title="Reports" description="Track occupancy, revenue, and daily operations" />
+        <>
+            <PageHeader title="Reports" description="Track occupancy, revenue, and daily operations" className="mb-0" />
 
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
                     <Button 
                         variant={activeTab === 'occupancy' ? 'default' : 'outline'}
                         className={`rounded-md px-6 transition-colors ${activeTab === 'occupancy' ? 'bg-[#24357B] hover:bg-[#24357B]/90 text-white' : ''}`}
@@ -171,97 +171,102 @@ function RouteComponent() {
                         Arrivals / Departures
                     </Button>
                 </div>
-                <Button variant="outline" className="rounded-md">
+                <Button variant="outline" className="rounded-md w-full sm:w-auto">
                     <Filter className="mr-2 h-4 w-4" />
                     Filter
                 </Button>
             </div>
 
             {activeTab === 'occupancy' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard 
-                        title="Occupancy Rate" 
+                        label="Occupancy Rate" 
                         value="$8,450.00" 
-                        trend="up" 
-                        trendValue="4.2% vs last period" 
+                        icon={BedDouble}
+                        color="blue"
+                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }} 
                     />
                     <StatCard 
-                        title={<span>ADR <span className="text-xs font-normal">(Avg. Daily Rate)</span></span>} 
+                        label="ADR (Avg. Daily Rate)" 
                         value="$182.50" 
-                        trend="up" 
-                        trendValue="4.2% vs last period" 
+                        icon={Home}
+                        color="emerald"
+                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }} 
                     />
                     <StatCard 
-                        title={<span>REVPAR <span className="text-[10px] font-normal leading-tight tracking-tighter">(Revenue Per Available Room)</span></span>} 
+                        label="REVPAR" 
                         value="$143.08" 
-                        trend="up" 
-                        trendValue="4.2% vs last period" 
+                        icon={CalendarCheck}
+                        color="amber"
+                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }} 
                     />
                     <StatCard 
-                        title="Total Room Nights" 
+                        label="Total Room Nights" 
                         value="1,247" 
-                        trend="down" 
-                        trendValue="32 vs last period" 
+                        icon={Users}
+                        color="slate"
+                        trend={{ direction: 'down', value: '32', label: 'vs last period' }} 
                     />
                 </div>
             )}
 
             {activeTab === 'revenue' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard 
-                        title="Total Revenue" 
+                        label="Total Revenue" 
                         value="$84,320" 
-                        trend="up" 
-                        trendValue="4.2% vs last period" 
+                        icon={CalendarCheck}
+                        color="blue"
+                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }} 
                     />
                     <StatCard 
-                        title="Total Bookings" 
+                        label="Total Bookings" 
                         value="72,180" 
-                        trend="up" 
-                        trendValue="4.2% vs last period" 
+                        icon={BedDouble}
+                        color="emerald"
+                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }} 
                     />
                     <StatCard 
-                        title="Net Earnings" 
+                        label="Net Earnings" 
                         value="$12,140" 
-                        trend="down" 
-                        trendValue="Lower direct share" 
+                        icon={CalendarX}
+                        color="orange"
+                        trend={{ direction: 'down', value: 'Lower direct share', label: '' }} 
                     />
                     <StatCard 
-                        title="Top Channel" 
+                        label="Top Channel" 
                         value="Airbnb" 
-                        trend="up" 
-                        trendValue="38.2% of bookings" 
-                        hideTrendIcon
+                        icon={Home}
+                        color="amber"
                     />
                 </div>
             )}
 
             {activeTab === 'arrivals' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard 
-                        title="Arrivals Today" 
+                        label="Arrivals Today" 
                         value="8" 
-                        trend="neutral" 
-                        trendValue="3 pending check-in" 
+                        icon={ArrowDownRight}
+                        color="blue"
                     />
                     <StatCard 
-                        title="Departures Today" 
+                        label="Departures Today" 
                         value="6" 
-                        trend="neutral" 
-                        trendValue="2 pending check-out" 
+                        icon={ArrowUpRight}
+                        color="orange"
                     />
                     <StatCard 
-                        title="In-house" 
+                        label="In-house" 
                         value="20" 
-                        trend="neutral" 
-                        trendValue="42 guests total" 
+                        icon={Home}
+                        color="emerald"
                     />
                     <StatCard 
-                        title="No-shows" 
+                        label="No-shows" 
                         value="1" 
-                        trend="down" 
-                        trendValue="Last 24h" 
-                        hideTrendIcon
+                        icon={CalendarX}
+                        color="rose"
                     />
                 </div>
             )}
@@ -277,34 +282,6 @@ function RouteComponent() {
             {activeTab === 'arrivals' && (
                 <DataTable columns={arrivalsColumns} data={ARRIVALS_DATA} noun="arrivals" />
             )}
-        </div>
-    )
-}
-
-function StatCard({ 
-    title, 
-    value, 
-    trend, 
-    trendValue,
-    hideTrendIcon
-}: { 
-    title: React.ReactNode, 
-    value: string, 
-    trend: 'up' | 'down' | 'neutral', 
-    trendValue: string,
-    hideTrendIcon?: boolean
-}) {
-    let trendColor = 'text-slate-400 font-medium'
-    if (trend === 'up') trendColor = 'text-green-500'
-    if (trend === 'down') trendColor = 'text-red-500'
-
-    return (
-        <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-2 relative overflow-hidden">
-            <h3 className="text-sm font-medium text-slate-500">{title}</h3>
-            <div className="text-3xl font-bold text-slate-900">{value}</div>
-            <div className={`text-xs font-semibold flex items-center gap-1 ${trendColor}`}>
-                {!hideTrendIcon && trend !== 'neutral' && (trend === 'up' ? '▲' : '▼')} {trendValue}
-            </div>
-        </div>
+        </>
     )
 }
