@@ -26,7 +26,7 @@ import * as React from 'react'
 */
 export const data = {
     user: {
-        name: 'shadcn',
+        name: 'Doraemon',
         email: 'm@example.com',
         avatar: '/avatars/shadcn.jpg',
         role: 'Property Owner',
