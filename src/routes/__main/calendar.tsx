@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { createFileRoute } from '@tanstack/react-router'
@@ -265,18 +266,17 @@ function StatCard({
 
 // ─── Avatar Chip ──────────────────────────────────────────────────────────────
 
-function AvatarChip({ initials, status }: { initials: string; status: BookingStatus }) {
+function AvatarChip({ name, status }: { name: string; status: BookingStatus }) {
   const cfg = STATUS_CONFIG[status]
   return (
-    <span
+    <div
       className={cn(
-        'inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[8px] font-bold',
+        'size-5 shrink-0 rounded-full overflow-hidden flex items-center justify-center ring-1 ring-border/50',
         cfg.bg,
-        cfg.text,
       )}
     >
-      {initials}
-    </span>
+      <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${name.replace(' ', '')}`} alt={name} className="size-full object-cover opacity-90" />
+    </div>
   )
 }
 
@@ -424,12 +424,11 @@ function BookingDetailDialog({
           <div className="flex items-center gap-3">
             <div
               className={cn(
-                'size-10 rounded-xl flex items-center justify-center text-sm font-bold',
+                'size-10 rounded-xl overflow-hidden flex items-center justify-center shrink-0 ring-1 ring-border/50',
                 cfg.bg,
-                cfg.text,
               )}
             >
-              {booking.guestAvatar}
+              <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${booking.guestName.replace(' ', '')}`} alt={booking.guestName} className="size-full object-cover" />
             </div>
             <div>
               <DialogTitle className="text-base">{booking.guestName}</DialogTitle>
@@ -687,7 +686,7 @@ function CalendarRow({
                           zIndex: 10,
                         }}
                       >
-                        <AvatarChip initials={booking.guestAvatar} status={booking.status} />
+                        <AvatarChip name={booking.guestName} status={booking.status} />
                         <span className="truncate leading-none">{booking.guestName}</span>
                       </button>
                     </TooltipTrigger>
@@ -847,114 +846,129 @@ function RouteComponent() {
 
   return (
     <>
-      <PageHeader
-        title="Booking Calendar"
-        description="Visual overview of all room reservations and availability"
-      />
+      {/* ── Dashboard Tabs ───────────────────────────────────────────── */}
+      <Tabs defaultValue="stats" className="w-full space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center justify-between">
+          <PageHeader
+            title="Booking Calendar"
+            description="Visual overview of all room reservations and availability"
+          />
+          <TabsList>
+            <TabsTrigger value="stats">Confirmed Bookings This Month</TabsTrigger>
+            {isCurrentMonth && <TabsTrigger value="availability">Room Availability Today</TabsTrigger>}
+            {isCurrentMonth && <TabsTrigger value="activity">Today's Activity</TabsTrigger>}
+          </TabsList>
+        </div>
 
-      {/* ── Stats ─────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard
-          icon={<CalendarDays className="size-5 text-primary" />}
-          label="Confirmed Bookings"
-          value={stats.confirmed}
-          sub="This month"
-          color="bg-primary/10"
-        />
-        <StatCard
-          icon={<Clock className="size-5 text-amber-600" />}
-          label="Pending Bookings"
-          value={stats.pending}
-          sub="Awaiting confirmation"
-          color="bg-amber-500/10"
-        />
-        <StatCard
-          icon={<CircleDot className="size-5 text-emerald-600" />}
-          label="Occupancy Rate"
-          value={`${stats.occupancy}%`}
-          sub={`${ROOMS.length - Math.round(ROOMS.length * stats.occupancy / 100)} of ${ROOMS.length} rooms free today`}
-          color="bg-emerald-500/10"
-        />
-        <StatCard
-          icon={<Building2 className="size-5 text-violet-600" />}
-          label="Est. Revenue"
-          value={`$${stats.revenue.toLocaleString()}`}
-          sub="Confirmed only"
-          color="bg-violet-500/10"
-        />
-      </div>
+        <TabsContent value="stats">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatCard
+              icon={<CalendarDays className="size-5 text-primary" />}
+              label="Confirmed Bookings"
+              value={stats.confirmed}
+              sub="This month"
+              color="bg-primary/10"
+            />
+            <StatCard
+              icon={<Clock className="size-5 text-amber-600" />}
+              label="Pending Bookings"
+              value={stats.pending}
+              sub="Awaiting confirmation"
+              color="bg-amber-500/10"
+            />
+            <StatCard
+              icon={<CircleDot className="size-5 text-emerald-600" />}
+              label="Occupancy Rate"
+              value={`${stats.occupancy}%`}
+              sub={`${ROOMS.length - Math.round(ROOMS.length * stats.occupancy / 100)} of ${ROOMS.length} rooms free today`}
+              color="bg-emerald-500/10"
+            />
+            <StatCard
+              icon={<Building2 className="size-5 text-violet-600" />}
+              label="Est. Revenue"
+              value={`$${stats.revenue.toLocaleString()}`}
+              sub="Confirmed only"
+              color="bg-violet-500/10"
+            />
+          </div>
+        </TabsContent>
 
-      {/* ── Room Availability Summary ─────────────────────────────────── */}
-      {isCurrentMonth && (
-        <Card className="border-0 shadow-sm overflow-hidden">
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <BedDouble className="size-4 text-primary" />
-              Room Availability Today
-              <span className="ml-auto text-xs font-normal text-muted-foreground">
-                {availabilityByType.reduce((s, t) => s + t.free, 0)} of{' '}
-                {ROOMS.length} rooms available
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {availabilityByType.map(({ type, total, free }) => {
-                const pct = total > 0 ? Math.round((free / total) * 100) : 0
-                const typeLabel = type.charAt(0).toUpperCase() + type.slice(1)
-                const allFree = free === total
-                const noneFree = free === 0
-                return (
-                  <div key={type} className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-muted-foreground">{ROOM_TYPE_ICONS[type]}</span>
-                        <span className="text-xs font-semibold capitalize">{typeLabel}</span>
+        {isCurrentMonth && (
+          <TabsContent value="availability">
+            <Card className="border-0 shadow-sm overflow-hidden">
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <BedDouble className="size-4 text-primary" />
+                  Room Availability Today
+                  <span className="ml-auto text-xs font-normal text-muted-foreground">
+                    {availabilityByType.reduce((s, t) => s + t.free, 0)} of{' '}
+                    {ROOMS.length} rooms available
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {availabilityByType.map(({ type, total, free }) => {
+                    const pct = total > 0 ? Math.round((free / total) * 100) : 0
+                    const typeLabel = type.charAt(0).toUpperCase() + type.slice(1)
+                    const allFree = free === total
+                    const noneFree = free === 0
+                    return (
+                      <div key={type} className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-muted-foreground">{ROOM_TYPE_ICONS[type]}</span>
+                            <span className="text-xs font-semibold capitalize">{typeLabel}</span>
+                          </div>
+                          <span
+                            className={cn(
+                              'text-xs font-bold',
+                              allFree
+                                ? 'text-emerald-600'
+                                : noneFree
+                                  ? 'text-destructive'
+                                  : 'text-amber-600',
+                            )}
+                          >
+                            {free}/{total}
+                          </span>
+                        </div>
+                        {/* Fill bar */}
+                        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                          <div
+                            className={cn(
+                              'h-full rounded-full transition-all duration-500',
+                              allFree
+                                ? 'bg-emerald-500'
+                                : noneFree
+                                  ? 'bg-destructive'
+                                  : 'bg-amber-500',
+                            )}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          {free === 0
+                            ? 'Fully occupied'
+                            : free === total
+                              ? 'All available'
+                              : `${free} free · ${total - free} occupied`}
+                        </p>
                       </div>
-                      <span
-                        className={cn(
-                          'text-xs font-bold',
-                          allFree
-                            ? 'text-emerald-600'
-                            : noneFree
-                              ? 'text-destructive'
-                              : 'text-amber-600',
-                        )}
-                      >
-                        {free}/{total}
-                      </span>
-                    </div>
-                    {/* Fill bar */}
-                    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                      <div
-                        className={cn(
-                          'h-full rounded-full transition-all duration-500',
-                          allFree
-                            ? 'bg-emerald-500'
-                            : noneFree
-                              ? 'bg-destructive'
-                              : 'bg-amber-500',
-                        )}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">
-                      {free === 0
-                        ? 'Fully occupied'
-                        : free === total
-                          ? 'All available'
-                          : `${free} free · ${total - free} occupied`}
-                    </p>
-                  </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
-      {/* ── Today's Activity (only when viewing current month) ────────── */}
-      {isCurrentMonth && <TodayPanel today={today} />}
+        {isCurrentMonth && (
+          <TabsContent value="activity">
+            <TodayPanel today={today} />
+          </TabsContent>
+        )}
+      </Tabs>
 
       {/* ── Calendar Card ──────────────────────────────────────────────── */}
       <Card className="border-0 shadow-sm overflow-hidden">
@@ -1163,6 +1177,7 @@ function RouteComponent() {
           </p>
         </div>
       </Card>
+
 
       {/* Booking detail dialog */}
       {selectedBooking && selectedRoom && (
