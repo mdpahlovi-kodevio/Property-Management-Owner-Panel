@@ -59,7 +59,7 @@ export const data = {
         },
         {
             title: 'Users Management',
-            url: '/users-management',
+            url: '/user-management',
             icon: <User />,
         },
         {
