@@ -18,168 +18,135 @@ export const Route = createFileRoute('/__main/user-management')({
   component: RouteComponent,
 })
 
-const employeeSchema = z.object({
+const userSchema = z.object({
   name: z.string().min(1, 'Full name is required'),
   email: z.email('Please enter a valid email address'),
   phone: z.string(),
-  image: z.string(),
-  role: z.enum(['Manager', 'Super Admin', 'Maintenance Staff', 'Accountant']),
+  bookings: z.coerce.number().min(0, 'Must be at least 0'),
   status: z.enum(['Active', 'Blocked']),
 })
 
-const INITIAL_EMPLOYEES = [
-  {
-    id: 1,
-    name: 'Jane Cooper',
-    image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Jane',
-    email: 'john.smith@email.com',
-    phone: '+1 647-210-4587',
-    role: 'Manager',
-    status: 'Active',
-  },
-  {
-    id: 2,
-    name: 'Wade Warren',
-    image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Wade',
-    email: 'sarah.j@email.com',
-    phone: '+1 647-210-4587',
-    role: 'Super Admin',
-    status: 'Active',
-  },
-  {
-    id: 3,
-    name: 'Dianne Russell',
-    image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Dianne',
-    email: 'ava.w@email.com',
-    phone: '+1 647-210-4587',
-    role: 'Maintenance Staff',
-    status: 'Active',
-  },
-  {
-    id: 4,
-    name: 'Eleanor Pena',
-    image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Eleanor',
-    email: 'william.h@email.com',
-    phone: '+1 647-210-4587',
-    role: 'Accountant',
-    status: 'Active',
-  },
+const INITIAL_USERS = [
+  { id: 1, name: 'Jane Cooper', phone: '+1 416 XXX XXXX', email: 'janecoper@gmail.com', bookings: 4, status: 'Active' as const },
+  { id: 2, name: 'Wade Warren', phone: '+1 416 XXX XXXX', email: 'weaver@example.com', bookings: 5, status: 'Active' as const },
+  { id: 3, name: 'Esther Howard', phone: '+1 416 XXX XXXX', email: 'esther@gmail.com', bookings: 3, status: 'Active' as const },
+  { id: 4, name: 'Leslie Alexander', phone: '+1 416 XXX XXXX', email: 'leslie@gmail.com', bookings: 7, status: 'Active' as const },
+  { id: 5, name: 'Jenny Wilson', phone: '+1 416 XXX XXXX', email: 'janecoper@gmail.com', bookings: 3, status: 'Active' as const },
+  { id: 6, name: 'Guy Hawkins', phone: '+1 416 XXX XXXX', email: 'hawkins@gmail.com', bookings: 2, status: 'Active' as const },
+  { id: 7, name: 'Robert Fox', phone: '+1 416 XXX XXXX', email: 'robert@gmail.com', bookings: 4, status: 'Active' as const },
+  { id: 8, name: 'Kristin Watson', phone: '+1 416 XXX XXXX', email: 'kristin@gmail.com', bookings: 2, status: 'Blocked' as const },
+  { id: 9, name: 'Jacob Jones', phone: '+1 416 XXX XXXX', email: 'jacob@gmail.com', bookings: 4, status: 'Active' as const },
+  { id: 10, name: 'Bessie Cooper', phone: '+1 416 XXX XXXX', email: 'bessie@gmail.com', bookings: 2, status: 'Active' as const },
+  { id: 11, name: 'Albert Flores', phone: '+1 416 XXX XXXX', email: 'albert@gmail.com', bookings: 2, status: 'Active' as const },
+  { id: 12, name: 'Dianne Russell', phone: '+1 416 XXX XXXX', email: 'dianne@gmail.com', bookings: 3, status: 'Blocked' as const },
+  { id: 13, name: 'Eleanor Pena', phone: '+1 416 XXX XXXX', email: 'eleanor@gmail.com', bookings: 4, status: 'Blocked' as const },
 ]
 
-type Employee = (typeof INITIAL_EMPLOYEES)[number]
+type User = (typeof INITIAL_USERS)[number]
 
 function RouteComponent() {
-  const [employees, setEmployees] = useState<Employee[]>(INITIAL_EMPLOYEES)
+  const [users, setUsers] = useState<User[]>(INITIAL_USERS)
   const [searchQuery, setSearchQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
-  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
 
-  const isEditMode = editingEmployee !== null
+  const isEditMode = editingUser !== null
 
   const openAdd = () => {
-    setEditingEmployee(null)
+    setEditingUser(null)
     setIsOpen(true)
   }
 
-  const openEdit = (employee: Employee) => {
-    setEditingEmployee(employee)
+  const openEdit = (user: User) => {
+    setEditingUser(user)
     setIsOpen(true)
   }
 
   const closeDialog = () => {
     setIsOpen(false)
-    setEditingEmployee(null)
+    setEditingUser(null)
   }
 
-  const handleSave = (values: z.infer<typeof employeeSchema>) => {
+  const handleSave = (values: z.infer<typeof userSchema>) => {
     if (isEditMode) {
-      setEmployees((prev) => prev.map((e) => (e.id === editingEmployee.id ? { ...e, ...values } : e)))
+      setUsers((prev) => prev.map((u) => (u.id === editingUser.id ? { ...u, ...values } : u)))
     } else {
-      const newEmployee: Employee = {
+      const newUser: User = {
         id: Date.now(),
         ...values,
-        image: `https://api.dicebear.com/7.x/notionists/svg?seed=${values.name.replace(' ', '')}`,
       }
-      setEmployees((prev) => [...prev, newEmployee])
+      setUsers((prev) => [...prev, newUser])
     }
     closeDialog()
   }
 
-  const filteredEmployees = useMemo(() => {
-    if (!searchQuery.trim()) return employees
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return users
     const query = searchQuery.toLowerCase()
-    return employees.filter(
-      (e) =>
-        e.name.toLowerCase().includes(query) ||
-        e.email.toLowerCase().includes(query) ||
-        e.phone.toLowerCase().includes(query) ||
-        e.role.toLowerCase().includes(query),
+    return users.filter(
+      (u) =>
+        u.name.toLowerCase().includes(query) ||
+        u.email.toLowerCase().includes(query) ||
+        u.phone.toLowerCase().includes(query),
     )
-  }, [employees, searchQuery])
+  }, [users, searchQuery])
 
   const handleToggleStatus = (id: number) => {
-    setEmployees((prev) => prev.map((e) => (e.id === id ? { ...e, status: e.status === 'Active' ? 'Blocked' : 'Active' } : e)))
+    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status: u.status === 'Active' ? 'Blocked' : 'Active' } : u)))
   }
 
-  const handleDeleteEmployee = (id: number) => {
-    setEmployees((prev) => prev.filter((e) => e.id !== id))
+  const handleDeleteUser = (id: number) => {
+    setUsers((prev) => prev.filter((u) => u.id !== id))
   }
 
-  const columns: DataTableColumn<Employee>[] = useMemo(
+  const columns: DataTableColumn<User>[] = useMemo(
     () => [
       {
         key: 'name',
-        header: 'Employee',
-        className: 'flex items-center gap-3',
-        render: (user) => (
-          <>
-            <div className="size-8 rounded-full overflow-hidden">
-              <img src={user.image} alt={user.name} className="size-full object-cover" />
-            </div>
-            {user.name}
-          </>
-        ),
+        header: 'Name',
+        className: 'font-medium',
+        render: (user) => <span className="text-muted-foreground">{user.name}</span>,
       },
-      { key: 'email', header: 'Email', render: (emp) => <span className="text-muted-foreground">{emp.email}</span> },
-      { key: 'phone', header: 'Phone Number', render: (emp) => <span className="text-muted-foreground">{emp.phone}</span> },
-      { key: 'role', header: 'Role', render: (emp) => <span className="text-muted-foreground">{emp.role}</span> },
+      { key: 'phone', header: 'Phone Number', render: (user) => <span className="text-muted-foreground">{user.phone}</span> },
+      { key: 'email', header: 'Email', render: (user) => <span className="text-muted-foreground">{user.email}</span> },
+      { key: 'bookings', header: 'Bookings', render: (user) => <span className="text-muted-foreground">{user.bookings}</span> },
       {
         key: 'status',
         header: 'Status',
-        render: (emp) =>
-          emp.status === 'Active' ? (
-            <span className="text-xs font-semibold text-green-600 bg-green-500/10 px-2.5 py-1 rounded-full">Active</span>
+        render: (user) =>
+          user.status === 'Active' ? (
+            <span className="text-sm font-medium text-green-500">Active</span>
           ) : (
-            <span className="text-xs font-semibold text-red-600 bg-red-500/10 px-2.5 py-1 rounded-full">Blocked</span>
+            <span className="text-sm font-medium text-red-500">Blocked</span>
           ),
       },
       {
         key: 'action',
         header: 'Action',
-        render: (emp) => (
+        render: (user) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm">
-                Action <ChevronDown className="h-3.5 w-3.5" />
+              <Button size="sm" className="bg-[#24357B] hover:bg-[#24357B]/90 text-white rounded-md h-9">
+                Action <ChevronDown className="ml-1 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-white">
-              <DropdownMenuItem onClick={() => openEdit(emp)}>
+              <DropdownMenuItem onClick={() => openEdit(user)}>
                 <Edit className="size-3.5" /> Edit Details
               </DropdownMenuItem>
               <StatusConfirm
-                name={emp.name}
-                currentStatus={emp.status}
-                newStatus={emp.status === 'Active' ? 'Blocked' : 'Active'}
-                onConfirm={() => handleToggleStatus(emp.id)}
+                name={user.name}
+                currentStatus={user.status}
+                newStatus={user.status === 'Active' ? 'Blocked' : 'Active'}
+                onConfirm={() => handleToggleStatus(user.id)}
               >
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                   <Check className="size-3.5" /> Toggle Status
                 </DropdownMenuItem>
               </StatusConfirm>
-              <TrashConfirm name={emp.name} onConfirm={() => handleDeleteEmployee(emp.id)}>
+              <TrashConfirm name={user.name} onConfirm={() => handleDeleteUser(user.id)}>
                 <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()}>
-                  <Trash2 className="size-3.5" /> Delete Employee
+                  <Trash2 className="size-3.5" /> Delete User
                 </DropdownMenuItem>
               </TrashConfirm>
             </DropdownMenuContent>
@@ -192,20 +159,20 @@ function RouteComponent() {
 
   return (
     <>
-      <PageHeader title="Employee" description="Manage your reports" />
+      <PageHeader title="Users Management" description="Manage your Users" />
 
       <div className="flex items-center justify-between gap-4">
         <SearchInput value={searchQuery} onValueChange={setSearchQuery} placeholder="Search" className="sm:w-80" />
-        <Button onClick={openAdd}>
-          <Plus className="h-4 w-4" />
-          Add Employee
+        <Button onClick={openAdd} className="bg-[#24357B] hover:bg-[#24357B]/90 text-white rounded-md">
+          <Plus className="mr-1 h-4 w-4" />
+          Add User
         </Button>
       </div>
 
       <DataTable
         columns={columns}
-        data={filteredEmployees}
-        noun="employees"
+        data={filteredUsers}
+        noun="users"
         emptyIcon={<Users className="h-6 w-6" />}
         onReset={() => setSearchQuery('')}
       />
@@ -218,31 +185,30 @@ function RouteComponent() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">{isEditMode ? 'Edit Employee' : 'Add Employee'}</DialogTitle>
+            <DialogTitle className="text-lg font-semibold">{isEditMode ? 'Edit User' : 'Add User'}</DialogTitle>
             <DialogDescription className="text-sm text-slate-500">
               {isEditMode
-                ? `Modify details for ${editingEmployee.name}.`
-                : 'Enter the details of the new employee to register them in the management panel.'}
+                ? `Modify details for ${editingUser.name}.`
+                : 'Enter the details of the new user to register them.'}
             </DialogDescription>
           </DialogHeader>
 
-          <EmployeeForm
-            key={editingEmployee?.id ?? 'add'}
+          <UserForm
+            key={editingUser?.id ?? 'add'}
             defaultValues={
-              editingEmployee
+              editingUser
                 ? {
-                  name: editingEmployee.name,
-                  email: editingEmployee.email,
-                  phone: editingEmployee.phone,
-                  image: editingEmployee.image,
-                  role: editingEmployee.role as any,
-                  status: editingEmployee.status as 'Active' | 'Blocked',
+                  name: editingUser.name,
+                  email: editingUser.email,
+                  phone: editingUser.phone,
+                  bookings: editingUser.bookings,
+                  status: editingUser.status as 'Active' | 'Blocked',
                 }
-                : { name: '', email: '', phone: '', image: '', role: 'Manager', status: 'Active' }
+                : { name: '', email: '', phone: '', bookings: 0, status: 'Active' }
             }
             onSubmit={handleSave}
             onCancel={closeDialog}
-            submitLabel={isEditMode ? 'Save Changes' : 'Register Employee'}
+            submitLabel={isEditMode ? 'Save Changes' : 'Register User'}
           />
         </DialogContent>
       </Dialog>
@@ -250,7 +216,7 @@ function RouteComponent() {
   )
 }
 
-function EmployeeForm({
+function UserForm({
   defaultValues,
   onSubmit,
   onCancel,
@@ -260,17 +226,16 @@ function EmployeeForm({
     name: string
     email: string
     phone: string
-    image: string
-    role: 'Manager' | 'Super Admin' | 'Maintenance Staff' | 'Accountant'
+    bookings: number
     status: 'Active' | 'Blocked'
   }
-  onSubmit: (values: z.infer<typeof employeeSchema>) => void
+  onSubmit: (values: z.infer<typeof userSchema>) => void
   onCancel: () => void
   submitLabel: string
 }) {
   const form = useAppForm({
     defaultValues,
-    validators: { onChange: employeeSchema },
+    validators: { onChange: userSchema },
     onSubmit: async ({ value }) => onSubmit(value),
   })
 
@@ -282,8 +247,6 @@ function EmployeeForm({
       }}
       className="space-y-4"
     >
-      <form.AppField name="image">{(field) => <field.FormAvatar folder="employees" />}</form.AppField>
-
       <form.AppField name="name">{(field) => <field.FormInput label="Full Name" placeholder="e.g. Jane Cooper" />}</form.AppField>
 
       <form.AppField name="email">
@@ -294,19 +257,8 @@ function EmployeeForm({
         {(field) => <field.FormInput label="Phone Number" placeholder="e.g. +1 416 555 0192" />}
       </form.AppField>
 
-      <form.AppField name="role">
-        {(field) => (
-          <field.FormSelect
-            label="Role"
-            placeholder="Select a role"
-            options={[
-              { value: 'Manager', label: 'Manager' },
-              { value: 'Super Admin', label: 'Super Admin' },
-              { value: 'Maintenance Staff', label: 'Maintenance Staff' },
-              { value: 'Accountant', label: 'Accountant' },
-            ]}
-          />
-        )}
+      <form.AppField name="bookings">
+        {(field) => <field.FormInput type="number" label="Bookings" placeholder="e.g. 4" />}
       </form.AppField>
 
       <form.AppField name="status">
