@@ -3,7 +3,6 @@ node_modules
 dist
 dist-ssr
 *.local
-.env
 .nitro
 .tanstack
 .wrangler
@@ -13,3 +12,4 @@ __unconfig*
 todos.json
 .agents
 .vercel
+config.bat

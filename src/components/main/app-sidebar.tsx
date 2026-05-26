@@ -6,24 +6,6 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } fr
 import { Headphones, LayoutDashboard, ShieldAlert, CircleCheck, Calendar1, House, MessageCircleMore, User, CreditCard, IdCardLanyard, ShieldUser, Star, FileText, Settings, } from 'lucide-react'
 import * as React from 'react'
 
-/** sidebar menus: 
-* Dashboard
-* Reservations
-* Calendar
-* Inbox
-* Rentals
-* Users Management
-* Payments
-* Channel Manager
-* Employee
-* Role Management
-* Reviews
-* Reports
-* Support
-* Settings
-* Logout
-
-*/
 export const data = {
     user: {
         name: 'Doraemon',
