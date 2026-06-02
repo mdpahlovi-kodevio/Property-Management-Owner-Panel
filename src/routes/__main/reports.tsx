@@ -88,7 +88,7 @@ const ARRIVALS_DATA: ArrivalsData[] = [
 function RouteComponent() {
     const [activeTab, setActiveTab] = useState<'occupancy' | 'revenue' | 'arrivals'>('arrivals')
 
-    const occupancyColumns: DataTableColumn<OccupancyData>[] = useMemo(
+    const occupancyColumns = useMemo<DataTableColumn<OccupancyData>[]>(
         () => [
             { key: 'date', header: 'Date', render: (r) => <span className="text-muted-foreground">{r.date}</span> },
             { key: 'availableRooms', header: 'Available Rooms', render: (r) => <span className="text-muted-foreground">{r.availableRooms}</span> },
@@ -101,7 +101,7 @@ function RouteComponent() {
         []
     )
 
-    const revenueColumns: DataTableColumn<RevenueData>[] = useMemo(
+    const revenueColumns = useMemo<DataTableColumn<RevenueData>[]>(
         () => [
             { key: 'source', header: 'Booking Source', render: (r) => <span className="text-muted-foreground">{r.source}</span> },
             { key: 'bookings', header: 'Total Bookings', render: (r) => <span className="text-muted-foreground">{r.bookings}</span> },
@@ -121,7 +121,7 @@ function RouteComponent() {
         []
     )
 
-    const arrivalsColumns: DataTableColumn<ArrivalsData>[] = useMemo(
+    const arrivalsColumns = useMemo<DataTableColumn<ArrivalsData>[]>(
         () => [
             { key: 'bookingId', header: 'Booking ID', render: (r) => <span className="text-muted-foreground">{r.bookingId}</span> },
             { key: 'guest', header: 'Guest', render: (r) => <span className="text-muted-foreground">{r.guest}</span> },
