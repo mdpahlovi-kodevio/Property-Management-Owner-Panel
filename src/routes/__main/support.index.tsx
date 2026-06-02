@@ -4,6 +4,11 @@ import { DataTableFooter } from '@/components/ui/data-table'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
 import { StatCard } from '@/components/ui/stat-card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { CheckCheck, CircleCheckBig, Clock, MessageSquare, Plus, SearchX } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -70,6 +75,7 @@ function RouteComponent() {
     const [searchQuery, setSearchQuery] = useState('')
     const [page, setPage] = useState(1)
     const [limit, setLimit] = useState(10)
+    const [isNewRequestOpen, setIsNewRequestOpen] = useState(false)
 
     const filteredRequests = useMemo(() => {
         let result = [...requests]
@@ -127,7 +133,7 @@ function RouteComponent() {
                     ))}
                 </ButtonGroup>
 
-                <Button>
+                <Button onClick={() => setIsNewRequestOpen(true)}>
                     <Plus className="h-4 w-4" />
                     New Request
                 </Button>
@@ -189,6 +195,65 @@ function RouteComponent() {
                 onLimitChange={setLimit}
                 noun="support requests"
             />
+
+            {/* New Support Request Dialog */}
+            <Dialog open={isNewRequestOpen} onOpenChange={setIsNewRequestOpen}>
+                <DialogContent className="w-[95%] sm:max-w-[600px] bg-white p-8 rounded-2xl gap-6">
+                    <DialogHeader className="text-left mb-2">
+                        <DialogTitle className="text-[22px] font-bold text-slate-900 mb-2">Submit Support Request</DialogTitle>
+                        <DialogDescription className="text-[15px] text-slate-600 font-medium">Drag and drop your files here</DialogDescription>
+                    </DialogHeader>
+
+                    <div className="flex flex-col gap-6">
+                        <div className="space-y-2.5">
+                            <Label className="text-base font-semibold text-slate-900">Subject</Label>
+                            <Input placeholder="Enter subject" className="h-12 rounded-lg border-slate-200 text-[15px]" />
+                        </div>
+
+                        <div className="space-y-2.5">
+                            <Label className="text-base font-semibold text-slate-900">Priority</Label>
+                            <Select>
+                                <SelectTrigger className="h-12 rounded-lg border-slate-200 text-[15px] text-slate-500">
+                                    <SelectValue placeholder="Select priority" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="low">Low</SelectItem>
+                                    <SelectItem value="medium">Medium</SelectItem>
+                                    <SelectItem value="high">High</SelectItem>
+                                    <SelectItem value="urgent">Urgent</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2.5">
+                            <Label className="text-base font-semibold text-slate-900">Employee</Label>
+                            <Select>
+                                <SelectTrigger className="h-12 rounded-lg border-slate-200 text-[15px] text-slate-500">
+                                    <SelectValue placeholder="Select employee name" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="john">John Doe</SelectItem>
+                                    <SelectItem value="jane">Jane Smith</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2.5">
+                            <Label className="text-base font-semibold text-slate-900">Description</Label>
+                            <Textarea placeholder="Typing" className="min-h-[140px] rounded-lg border-slate-200 text-[15px] resize-none" />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                            <Button variant="outline" onClick={() => setIsNewRequestOpen(false)} className="h-12 rounded-lg font-semibold text-[15px] border-slate-200 text-slate-600 hover:bg-slate-50">
+                                Cancel
+                            </Button>
+                            <Button className="h-12 rounded-lg font-semibold text-[15px] bg-[#243E8B] hover:bg-[#1D3270] text-white">
+                                Submit Request
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </>
     )
 }
