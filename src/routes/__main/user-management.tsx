@@ -22,7 +22,7 @@ const userSchema = z.object({
   name: z.string().min(1, 'Full name is required'),
   email: z.email('Please enter a valid email address'),
   phone: z.string(),
-  bookings: z.coerce.number().min(0, 'Must be at least 0'),
+  bookings: z.number().min(0, 'Must be at least 0'),
   status: z.enum(['Active', 'Blocked']),
 })
 

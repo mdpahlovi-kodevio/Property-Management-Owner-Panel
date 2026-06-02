@@ -1,6 +1,7 @@
 import { useAppForm } from '@/components/form/form-context'
 import { Button } from '@/components/ui/button'
-import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
+import { DataTable } from '@/components/ui/data-table'
+import type { DataTableColumn } from '@/components/ui/data-table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { PageHeader } from '@/components/ui/page-header'
@@ -98,7 +99,7 @@ function RouteComponent() {
     }
 
     const handleSave = (values: z.infer<typeof roleSchema>) => {
-        if (isEditMode && editingRole) {
+        if (isEditMode) {
             setRoles((prev) => prev.map((r) => (r.id === editingRole.id ? { ...r, ...values } : r)))
         } else {
             const newRole: RoleItem = {
@@ -206,7 +207,7 @@ function RouteComponent() {
                         <DialogTitle className="text-lg font-semibold">{isEditMode ? 'Edit Role' : 'Add Role'}</DialogTitle>
                         <DialogDescription className="text-sm text-slate-500">
                             {isEditMode
-                                ? `Modify details for ${editingRole?.roleName || 'Role'}.`
+                                ? `Modify details for ${editingRole.roleName || 'Role'}.`
                                 : 'Enter the details to create a new role and assign permissions.'}
                         </DialogDescription>
                     </DialogHeader>
@@ -216,10 +217,10 @@ function RouteComponent() {
                         defaultValues={
                             editingRole
                                 ? {
-                                      roleName: editingRole.roleName,
-                                      employees: editingRole.employees,
-                                      modules: editingRole.modules,
-                                  }
+                                    roleName: editingRole.roleName,
+                                    employees: editingRole.employees,
+                                    modules: editingRole.modules,
+                                }
                                 : { roleName: '', employees: '', modules: [] }
                         }
                         onSubmit={handleSave}

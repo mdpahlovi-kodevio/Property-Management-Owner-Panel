@@ -16,7 +16,6 @@ import {
     Zap,
     Lock,
     MoreHorizontal,
-    Plus,
     Edit2,
 } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
@@ -353,7 +352,7 @@ function RouteComponent() {
                         // Update last message status to delivered/read
                         const updatedMessages = [...conv.messages]
                         const lastMsg = updatedMessages[updatedMessages.length - 1]
-                        if (lastMsg && lastMsg.senderId === CURRENT_USER_ID) {
+                        if (lastMsg.senderId === CURRENT_USER_ID) {
                             lastMsg.status = 'read'
                         }
                         return { ...conv, messages: updatedMessages }
@@ -400,7 +399,7 @@ function RouteComponent() {
                 {/* ─── Sidebar ─── */}
                 <div
                     className={cn(
-                        "w-full md:w-[340px] flex-col border-r bg-muted/10 shrink-0 z-10 relative",
+                        "w-full md:w-85 flex-col border-r bg-muted/10 shrink-0 z-10 relative",
                         activeConversationId ? "hidden md:flex" : "flex"
                     )}
                 >
@@ -498,7 +497,7 @@ function RouteComponent() {
                                                                 : 'text-muted-foreground',
                                                         )}
                                                     >
-                                                        {lastMessage?.timestamp}
+                                                        {lastMessage.timestamp}
                                                     </span>
                                                 </div>
                                                 <p
@@ -510,7 +509,7 @@ function RouteComponent() {
                                                         !isActive && conv.unreadCount > 0 && 'text-foreground font-medium',
                                                     )}
                                                 >
-                                                    {lastMessage?.text}
+                                                    {lastMessage.text}
                                                 </p>
                                             </div>
 
@@ -572,7 +571,7 @@ function RouteComponent() {
                         )}
                     >
                         {/* Chat Header */}
-                        <div className="h-[76px] px-4 md:px-6 flex items-center justify-between border-b bg-card/80 backdrop-blur-xl shrink-0 z-10">
+                        <div className="h-19 px-4 md:px-6 flex items-center justify-between border-b bg-card/80 backdrop-blur-xl shrink-0 z-10">
                             <div className="flex items-center gap-3 md:gap-4">
                                 <Button
                                     variant="ghost"
@@ -861,8 +860,8 @@ function RouteComponent() {
 
                 {/* ─── Guest Info Sidebar (Right) ─── */}
                 {activeConversation && isInfoOpen && (
-                    <div className="w-[300px] flex flex-col border-l bg-card shrink-0 z-10 relative hidden lg:flex">
-                        <div className="h-[76px] flex items-center px-4 border-b shrink-0">
+                    <div className="w-75 flex flex-col border-l bg-card shrink-0 z-10 relative lg:flex">
+                        <div className="h-19 flex items-center px-4 border-b shrink-0">
                             <h3 className="font-semibold">Guest Details</h3>
                         </div>
                         <div className="flex-1 overflow-y-auto p-5 space-y-6">
@@ -938,7 +937,7 @@ function RouteComponent() {
                                         <textarea
                                             value={noteDraft}
                                             onChange={(e) => setNoteDraft(e.target.value)}
-                                            className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                            className="flex min-h-25 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                             placeholder="Add notes about this guest..."
                                             autoFocus
                                         />
@@ -948,7 +947,7 @@ function RouteComponent() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg italic min-h-[60px] whitespace-pre-wrap">
+                                    <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg italic min-h-15 whitespace-pre-wrap">
                                         {activeConversation.contact.notes || "No notes added yet. Click edit to add some."}
                                     </div>
                                 )}

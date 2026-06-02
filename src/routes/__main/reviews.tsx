@@ -111,25 +111,25 @@ function RouteComponent() {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard 
-            label="Average Rating" 
-            value="4.8" 
-            icon={Star} 
-            color="amber" 
-            trend={{ direction: 'up', value: '0.2', label: 'vs last month' }} 
+        <StatCard
+          label="Average Rating"
+          value="4.8"
+          icon={Star}
+          color="amber"
+          trend={{ direction: 'up', value: '0.2', label: 'vs last month' }}
         />
-        <StatCard 
-            label="Response Rate" 
-            value="94%" 
-            icon={MessageSquare} 
-            color="blue" 
-            trend={{ direction: 'up', value: '2%', label: 'vs last month' }} 
+        <StatCard
+          label="Response Rate"
+          value="94%"
+          icon={MessageSquare}
+          color="blue"
+          trend={{ direction: 'up', value: '2%', label: 'vs last month' }}
         />
-        <StatCard 
-            label="Pending Replies" 
-            value="12" 
-            icon={Clock} 
-            color="orange" 
+        <StatCard
+          label="Pending Replies"
+          value="12"
+          icon={Clock}
+          color="orange"
         />
       </div>
 
@@ -140,11 +140,10 @@ function RouteComponent() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-5 py-2 rounded-md text-sm font-medium transition-all duration-200 flex-1 sm:flex-none text-center ${
-                activeTab === tab
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10'
-              }`}
+              className={`px-5 py-2 rounded-md text-sm font-medium transition-all duration-200 flex-1 sm:flex-none text-center ${activeTab === tab
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10'
+                }`}
             >
               {tab}
             </button>
@@ -207,9 +206,8 @@ function ReviewCard({ review }: { review: Review }) {
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
-                  className={`w-3.5 h-3.5 ${
-                    i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'
-                  }`}
+                  className={`w-3.5 h-3.5 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'
+                    }`}
                 />
               ))}
             </div>

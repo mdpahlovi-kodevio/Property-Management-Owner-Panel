@@ -40,7 +40,7 @@ const INITIAL_PAYMENTS: Payment[] = [
 ]
 
 function RouteComponent() {
-    const [payments, setPayments] = useState<Payment[]>(INITIAL_PAYMENTS)
+    const [payments] = useState<Payment[]>(INITIAL_PAYMENTS)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)

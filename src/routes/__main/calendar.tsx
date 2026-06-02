@@ -42,7 +42,8 @@ import {
     Users,
     XCircle,
 } from 'lucide-react'
-import { type ReactNode, useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+import type { ReactNode } from 'react';
 
 export const Route = createFileRoute('/__main/calendar')({
     component: RouteComponent,
@@ -626,7 +627,7 @@ function CalendarRow({
                         <div
                             key={d}
                             className={cn(
-                                'relative border-r border-border/30 last:border-r-0 flex-1 min-w-[28px] h-12 group/cell',
+                                'relative border-r border-border/30 last:border-r-0 flex-1 min-w-7 h-12 group/cell',
                                 // Free future/today cells: emerald tint
                                 isFree && !isPast && 'bg-emerald-500/[0.07]',
                                 // Free past cells: very subtle muted
@@ -638,7 +639,7 @@ function CalendarRow({
                             {/* Bottom availability strip */}
                             <span
                                 className={cn(
-                                    'absolute bottom-0 left-0 right-0 h-[3px] rounded-t-sm transition-all',
+                                    'absolute bottom-0 left-0 right-0 h-0.75rounded-t-sm transition-all',
                                     isFree && !isPast && !isToday && 'bg-emerald-500/40',
                                     isFree && isPast && 'bg-muted-foreground/15',
                                     isToday && isFree && 'bg-primary/40',
@@ -1087,7 +1088,7 @@ function RouteComponent() {
                             ))}
                         </div>
                     ) : (
-                        <div className="min-w-[720px]">
+                        <div className="min-w-180">
                             {/* Day-number header */}
                             <div className="flex border-b border-border/60 bg-muted/40">
                                 {/* Room column header */}
@@ -1109,7 +1110,7 @@ function RouteComponent() {
                                             <div
                                                 key={d}
                                                 className={cn(
-                                                    'flex-1 min-w-[28px] flex flex-col items-center justify-center gap-0.5 py-1',
+                                                    'flex-1 min-w-7 flex flex-col items-center justify-center gap-0.5 py-1',
                                                     'border-r border-border/30 last:border-r-0',
                                                     isToday && 'bg-primary/5',
                                                 )}

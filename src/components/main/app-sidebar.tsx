@@ -3,13 +3,13 @@
 import { NavMain } from '@/components/main/nav-main'
 import { NavUser } from '@/components/main/nav-user'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
-import { Headphones, LayoutDashboard, ShieldAlert, CircleCheck, Calendar1, House, MessageCircleMore, User, CreditCard, IdCardLanyard, ShieldUser, Star, FileText, Settings, } from 'lucide-react'
+import { Headphones, LayoutDashboard, CircleCheck, Calendar1, House, MessageCircleMore, User, CreditCard, IdCardLanyard, ShieldUser, Star, FileText, Settings, } from 'lucide-react'
 import * as React from 'react'
 
 export const data = {
     user: {
         name: 'Doraemon',
-        email: 'm@example.com',
+        email: 'support@doraemon.com',
         avatar: '/avatars/shadcn.jpg',
         role: 'Property Owner',
     },

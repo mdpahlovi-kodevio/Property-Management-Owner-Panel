@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
@@ -78,7 +78,7 @@ function RentalsComponent() {
     })
 
     const toggleAmenity = (name: string) => {
-        const current = form.getFieldValue('amenities') as string[]
+        const current = form.getFieldValue('amenities')
         form.setFieldValue('amenities', current.includes(name) ? current.filter(a => a !== name) : [...current, name])
     }
 
@@ -128,7 +128,7 @@ function RentalsComponent() {
                                     className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                                 />
                                 {/* Subtle gradient overlay for better text contrast if needed */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <div className="absolute inset-0 bg-linear-to-t from-slate-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                                 {/* Status Badge - Top Left */}
                                 <div className="absolute top-4 left-4 z-10">
@@ -195,7 +195,7 @@ function RentalsComponent() {
 
             {/* Add Property Dialog */}
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                <DialogContent className="w-[95%] sm:max-w-[550px] max-h-[90vh] overflow-y-auto bg-white p-6 rounded-3xl">
+                <DialogContent className="w-[95%] sm:max-w-137.5 max-h-[90vh] overflow-y-auto bg-white p-6 rounded-3xl">
                     <DialogHeader className="mb-4 text-left">
                         <DialogTitle className="text-xl font-bold">Add New Property</DialogTitle>
                         <DialogDescription className="text-sm text-slate-500">Drag and drop your files here</DialogDescription>
@@ -418,7 +418,7 @@ function RentalsComponent() {
                                     <Label className="font-semibold text-slate-800">Description</Label>
                                     <Textarea
                                         placeholder="Typing"
-                                        className="rounded-lg border-slate-200 min-h-[120px]"
+                                        className="rounded-lg border-slate-200 min-h-30"
                                         value={field.state.value}
                                         onChange={(e) => field.handleChange(e.target.value)}
                                     />
@@ -449,7 +449,7 @@ function RentalsComponent() {
 
             {/* View Property Dialog */}
             <Dialog open={!!selectedProperty} onOpenChange={(open) => !open && setSelectedProperty(null)}>
-                <DialogContent className="w-[95%] sm:max-w-[550px] max-h-[90vh] overflow-y-auto bg-white p-6 rounded-3xl gap-0">
+                <DialogContent className="w-[95%] sm:max-w-137.5 max-h-[90vh] overflow-y-auto bg-white p-6 rounded-3xl gap-0">
                     <DialogHeader className="mb-4 text-left">
                         <DialogTitle className="text-2xl font-bold">Property Details</DialogTitle>
                         <DialogDescription className="sr-only">Details for {selectedProperty?.title}</DialogDescription>

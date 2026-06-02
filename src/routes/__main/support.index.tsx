@@ -198,7 +198,7 @@ function RouteComponent() {
 
             {/* New Support Request Dialog */}
             <Dialog open={isNewRequestOpen} onOpenChange={setIsNewRequestOpen}>
-                <DialogContent className="w-[95%] sm:max-w-[600px] bg-white p-8 rounded-2xl gap-6">
+                <DialogContent className="w-[95%] sm:max-w-150 bg-white p-8 rounded-2xl gap-6">
                     <DialogHeader className="text-left mb-2">
                         <DialogTitle className="text-[22px] font-bold text-slate-900 mb-2">Submit Support Request</DialogTitle>
                         <DialogDescription className="text-[15px] text-slate-600 font-medium">Drag and drop your files here</DialogDescription>
@@ -240,7 +240,7 @@ function RouteComponent() {
 
                         <div className="space-y-2.5">
                             <Label className="text-base font-semibold text-slate-900">Description</Label>
-                            <Textarea placeholder="Typing" className="min-h-[140px] rounded-lg border-slate-200 text-[15px] resize-none" />
+                            <Textarea placeholder="Typing" className="min-h-35 rounded-lg border-slate-200 text-[15px] resize-none" />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 mt-4">
