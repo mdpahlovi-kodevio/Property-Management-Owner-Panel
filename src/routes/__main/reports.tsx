@@ -108,9 +108,9 @@ function RouteComponent() {
             { key: 'totalRevenue', header: 'Total Revenue', render: (r) => <span className="text-muted-foreground">{r.totalRevenue}</span> },
             { key: 'totalEarnings', header: 'Total Earnings', render: (r) => <span className="text-muted-foreground">{r.totalEarnings}</span> },
             { key: 'expectedPayout', header: 'Expected Payout', render: (r) => <span className="text-muted-foreground">{r.expectedPayout}</span> },
-            { 
-                key: 'action', 
-                header: 'Action', 
+            {
+                key: 'action',
+                header: 'Action',
                 render: () => (
                     <Button size="sm" className="bg-[#24357B] hover:bg-[#24357B]/90 text-white rounded-md h-8 px-4 text-xs font-medium">
                         View
@@ -130,9 +130,9 @@ function RouteComponent() {
             { key: 'checkOut', header: 'Check-out', render: (r) => <span className="text-muted-foreground">{r.checkOut}</span> },
             { key: 'nights', header: 'Nights', render: (r) => <span className="text-muted-foreground">{r.nights}</span> },
             { key: 'source', header: 'Source', render: (r) => <span className="text-muted-foreground">{r.source}</span> },
-            { 
-                key: 'status', 
-                header: 'Status', 
+            {
+                key: 'status',
+                header: 'Status',
                 render: (r) => (
                     <span className={`text-xs font-medium ${r.status === 'Checked-in' ? 'text-green-500' : 'text-orange-400'}`}>
                         {r.status}
@@ -149,21 +149,21 @@ function RouteComponent() {
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-                    <Button 
+                    <Button
                         variant={activeTab === 'occupancy' ? 'default' : 'outline'}
                         className={`rounded-md px-6 transition-colors ${activeTab === 'occupancy' ? 'bg-[#24357B] hover:bg-[#24357B]/90 text-white' : ''}`}
                         onClick={() => setActiveTab('occupancy')}
                     >
                         Occupancy
                     </Button>
-                    <Button 
+                    <Button
                         variant={activeTab === 'revenue' ? 'default' : 'outline'}
                         className={`rounded-md px-6 transition-colors ${activeTab === 'revenue' ? 'bg-[#24357B] hover:bg-[#24357B]/90 text-white' : ''}`}
                         onClick={() => setActiveTab('revenue')}
                     >
                         Revenue by Source
                     </Button>
-                    <Button 
+                    <Button
                         variant={activeTab === 'arrivals' ? 'default' : 'outline'}
                         className={`rounded-md px-6 transition-colors ${activeTab === 'arrivals' ? 'bg-[#24357B] hover:bg-[#24357B]/90 text-white' : ''}`}
                         onClick={() => setActiveTab('arrivals')}
@@ -179,63 +179,63 @@ function RouteComponent() {
 
             {activeTab === 'occupancy' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard 
-                        label="Occupancy Rate" 
-                        value="$8,450.00" 
+                    <StatCard
+                        label="Occupancy Rate"
+                        value="$8,450.00"
                         icon={BedDouble}
                         color="blue"
-                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }} 
+                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }}
                     />
-                    <StatCard 
-                        label="ADR (Avg. Daily Rate)" 
-                        value="$182.50" 
+                    <StatCard
+                        label="ADR (Avg. Daily Rate)"
+                        value="$182.50"
                         icon={Home}
                         color="emerald"
-                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }} 
+                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }}
                     />
-                    <StatCard 
-                        label="REVPAR" 
-                        value="$143.08" 
+                    <StatCard
+                        label="REVPAR"
+                        value="$143.08"
                         icon={CalendarCheck}
                         color="amber"
-                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }} 
+                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }}
                     />
-                    <StatCard 
-                        label="Total Room Nights" 
-                        value="1,247" 
+                    <StatCard
+                        label="Total Room Nights"
+                        value="1,247"
                         icon={Users}
                         color="slate"
-                        trend={{ direction: 'down', value: '32', label: 'vs last period' }} 
+                        trend={{ direction: 'down', value: '32', label: 'vs last period' }}
                     />
                 </div>
             )}
 
             {activeTab === 'revenue' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard 
-                        label="Total Revenue" 
-                        value="$84,320" 
+                    <StatCard
+                        label="Total Revenue"
+                        value="$84,320"
                         icon={CalendarCheck}
                         color="blue"
-                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }} 
+                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }}
                     />
-                    <StatCard 
-                        label="Total Bookings" 
-                        value="72,180" 
+                    <StatCard
+                        label="Total Bookings"
+                        value="72,180"
                         icon={BedDouble}
                         color="emerald"
-                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }} 
+                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }}
                     />
-                    <StatCard 
-                        label="Net Earnings" 
-                        value="$12,140" 
+                    <StatCard
+                        label="Net Earnings"
+                        value="$12,140"
                         icon={CalendarX}
                         color="orange"
-                        trend={{ direction: 'down', value: 'Lower direct share', label: '' }} 
+                        trend={{ direction: 'down', value: 'Lower direct share', label: '' }}
                     />
-                    <StatCard 
-                        label="Top Channel" 
-                        value="Airbnb" 
+                    <StatCard
+                        label="Top Channel"
+                        value="Airbnb"
                         icon={Home}
                         color="amber"
                     />
@@ -244,27 +244,27 @@ function RouteComponent() {
 
             {activeTab === 'arrivals' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard 
-                        label="Arrivals Today" 
-                        value="8" 
+                    <StatCard
+                        label="Arrivals Today"
+                        value="8"
                         icon={ArrowDownRight}
                         color="blue"
                     />
-                    <StatCard 
-                        label="Departures Today" 
-                        value="6" 
+                    <StatCard
+                        label="Departures Today"
+                        value="6"
                         icon={ArrowUpRight}
                         color="orange"
                     />
-                    <StatCard 
-                        label="In-house" 
-                        value="20" 
+                    <StatCard
+                        label="In-house"
+                        value="20"
                         icon={Home}
                         color="emerald"
                     />
-                    <StatCard 
-                        label="No-shows" 
-                        value="1" 
+                    <StatCard
+                        label="No-shows"
+                        value="1"
                         icon={CalendarX}
                         color="rose"
                     />
