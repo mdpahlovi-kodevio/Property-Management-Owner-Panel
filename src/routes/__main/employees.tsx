@@ -192,14 +192,15 @@ function RouteComponent() {
 
     return (
         <>
-            <PageHeader title="Employee" description="Manage your reports" />
-
-            <div className="flex items-center justify-between gap-4">
-                <SearchInput value={searchQuery} onValueChange={setSearchQuery} placeholder="Search" className="sm:w-80" />
-                <Button onClick={openAdd}>
-                    <Plus className="h-4 w-4" />
-                    Add Employee
-                </Button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <PageHeader title="Employee" description="Manage your reports" />
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                    <SearchInput value={searchQuery} onValueChange={setSearchQuery} placeholder="Search" className="w-full sm:w-[320px]" />
+                    <Button onClick={openAdd} className="w-full sm:w-auto">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Employee
+                    </Button>
+                </div>
             </div>
 
             <DataTable

@@ -86,34 +86,33 @@ function RentalsComponent() {
 
     return (
         <>
-            <PageHeader
-                title="Rentals"
-                description="Manage your Rentals"
-            />
-
-            <div className="p-4 md:p-6 flex flex-col gap-8 min-h-screen">
-                {/* Actions Bar */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="w-full sm:w-[320px]">
-                        <SearchInput
-                            placeholder="Search properties..."
-                            value={searchQuery}
-                            onValueChange={setSearchQuery}
-                        />
-                    </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <PageHeader
+                    title="Rentals"
+                    description="Manage your Rentals"
+                />
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                    <SearchInput
+                        placeholder="Search properties..."
+                        value={searchQuery}
+                        onValueChange={setSearchQuery}
+                        className="w-full sm:w-[320px]"
+                    />
                     <Button
                         onClick={() => {
                             setEditingProperty(null)
                             form.reset()
                             setIsAddOpen(true)
                         }}
-                        className="w-full sm:w-auto bg-[#243E8B] hover:bg-[#1D3270] text-white rounded-full px-6 gap-2 font-semibold shadow-md shadow-[#243E8B]/20 transition-all hover:shadow-lg hover:-translate-y-0.5"
+                        className="w-full sm:w-auto"
                     >
-                        <Plus className="size-4" />
+                        <Plus className="size-4 mr-2" />
                         Add Property
                     </Button>
                 </div>
+            </div>
 
+            <div className="flex flex-col gap-8 min-h-screen">
                 {/* Properties Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
                     {MOCK_PROPERTIES.filter(property => {

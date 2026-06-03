@@ -89,3 +89,13 @@ export function StatCard({ label, value, icon: Icon, color, trend, className }: 
         </div>
     )
 }
+
+export function StatCardsGrid({ cards, className }: { cards: StatCardProps[], className?: string }) {
+    return (
+        <div className={cn("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4", className)}>
+            {cards.map((card, idx) => (
+                <StatCard key={idx} {...card} />
+            ))}
+        </div>
+    )
+}

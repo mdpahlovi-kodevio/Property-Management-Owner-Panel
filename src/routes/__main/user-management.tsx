@@ -159,15 +159,16 @@ function RouteComponent() {
 
   return (
     <>
-      <PageHeader title="Users Management" description="Manage your Users" />
-
-      <div className="flex items-center justify-between gap-4">
-        <SearchInput value={searchQuery} onValueChange={setSearchQuery} placeholder="Search" className="sm:w-80" />
-        <Button onClick={openAdd} className="bg-[#24357B] hover:bg-[#24357B]/90 text-white rounded-md">
-          <Plus className="mr-1 h-4 w-4" />
-          Add User
-        </Button>
-      </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <PageHeader title="Users Management" description="Manage your Users" />
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                    <SearchInput value={searchQuery} onValueChange={setSearchQuery} placeholder="Search" className="w-full sm:w-[320px]" />
+                    <Button onClick={openAdd} className="w-full sm:w-auto">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add User
+                    </Button>
+                </div>
+            </div>
 
       <DataTable
         columns={columns}

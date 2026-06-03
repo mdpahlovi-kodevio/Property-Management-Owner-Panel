@@ -24,6 +24,9 @@ import {
     RefreshCw,
     Building2,
     XCircle,
+    Home,
+    DoorOpen,
+    Wrench,
 } from 'lucide-react'
 
 // Hooks and Utilities
@@ -33,7 +36,7 @@ import { isSameDay } from '@/lib/calendar-utils'
 import { MONTHS, ROOM_TYPE_ICONS, ROOMS } from '@/data/mock-calendar'
 
 // UI Components
-import { StatCard, SimpleStatCard } from '@/components/calendar/StatCards'
+import { StatCardsGrid } from '@/components/ui/stat-card'
 import { Legend } from '@/components/calendar/Legend'
 import { TodayPanel } from '@/components/calendar/TodayPanel'
 import { BookingDetailDialog } from '@/components/calendar/BookingDetailDialog'
@@ -101,44 +104,35 @@ function RouteComponent() {
                 </div>
 
                 {/* ── Summary Stats ────────────────────────────────────────────── */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <SimpleStatCard label="Total Rooms" value={todayStats.total} colorClass="text-[#2a3070] dark:text-blue-400" />
-                    <SimpleStatCard label="Booked Today" value={todayStats.booked} colorClass="text-[#d83f3f] dark:text-red-400" />
-                    <SimpleStatCard label="Available Today" value={todayStats.available} colorClass="text-[#df8c20] dark:text-amber-400" />
-                    <SimpleStatCard label="Maintenance" value={todayStats.maintenance} colorClass="text-[#64666a] dark:text-gray-400" />
-                </div>
-
                 <TabsContent value="stats">
-                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                        <StatCard
-                            icon={<CalendarDays className="size-5 text-primary" />}
-                            label="Confirmed Bookings"
-                            value={stats.confirmed}
-                            sub="This month"
-                            color="bg-primary/10"
-                        />
-                        <StatCard
-                            icon={<Clock className="size-5 text-amber-600" />}
-                            label="Pending Bookings"
-                            value={stats.pending}
-                            sub="Awaiting confirmation"
-                            color="bg-amber-500/10"
-                        />
-                        <StatCard
-                            icon={<CircleDot className="size-5 text-emerald-600" />}
-                            label="Occupancy Rate"
-                            value={`${stats.occupancy}%`}
-                            sub={`${ROOMS.length - Math.round(ROOMS.length * stats.occupancy / 100)} of ${ROOMS.length} rooms free today`}
-                            color="bg-emerald-500/10"
-                        />
-                        <StatCard
-                            icon={<Building2 className="size-5 text-violet-600" />}
-                            label="Est. Revenue"
-                            value={`$${stats.revenue.toLocaleString()}`}
-                            sub="Confirmed only"
-                            color="bg-violet-500/10"
-                        />
-                    </div>
+                    <StatCardsGrid
+                        cards={[
+                            {
+                                icon: Home,
+                                label: "Total Rooms",
+                                value: todayStats.total,
+                                color: "blue"
+                            },
+                            {
+                                icon: BedDouble,
+                                label: "Booked Today",
+                                value: todayStats.booked,
+                                color: "rose"
+                            },
+                            {
+                                icon: DoorOpen,
+                                label: "Available Today",
+                                value: todayStats.available,
+                                color: "emerald"
+                            },
+                            {
+                                icon: Wrench,
+                                label: "Maintenance",
+                                value: todayStats.maintenance,
+                                color: "slate"
+                            }
+                        ]}
+                    />
                 </TabsContent>
 
                 {isCurrentMonth && (

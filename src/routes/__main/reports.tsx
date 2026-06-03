@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
 import type { DataTableColumn } from '@/components/ui/data-table';
 import { PageHeader } from '@/components/ui/page-header'
-import { StatCard } from '@/components/ui/stat-card'
+import { StatCard, StatCardsGrid } from '@/components/ui/stat-card'
 import { createFileRoute } from '@tanstack/react-router'
 import { ArrowDownRight, ArrowUpRight, BedDouble, CalendarCheck, CalendarX, Filter, Home, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -177,97 +177,103 @@ function RouteComponent() {
                 </Button>
             </div>
             {activeTab === 'occupancy' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard
-                        label="Occupancy Rate"
-                        value="$8,450.00"
-                        icon={BedDouble}
-                        color="blue"
-                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }}
-                    />
-                    <StatCard
-                        label="ADR (Avg. Daily Rate)"
-                        value="$182.50"
-                        icon={Home}
-                        color="emerald"
-                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }}
-                    />
-                    <StatCard
-                        label="REVPAR"
-                        value="$143.08"
-                        icon={CalendarCheck}
-                        color="amber"
-                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }}
-                    />
-                    <StatCard
-                        label="Total Room Nights"
-                        value="1,247"
-                        icon={Users}
-                        color="slate"
-                        trend={{ direction: 'down', value: '32', label: 'vs last period' }}
-                    />
-                </div>
+                <StatCardsGrid
+                    cards={[
+                        {
+                            label: "Occupancy Rate",
+                            value: "83.3%",
+                            icon: BedDouble,
+                            color: "blue",
+                            trend: { direction: 'up', value: '4.2%', label: 'vs last period' }
+                        },
+                        {
+                            label: "ADR (Avg. Daily Rate)",
+                            value: "$182.50",
+                            icon: Home,
+                            color: "emerald",
+                            trend: { direction: 'up', value: '4.2%', label: 'vs last period' }
+                        },
+                        {
+                            label: "REVPAR",
+                            value: "$143.08",
+                            icon: CalendarCheck,
+                            color: "amber",
+                            trend: { direction: 'up', value: '4.2%', label: 'vs last period' }
+                        },
+                        {
+                            label: "Total Room Nights",
+                            value: "1,247",
+                            icon: Users,
+                            color: "slate",
+                            trend: { direction: 'down', value: '32', label: 'vs last period' }
+                        }
+                    ]}
+                />
             )}
 
             {activeTab === 'revenue' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard
-                        label="Total Revenue"
-                        value="$84,320"
-                        icon={CalendarCheck}
-                        color="blue"
-                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }}
-                    />
-                    <StatCard
-                        label="Total Bookings"
-                        value="72,180"
-                        icon={BedDouble}
-                        color="emerald"
-                        trend={{ direction: 'up', value: '4.2%', label: 'vs last period' }}
-                    />
-                    <StatCard
-                        label="Net Earnings"
-                        value="$12,140"
-                        icon={CalendarX}
-                        color="orange"
-                        trend={{ direction: 'down', value: 'Lower direct share', label: '' }}
-                    />
-                    <StatCard
-                        label="Top Channel"
-                        value="Airbnb"
-                        icon={Home}
-                        color="amber"
-                    />
-                </div>
+                <StatCardsGrid
+                    cards={[
+                        {
+                            label: "Total Revenue",
+                            value: "$84,320",
+                            icon: CalendarCheck,
+                            color: "blue",
+                            trend: { direction: 'up', value: '4.2%', label: 'vs last period' }
+                        },
+                        {
+                            label: "Total Bookings",
+                            value: "72,180",
+                            icon: BedDouble,
+                            color: "emerald",
+                            trend: { direction: 'up', value: '4.2%', label: 'vs last period' }
+                        },
+                        {
+                            label: "Net Earnings",
+                            value: "$12,140",
+                            icon: CalendarX,
+                            color: "orange",
+                            trend: { direction: 'down', value: 'Lower direct share', label: '' }
+                        },
+                        {
+                            label: "Top Channel",
+                            value: "Airbnb",
+                            icon: Home,
+                            color: "amber"
+                        }
+                    ]}
+                />
             )}
 
             {activeTab === 'arrivals' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard
-                        label="Arrivals Today"
-                        value="8"
-                        icon={ArrowDownRight}
-                        color="blue"
-                    />
-                    <StatCard
-                        label="Departures Today"
-                        value="6"
-                        icon={ArrowUpRight}
-                        color="orange"
-                    />
-                    <StatCard
-                        label="In-house"
-                        value="20"
-                        icon={Home}
-                        color="emerald"
-                    />
-                    <StatCard
-                        label="No-shows"
-                        value="1"
-                        icon={CalendarX}
-                        color="rose"
-                    />
-                </div>
+                <StatCardsGrid
+                    cards={[
+                        {
+                            label: "Arrivals Today",
+                            value: "8",
+                            icon: ArrowDownRight,
+                            color: "blue"
+                        },
+                        {
+                            label: "Departures Today",
+                            value: "6",
+                            icon: ArrowUpRight,
+                            color: "orange"
+                        },
+                        {
+                            label: "In-house",
+                            value: "20",
+                            icon: Home,
+                            color: "emerald"
+                        },
+                        {
+                            label: "No-shows",
+                            value: "1",
+                            icon: CalendarX,
+                            color: "rose"
+                        }
+                    ]}
+                />
             )}
 
             {activeTab === 'occupancy' && (

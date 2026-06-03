@@ -18,6 +18,7 @@ import {
     XAxis,
     YAxis,
 } from 'recharts'
+import { PageHeader } from '#/components/ui/page-header'
 
 export const Route = createFileRoute('/__main/')({
     component: RouteComponent,
@@ -74,6 +75,7 @@ function RouteComponent() {
 
     return (
         <>
+            <PageHeader title="Dashboard" description="View Dashboard Statical Data" />
             {/* Stat Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard

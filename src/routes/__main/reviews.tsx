@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
-import { StatCard } from '@/components/ui/stat-card'
+import { StatCardsGrid } from '@/components/ui/stat-card'
 import { createFileRoute } from '@tanstack/react-router'
 import { CheckCircle2, Clock, Filter, MessageSquare, Star } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -110,28 +110,31 @@ function RouteComponent() {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard
-          label="Average Rating"
-          value="4.8"
-          icon={Star}
-          color="amber"
-          trend={{ direction: 'up', value: '0.2', label: 'vs last month' }}
-        />
-        <StatCard
-          label="Response Rate"
-          value="94%"
-          icon={MessageSquare}
-          color="blue"
-          trend={{ direction: 'up', value: '2%', label: 'vs last month' }}
-        />
-        <StatCard
-          label="Pending Replies"
-          value="12"
-          icon={Clock}
-          color="orange"
-        />
-      </div>
+      <StatCardsGrid
+        className="grid-cols-1 sm:grid-cols-3"
+        cards={[
+          {
+            label: "Average Rating",
+            value: "4.8",
+            icon: Star,
+            color: "amber",
+            trend: { direction: 'up', value: '0.2', label: 'vs last month' }
+          },
+          {
+            label: "Response Rate",
+            value: "94%",
+            icon: MessageSquare,
+            color: "blue",
+            trend: { direction: 'up', value: '2%', label: 'vs last month' }
+          },
+          {
+            label: "Pending Replies",
+            value: "12",
+            icon: Clock,
+            color: "orange"
+          }
+        ]}
+      />
 
       {/* Filters and Search */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
