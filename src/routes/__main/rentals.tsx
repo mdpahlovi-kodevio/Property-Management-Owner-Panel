@@ -179,7 +179,7 @@ function RentalsComponent() {
 
     return (
         <>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <PageHeader
                     title="Rentals"
                     description="Manage your Rentals"
