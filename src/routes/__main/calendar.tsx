@@ -265,6 +265,25 @@ function StatCard({
     )
 }
 
+function SimpleStatCard({
+    label,
+    value,
+    colorClass,
+}: {
+    label: string
+    value: string | number
+    colorClass: string
+}) {
+    return (
+        <Card className="border-0 shadow-sm">
+            <CardContent className="p-5 flex flex-col gap-2">
+                <p className="text-sm font-medium text-foreground/80">{label}</p>
+                <p className={cn("text-3xl font-bold tracking-tight", colorClass)}>{value}</p>
+            </CardContent>
+        </Card>
+    )
+}
+
 // ─── Avatar Chip ──────────────────────────────────────────────────────────────
 
 function AvatarChip({ name, status }: { name: string; status: BookingStatus }) {
@@ -839,6 +858,33 @@ function RouteComponent() {
         })
     }, [today])
 
+    const todayStats = useMemo(() => {
+        let booked = 0;
+        let maintenance = 0;
+
+        ROOMS.forEach(room => {
+            const occupying = BOOKINGS.filter(
+                (b) =>
+                    b.roomId === room.id &&
+                    b.checkIn <= today &&
+                    b.checkOut > today,
+            )
+            
+            if (occupying.some(b => b.status === 'blocked')) {
+                maintenance++;
+            } else if (occupying.some(b => b.status === 'confirmed' || b.status === 'pending')) {
+                booked++;
+            }
+        });
+
+        return {
+            total: ROOMS.length,
+            booked,
+            maintenance,
+            available: ROOMS.length - booked - maintenance
+        }
+    }, [today])
+
     const selectedRoom = selectedBooking
         ? ROOMS.find((r) => r.id === selectedBooking.roomId) ?? null
         : null
@@ -859,6 +905,14 @@ function RouteComponent() {
                         {isCurrentMonth && <TabsTrigger value="availability">Room Availability Today</TabsTrigger>}
                         {isCurrentMonth && <TabsTrigger value="activity">Today's Activity</TabsTrigger>}
                     </TabsList>
+                </div>
+
+                {/* ── Summary Stats ────────────────────────────────────────────── */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <SimpleStatCard label="Total Rooms" value={todayStats.total} colorClass="text-[#2a3070] dark:text-blue-400" />
+                    <SimpleStatCard label="Booked Today" value={todayStats.booked} colorClass="text-[#d83f3f] dark:text-red-400" />
+                    <SimpleStatCard label="Available Today" value={todayStats.available} colorClass="text-[#df8c20] dark:text-amber-400" />
+                    <SimpleStatCard label="Maintenance" value={todayStats.maintenance} colorClass="text-[#64666a] dark:text-gray-400" />
                 </div>
 
                 <TabsContent value="stats">

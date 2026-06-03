@@ -1,13 +1,15 @@
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 import { DataTable } from '@/components/ui/data-table'
 import type { DataTableColumn } from '@/components/ui/data-table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
+import { TrashConfirm } from '@/components/ui/trash-confirm'
 import { createFileRoute } from '@tanstack/react-router'
 import { ChevronDown, Eye, Trash2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/__main/payments')({
     component: RouteComponent,
@@ -40,15 +42,20 @@ const INITIAL_PAYMENTS: Payment[] = [
 ]
 
 function RouteComponent() {
-    const [payments] = useState<Payment[]>(INITIAL_PAYMENTS)
+    const [payments, setPayments] = useState<Payment[]>(INITIAL_PAYMENTS)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
 
-    const openDetails = (payment: Payment) => {
+    const openDetails = useCallback((payment: Payment) => {
         setSelectedPayment(payment)
         setIsDetailsOpen(true)
-    }
+    }, [])
+
+    const handleDelete = useCallback((paymentId: number) => {
+        setPayments((prev) => prev.filter((p) => p.id !== paymentId))
+        toast.success('Payment deleted successfully!')
+    }, [])
 
     const filteredPayments = useMemo(() => {
         if (!searchQuery.trim()) return payments
@@ -99,15 +106,17 @@ function RouteComponent() {
                             <DropdownMenuItem onClick={() => openDetails(p)}>
                                 <Eye className="size-3.5" /> View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600 focus:text-red-600">
-                                <Trash2 className="size-3.5" /> Delete Payment
-                            </DropdownMenuItem>
+                            <TrashConfirm name={`Payment from ${p.userName}`} onConfirm={() => handleDelete(p.id)}>
+                                <DropdownMenuItem className="text-red-600 focus:text-red-600" onSelect={(e) => e.preventDefault()}>
+                                    <Trash2 className="size-3.5" /> Delete Payment
+                                </DropdownMenuItem>
+                            </TrashConfirm>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 ),
             },
         ],
-        []
+        [openDetails, handleDelete]
     )
 
     return (
@@ -211,7 +220,7 @@ function PaymentDetailsDialog({ payment, isOpen, onOpenChange }: { payment: Paym
                         </div>
                     </div>
 
-                    <Button className="w-full bg-[#24357B] hover:bg-[#24357B]/90 text-white rounded-md h-12 text-base font-medium mt-2">
+                    <Button onClick={() => toast.success('Invoice downloaded!')} className="w-full bg-[#24357B] hover:bg-[#24357B]/90 text-white rounded-md h-12 text-base font-medium mt-2">
                         Download Invoice
                     </Button>
                 </div>

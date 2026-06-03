@@ -52,6 +52,7 @@ const MOCK_PROPERTIES = [
 function RentalsComponent() {
     const [searchQuery, setSearchQuery] = useState('')
     const [isAddOpen, setIsAddOpen] = useState(false)
+    const [editingProperty, setEditingProperty] = useState<typeof MOCK_PROPERTIES[0] | null>(null)
     const [selectedProperty, setSelectedProperty] = useState<typeof MOCK_PROPERTIES[0] | null>(null)
 
     const form = useForm({
@@ -71,8 +72,9 @@ function RentalsComponent() {
         },
         onSubmit: async ({ value }) => {
             console.log('Submitted values:', value)
-            toast.success('Property Published Successfully!')
+            toast.success('Property saved successfully!')
             setIsAddOpen(false)
+            setEditingProperty(null)
             form.reset()
         }
     })
@@ -100,7 +102,11 @@ function RentalsComponent() {
                         />
                     </div>
                     <Button
-                        onClick={() => setIsAddOpen(true)}
+                        onClick={() => {
+                            setEditingProperty(null)
+                            form.reset()
+                            setIsAddOpen(true)
+                        }}
                         className="w-full sm:w-auto bg-[#243E8B] hover:bg-[#1D3270] text-white rounded-full px-6 gap-2 font-semibold shadow-md shadow-[#243E8B]/20 transition-all hover:shadow-lg hover:-translate-y-0.5"
                     >
                         <Plus className="size-4" />
@@ -172,6 +178,15 @@ function RentalsComponent() {
                                 {/* Actions Grid */}
                                 <div className="grid grid-cols-2 gap-3 mt-auto pt-2">
                                     <Button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setEditingProperty(property)
+                                            form.reset()
+                                            form.setFieldValue('propertyName', property.title)
+                                            form.setFieldValue('location', property.location)
+                                            form.setFieldValue('price', property.price.replace('$', ''))
+                                            setIsAddOpen(true)
+                                        }}
                                         variant="outline"
                                         className="w-full gap-2 rounded-xl border-slate-200 text-slate-600 font-semibold h-11 hover:bg-slate-50 hover:text-[#243E8B] hover:border-[#243E8B]/30 transition-all duration-300 group/btn"
                                     >
@@ -194,10 +209,13 @@ function RentalsComponent() {
             </div>
 
             {/* Add Property Dialog */}
-            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <Dialog open={isAddOpen} onOpenChange={(open) => {
+                setIsAddOpen(open)
+                if (!open) setEditingProperty(null)
+            }}>
                 <DialogContent className="w-[95%] sm:max-w-137.5 max-h-[90vh] overflow-y-auto bg-white p-6 rounded-3xl">
                     <DialogHeader className="mb-4 text-left">
-                        <DialogTitle className="text-xl font-bold">Add New Property</DialogTitle>
+                        <DialogTitle className="text-xl font-bold">{editingProperty ? 'Edit Property' : 'Add New Property'}</DialogTitle>
                         <DialogDescription className="text-sm text-slate-500">Drag and drop your files here</DialogDescription>
                     </DialogHeader>
 
@@ -427,7 +445,10 @@ function RentalsComponent() {
                         />
 
                         <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t">
-                            <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)} className="rounded-xl h-12 font-semibold">
+                            <Button type="button" variant="outline" onClick={() => {
+                                setIsAddOpen(false)
+                                setEditingProperty(null)
+                            }} className="rounded-xl h-12 font-semibold">
                                 Cancel
                             </Button>
                             <form.Subscribe
@@ -438,7 +459,7 @@ function RentalsComponent() {
                                         disabled={!canSubmit}
                                         className="rounded-xl h-12 font-semibold bg-[#243E8B] hover:bg-[#1D3270] text-white"
                                     >
-                                        {isSubmitting ? 'Publishing...' : 'Publish Property'}
+                                        {isSubmitting ? (editingProperty ? 'Saving...' : 'Publishing...') : (editingProperty ? 'Save Changes' : 'Publish Property')}
                                     </Button>
                                 )}
                             />
@@ -549,7 +570,20 @@ function RentalsComponent() {
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4 mt-4">
-                                    <Button variant="outline" className="rounded-xl h-12 font-bold text-red-500 border-red-100 bg-red-50 hover:bg-red-100 hover:text-red-600">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                            if (selectedProperty) {
+                                                setEditingProperty(selectedProperty)
+                                                form.reset()
+                                                form.setFieldValue('propertyName', selectedProperty.title)
+                                                form.setFieldValue('location', selectedProperty.location)
+                                                form.setFieldValue('price', selectedProperty.price.replace('$', ''))
+                                                setIsAddOpen(true)
+                                                setSelectedProperty(null)
+                                            }
+                                        }}
+                                        className="rounded-xl h-12 font-bold text-red-500 border-red-100 bg-red-50 hover:bg-red-100 hover:text-red-600">
                                         Edit
                                     </Button>
                                     <Button className="rounded-xl h-12 font-bold bg-[#DCE6F5] text-[#243E8B] hover:bg-[#DCE6F5]/80">

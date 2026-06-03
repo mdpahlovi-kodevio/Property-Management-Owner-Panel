@@ -2,6 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StatCard } from '@/components/ui/stat-card'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { createFileRoute } from '@tanstack/react-router'
 import { Activity, ArrowUpRight, DollarSign, Clock, ExternalLink, UsersRound } from 'lucide-react'
 import { useState } from 'react'
@@ -179,10 +180,6 @@ function RouteComponent() {
                                 Returning vs new customer bookings
                             </CardDescription>
                         </div>
-
-                        <button className="text-sm font-medium text-primary hover:underline transition-colors">
-                            View all
-                        </button>
                     </CardHeader>
 
                     <CardContent className="flex flex-col items-center justify-center flex-1 p-0">
@@ -230,10 +227,47 @@ function RouteComponent() {
                     </CardContent>
 
                     <div className="mt-auto pt-4 border-t flex items-center justify-center">
-                        <button className="text-xs font-semibold text-primary inline-flex items-center gap-1.5 hover:underline active:scale-95 transition-all cursor-pointer">
-                            View Detailed Analytics
-                            <ExternalLink className="h-3.5 w-3.5" />
-                        </button>
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <button className="text-xs font-semibold text-primary inline-flex items-center gap-1.5 hover:underline active:scale-95 transition-all cursor-pointer">
+                                    View Detailed Analytics
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                </button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                                <DialogHeader>
+                                    <DialogTitle>Detailed Analytics</DialogTitle>
+                                    <DialogDescription>
+                                        Detailed breakdown of customer bookings and user statistics.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-2 items-center gap-4">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-sm font-medium leading-none">Returning Users</span>
+                                            <span className="text-sm text-muted-foreground">70% of total bookings</span>
+                                        </div>
+                                        <div className="flex flex-col gap-1 text-right">
+                                            <span className="text-sm font-medium leading-none">New Users</span>
+                                            <span className="text-sm text-muted-foreground">30% of total bookings</span>
+                                        </div>
+                                    </div>
+                                    <div className="h-[1px] bg-border my-2" />
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-medium">Average Booking Duration</span>
+                                        <span className="text-sm text-muted-foreground">4.2 days</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-medium">Cancellation Rate</span>
+                                        <span className="text-sm text-muted-foreground">3.1%</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-medium">Customer Satisfaction</span>
+                                        <span className="text-sm text-muted-foreground">4.8 / 5.0</span>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
                     </div>
                 </Card>
             </div>
