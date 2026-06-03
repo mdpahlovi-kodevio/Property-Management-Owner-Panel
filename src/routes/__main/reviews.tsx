@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
-import { StatCardsGrid } from '@/components/ui/stat-card'
 import { createFileRoute } from '@tanstack/react-router'
 import { CheckCircle2, Clock, Filter, MessageSquare, Star } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -86,19 +85,17 @@ const MOCK_REVIEWS: Review[] = [
 ]
 
 function RouteComponent() {
-  const [activeTab, setActiveTab] = useState<'All' | 'Pending' | 'Replied'>('All')
   const [searchQuery, setSearchQuery] = useState('')
 
   const filteredReviews = useMemo(() => {
     return MOCK_REVIEWS.filter((review) => {
-      const matchesTab = activeTab === 'All' || review.status === activeTab
       const matchesSearch =
         review.guestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         review.property.toLowerCase().includes(searchQuery.toLowerCase()) ||
         review.text.toLowerCase().includes(searchQuery.toLowerCase())
-      return matchesTab && matchesSearch
+      return matchesSearch
     })
-  }, [activeTab, searchQuery])
+  }, [searchQuery])
 
   return (
     <>
@@ -109,49 +106,8 @@ function RouteComponent() {
         </Button>
       </div>
 
-      {/* Metrics Row */}
-      <StatCardsGrid
-        className="grid-cols-1 sm:grid-cols-3"
-        cards={[
-          {
-            label: "Average Rating",
-            value: "4.8",
-            icon: Star,
-            color: "amber",
-            trend: { direction: 'up', value: '0.2', label: 'vs last month' }
-          },
-          {
-            label: "Response Rate",
-            value: "94%",
-            icon: MessageSquare,
-            color: "blue",
-            trend: { direction: 'up', value: '2%', label: 'vs last month' }
-          },
-          {
-            label: "Pending Replies",
-            value: "12",
-            icon: Clock,
-            color: "orange"
-          }
-        ]}
-      />
-
       {/* Filters and Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex bg-muted p-1 rounded-lg w-full sm:w-auto">
-          {(['All', 'Pending', 'Replied'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-5 py-2 rounded-md text-sm font-medium transition-all duration-200 flex-1 sm:flex-none text-center ${activeTab === tab
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10'
-                }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+      <div className="flex flex-col sm:flex-row items-center justify-end gap-4">
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <SearchInput
             value={searchQuery}
