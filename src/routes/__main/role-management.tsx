@@ -71,6 +71,86 @@ const INITIAL_ROLES = [
             { moduleName: 'Settings', enabled: true, permissions: ['Create', 'Update', 'View'] },
         ],
     },
+    {
+        id: 5,
+        roleName: 'Customer Support',
+        employees: 'Courtney Henry',
+        modules: [
+            { moduleName: 'Dashboard', enabled: true, permissions: ['StatCards'] },
+            { moduleName: 'Users', enabled: true, permissions: ['View'] },
+            { moduleName: 'Support', enabled: true, permissions: ['Create', 'Update', 'View', 'Resolve'] },
+        ],
+    },
+    {
+        id: 6,
+        roleName: 'Property Inspector',
+        employees: 'Albert Flores',
+        modules: [
+            { moduleName: 'Dashboard', enabled: true, permissions: ['StatCards'] },
+            { moduleName: 'Properties', enabled: true, permissions: ['View'] },
+            { moduleName: 'Reports', enabled: true, permissions: ['Create', 'Update', 'View'] },
+        ],
+    },
+    {
+        id: 7,
+        roleName: 'Marketing Specialist',
+        employees: 'Kathryn Murphy',
+        modules: [
+            { moduleName: 'Dashboard', enabled: true, permissions: ['StatCards', 'Revenue Overview'] },
+            { moduleName: 'Properties', enabled: true, permissions: ['View'] },
+            { moduleName: 'Reports', enabled: true, permissions: ['Create', 'View', 'Export'] },
+        ],
+    },
+    {
+        id: 8,
+        roleName: 'IT Administrator',
+        employees: 'Cody Fisher',
+        modules: [
+            { moduleName: 'Dashboard', enabled: true, permissions: ['StatCards'] },
+            { moduleName: 'Users', enabled: true, permissions: ['Create', 'Update', 'View', 'Delete'] },
+            { moduleName: 'Employee', enabled: true, permissions: ['Create', 'Update', 'View', 'Delete'] },
+            { moduleName: 'Settings', enabled: true, permissions: ['Create', 'Update', 'View', 'Delete'] },
+        ],
+    },
+    {
+        id: 9,
+        roleName: 'Sales Representative',
+        employees: 'Savannah Nguyen',
+        modules: [
+            { moduleName: 'Dashboard', enabled: true, permissions: ['StatCards', 'Revenue Overview'] },
+            { moduleName: 'Property Owners', enabled: true, permissions: ['Create', 'View'] },
+            { moduleName: 'Properties', enabled: true, permissions: ['View'] },
+        ],
+    },
+    {
+        id: 10,
+        roleName: 'HR Manager',
+        employees: 'Ralph Edwards',
+        modules: [
+            { moduleName: 'Dashboard', enabled: true, permissions: ['StatCards'] },
+            { moduleName: 'Users', enabled: true, permissions: ['Create', 'Update', 'View', 'Delete'] },
+            { moduleName: 'Employee', enabled: true, permissions: ['Create', 'Update', 'View', 'Delete'] },
+        ],
+    },
+    {
+        id: 11,
+        roleName: 'Legal Advisor',
+        employees: 'Bessie Cooper',
+        modules: [
+            { moduleName: 'Dashboard', enabled: true, permissions: ['StatCards'] },
+            { moduleName: 'Properties', enabled: true, permissions: ['View'] },
+            { moduleName: 'Reports', enabled: true, permissions: ['View', 'Export'] },
+        ],
+    },
+    {
+        id: 12,
+        roleName: 'Data Analyst',
+        employees: 'Jerome Bell',
+        modules: [
+            { moduleName: 'Dashboard', enabled: true, permissions: ['StatCards', 'Revenue Overview'] },
+            { moduleName: 'Reports', enabled: true, permissions: ['Create', 'View', 'Export'] },
+        ],
+    },
 ]
 
 type RoleItem = (typeof INITIAL_ROLES)[number]

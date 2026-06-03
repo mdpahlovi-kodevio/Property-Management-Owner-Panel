@@ -23,7 +23,7 @@ const employeeSchema = z.object({
     email: z.email('Please enter a valid email address'),
     phone: z.string(),
     image: z.string(),
-    role: z.enum(['Manager', 'Super Admin', 'Maintenance Staff', 'Accountant']),
+    role: z.enum(['Manager', 'Super Admin', 'Maintenance Staff', 'Accountant', 'Customer Support', 'Property Inspector', 'Marketing Specialist', 'IT Administrator', 'Sales Representative', 'HR Manager', 'Legal Advisor', 'Data Analyst']),
     status: z.enum(['Active', 'Blocked']),
 })
 
@@ -62,6 +62,78 @@ const INITIAL_EMPLOYEES = [
         email: 'william.h@email.com',
         phone: '+1 647-210-4587',
         role: 'Accountant',
+        status: 'Active',
+    },
+    {
+        id: 5,
+        name: 'Courtney Henry',
+        image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Courtney',
+        email: 'courtney.h@email.com',
+        phone: '+1 647-210-4588',
+        role: 'Customer Support',
+        status: 'Active',
+    },
+    {
+        id: 6,
+        name: 'Albert Flores',
+        image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Albert',
+        email: 'albert.f@email.com',
+        phone: '+1 647-210-4589',
+        role: 'Property Inspector',
+        status: 'Active',
+    },
+    {
+        id: 7,
+        name: 'Kathryn Murphy',
+        image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Kathryn',
+        email: 'kathryn.m@email.com',
+        phone: '+1 647-210-4590',
+        role: 'Marketing Specialist',
+        status: 'Blocked',
+    },
+    {
+        id: 8,
+        name: 'Cody Fisher',
+        image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Cody',
+        email: 'cody.f@email.com',
+        phone: '+1 647-210-4591',
+        role: 'IT Administrator',
+        status: 'Active',
+    },
+    {
+        id: 9,
+        name: 'Savannah Nguyen',
+        image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Savannah',
+        email: 'savannah.n@email.com',
+        phone: '+1 647-210-4592',
+        role: 'Sales Representative',
+        status: 'Active',
+    },
+    {
+        id: 10,
+        name: 'Ralph Edwards',
+        image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Ralph',
+        email: 'ralph.e@email.com',
+        phone: '+1 647-210-4593',
+        role: 'HR Manager',
+        status: 'Blocked',
+    },
+    {
+        id: 11,
+        name: 'Bessie Cooper',
+        image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Bessie',
+        email: 'bessie.c@email.com',
+        phone: '+1 647-210-4594',
+        role: 'Legal Advisor',
+        status: 'Active',
+    },
+    {
+        id: 12,
+        name: 'Jerome Bell',
+        image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Jerome',
+        email: 'jerome.b@email.com',
+        phone: '+1 647-210-4595',
+        role: 'Data Analyst',
         status: 'Active',
     },
 ]
@@ -262,7 +334,7 @@ function EmployeeForm({
         email: string
         phone: string
         image: string
-        role: 'Manager' | 'Super Admin' | 'Maintenance Staff' | 'Accountant'
+        role: 'Manager' | 'Super Admin' | 'Maintenance Staff' | 'Accountant' | 'Customer Support' | 'Property Inspector' | 'Marketing Specialist' | 'IT Administrator' | 'Sales Representative' | 'HR Manager' | 'Legal Advisor' | 'Data Analyst'
         status: 'Active' | 'Blocked'
     }
     onSubmit: (values: z.infer<typeof employeeSchema>) => void
@@ -305,6 +377,14 @@ function EmployeeForm({
                             { value: 'Super Admin', label: 'Super Admin' },
                             { value: 'Maintenance Staff', label: 'Maintenance Staff' },
                             { value: 'Accountant', label: 'Accountant' },
+                            { value: 'Customer Support', label: 'Customer Support' },
+                            { value: 'Property Inspector', label: 'Property Inspector' },
+                            { value: 'Marketing Specialist', label: 'Marketing Specialist' },
+                            { value: 'IT Administrator', label: 'IT Administrator' },
+                            { value: 'Sales Representative', label: 'Sales Representative' },
+                            { value: 'HR Manager', label: 'HR Manager' },
+                            { value: 'Legal Advisor', label: 'Legal Advisor' },
+                            { value: 'Data Analyst', label: 'Data Analyst' },
                         ]}
                     />
                 )}

@@ -143,7 +143,7 @@ const MOCK_PROPERTIES = [
 function RentalsComponent() {
     const [searchQuery, setSearchQuery] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
-    const [itemsPerPage, setItemsPerPage] = useState(8)
+    const [itemsPerPage, setItemsPerPage] = useState(4)
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [editingProperty, setEditingProperty] = useState<typeof MOCK_PROPERTIES[0] | null>(null)
     const [selectedProperty, setSelectedProperty] = useState<typeof MOCK_PROPERTIES[0] | null>(null)
@@ -220,7 +220,7 @@ function RentalsComponent() {
                     return (
                         <>
                             {/* Properties Grid */}
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[16px]">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4.5">
                                 {paginatedProperties.map((property) => (
                                     <div
                                         key={property.id}
