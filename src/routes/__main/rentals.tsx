@@ -91,7 +91,7 @@ function RentalsComponent() {
                 description="Manage your Rentals"
             />
 
-            <div className="p-4 md:p-6 flex flex-col gap-8 bg-slate-50/50 min-h-screen">
+            <div className="p-4 md:p-6 flex flex-col gap-8 min-h-screen">
                 {/* Actions Bar */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="w-full sm:w-[320px]">
