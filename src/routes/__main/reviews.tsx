@@ -165,87 +165,84 @@ function ReviewCard({ review, onReply, onDelete }: { review: Review, onReply: (i
   }
 
   return (
-    <div className="bg-card rounded-xl border border-border/50 shadow-sm p-5 sm:p-6 flex flex-col gap-5 transition-all duration-200 hover:shadow-md hover:border-border group">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-        <div className="flex items-start gap-4">
+    <div className="bg-card rounded-2xl border border-border shadow-sm p-6 flex flex-col gap-5 transition-all duration-200 hover:shadow-md">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-4 w-full sm:w-auto">
           <img
             src={review.avatarUrl}
             alt={review.guestName}
-            className="w-12 h-12 rounded-full border-2 border-background shadow-sm object-cover shrink-0"
+            className="w-12 h-12 rounded-full object-cover shrink-0 ring-1 ring-border/50"
           />
-          <div>
-            <h3 className="font-semibold text-foreground text-lg leading-tight mb-1.5">{review.guestName}</h3>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#FFF8F0] text-[#D97706] rounded-lg font-medium text-[13px] border border-[#FDE6D5]">
+          <div className="flex flex-col gap-0.5">
+            <h3 className="font-semibold text-foreground text-[16px]">{review.guestName}</h3>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[13px] text-muted-foreground">{review.date}</span>
+              <div className="w-1 h-1 rounded-full bg-border hidden sm:block"></div>
+              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-[#FFF8F0] text-[#D97706] rounded font-medium text-[11px] sm:text-[12px] border border-[#FDE6D5]">
                 <div className="relative flex items-center justify-center">
-                  <MessageSquare className="w-[15px] h-[15px]" />
-                  <Star className="w-[7px] h-[7px] absolute fill-[#D97706] mb-[2px] ml-[1px]" />
+                  <MessageSquare className="w-[12px] h-[12px]" />
+                  <Star className="w-[6px] h-[6px] absolute fill-[#D97706] mb-[2px] ml-[1px]" />
                 </div>
                 For {review.property}
               </div>
-              <span className="text-sm text-muted-foreground font-medium">{review.date}</span>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between gap-3 sm:gap-2 border-t sm:border-t-0 border-border/50 pt-3 sm:pt-0">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center bg-muted/50 px-3 py-1.5 rounded-lg border border-border/50">
-              <span className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground mr-3">
-                {review.platform}
-              </span>
-              <div className="flex gap-0.5">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-3.5 h-3.5 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'
-                      }`}
-                  />
-                ))}
-              </div>
+        <div className="flex items-center justify-between w-full sm:w-auto gap-4">
+          <div className="flex flex-col sm:items-end gap-2">
+            <div className="flex gap-1">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`w-[18px] h-[18px] ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'}`}
+                />
+              ))}
             </div>
-            <button
-              onClick={() => onDelete(review.id)}
-              className="flex items-center justify-center h-[34px] w-[34px] rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors cursor-pointer shrink-0"
-              title="Delete review"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+
+            <div className="flex items-center gap-2">
+              {review.status === 'Replied' ? (
+                <span className="flex items-center text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
+                  <CheckCircle2 className="w-3 h-3 mr-1" /> Replied
+                </span>
+              ) : (
+                <span className="flex items-center text-[11px] font-semibold text-orange-700 bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-full">
+                  <Clock className="w-3 h-3 mr-1" /> Pending
+                </span>
+              )}
+            </div>
           </div>
-          {review.status === 'Replied' ? (
-            <span className="flex items-center text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 px-2.5 py-1 rounded-full">
-              <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Replied
-            </span>
-          ) : (
-            <span className="flex items-center text-xs font-semibold text-orange-700 bg-orange-50 border border-orange-100 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20 px-2.5 py-1 rounded-full">
-              <Clock className="w-3.5 h-3.5 mr-1.5" /> Pending Reply
-            </span>
-          )}
+
+          <button
+            onClick={() => onDelete(review.id)}
+            className="text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors p-2 rounded-md cursor-pointer sm:-mr-2"
+            title="Delete review"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      <div className="bg-muted/30 rounded-xl p-4 border border-border/50">
-        <p className="text-foreground/90 leading-relaxed text-[15px]">"{review.text}"</p>
-      </div>
+      {/* Review Content */}
+      <p className="text-foreground/90 leading-relaxed text-[15px]">
+        "{review.text}"
+      </p>
 
+      {/* Host Reply Box */}
       {review.status === 'Replied' && review.replyText && (
-        <div className="ml-4 sm:ml-12 bg-muted/50 rounded-xl p-4 sm:p-5 border border-border/60 relative">
-          <div className="absolute -top-2 left-6 w-4 h-4 bg-muted/50 border-t border-l border-border/60 transform rotate-45"></div>
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="font-semibold text-sm text-primary flex items-center">
-              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2">
-                <MessageSquare className="w-3.5 h-3.5 text-primary" />
-              </div>
-              Host Reply
-            </span>
-            <span className="text-xs font-medium text-muted-foreground">Oct 25, 2026</span>
+        <div className="bg-muted/30 rounded-xl p-4 border border-border/50">
+          <div className="flex items-center gap-2 mb-2">
+            <MessageSquare className="w-4 h-4 text-primary" />
+            <span className="font-semibold text-sm text-foreground">Host Reply</span>
           </div>
-          <p className="text-[15px] text-muted-foreground leading-relaxed ml-8">{review.replyText}</p>
+          <p className="text-[14px] text-muted-foreground leading-relaxed pl-6">{review.replyText}</p>
         </div>
       )}
 
+      {/* Action Area */}
       {review.status === 'Pending' && !isReplying && (
-        <div className="ml-4 sm:ml-12 mt-1 flex gap-3 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="flex gap-3 pt-1">
           <Button
             className="rounded-lg px-6 h-10 text-sm shadow-sm transition-all cursor-pointer"
             onClick={() => setIsReplying(true)}
@@ -258,8 +255,9 @@ function ReviewCard({ review, onReply, onDelete }: { review: Review, onReply: (i
         </div>
       )}
 
+      {/* Reply Form */}
       {review.status === 'Pending' && isReplying && (
-        <div className="ml-4 sm:ml-12 mt-2 flex flex-col gap-3">
+        <div className="flex flex-col gap-3 pt-1">
           <div className="relative">
             <Textarea
               placeholder="Type your reply here..."
