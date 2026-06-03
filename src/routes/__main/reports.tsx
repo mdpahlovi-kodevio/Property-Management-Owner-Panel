@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
 import type { DataTableColumn } from '@/components/ui/data-table';
 import { PageHeader } from '@/components/ui/page-header'
-import { StatCard, StatCardsGrid } from '@/components/ui/stat-card'
+import { StatCardsGrid } from '@/components/ui/stat-card'
 import { createFileRoute } from '@tanstack/react-router'
 import { ArrowDownRight, ArrowUpRight, BedDouble, CalendarCheck, CalendarX, Filter, Home, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'

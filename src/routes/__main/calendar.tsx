@@ -15,14 +15,10 @@ import { cn } from '@/lib/utils'
 import { createFileRoute } from '@tanstack/react-router'
 import {
     BedDouble,
-    CalendarDays,
     ChevronLeft,
     ChevronRight,
-    CircleDot,
-    Clock,
     Plus,
     RefreshCw,
-    Building2,
     XCircle,
     Home,
     DoorOpen,
@@ -70,7 +66,6 @@ function RouteComponent() {
     const {
         filteredRooms,
         bookingsForRoom,
-        stats,
         availabilityByType,
         todayStats,
     } = useCalendarStats({

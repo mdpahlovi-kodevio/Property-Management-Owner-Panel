@@ -572,15 +572,15 @@ function RentalsComponent() {
                                     <Button
                                         variant="outline"
                                         onClick={() => {
-                                            if (selectedProperty) {
-                                                setEditingProperty(selectedProperty)
-                                                form.reset()
-                                                form.setFieldValue('propertyName', selectedProperty.title)
-                                                form.setFieldValue('location', selectedProperty.location)
-                                                form.setFieldValue('price', selectedProperty.price.replace('$', ''))
-                                                setIsAddOpen(true)
-                                                setSelectedProperty(null)
-                                            }
+                                            // if (selectedProperty ) {
+                                            setEditingProperty(selectedProperty)
+                                            form.reset()
+                                            form.setFieldValue('propertyName', selectedProperty.title)
+                                            form.setFieldValue('location', selectedProperty.location)
+                                            form.setFieldValue('price', selectedProperty.price.replace('$', ''))
+                                            setIsAddOpen(true)
+                                            setSelectedProperty(null)
+                                            // }
                                         }}
                                         className="rounded-xl h-12 font-bold text-red-500 border-red-100 bg-red-50 hover:bg-red-100 hover:text-red-600">
                                         Edit

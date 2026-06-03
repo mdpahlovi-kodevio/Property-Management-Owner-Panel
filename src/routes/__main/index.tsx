@@ -236,7 +236,7 @@ function RouteComponent() {
                                     <ExternalLink className="h-3.5 w-3.5" />
                                 </button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-[425px]">
+                            <DialogContent className="sm:max-w-106.25">
                                 <DialogHeader>
                                     <DialogTitle>Detailed Analytics</DialogTitle>
                                     <DialogDescription>
@@ -245,7 +245,7 @@ function RouteComponent() {
                                 </DialogHeader>
                                 <div className="grid gap-4 py-4">
                                     <div className="grid grid-cols-2 items-center gap-4">
-                                        <div className="flex flex-col gap-1">
+                                        `<div className="flex flex-col gap-1">
                                             <span className="text-sm font-medium leading-none">Returning Users</span>
                                             <span className="text-sm text-muted-foreground">70% of total bookings</span>
                                         </div>
@@ -254,7 +254,7 @@ function RouteComponent() {
                                             <span className="text-sm text-muted-foreground">30% of total bookings</span>
                                         </div>
                                     </div>
-                                    <div className="h-[1px] bg-border my-2" />
+                                    <div className="h-px bg-border my-2" />
                                     <div className="flex justify-between items-center">
                                         <span className="text-sm font-medium">Average Booking Duration</span>
                                         <span className="text-sm text-muted-foreground">4.2 days</span>
