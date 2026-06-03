@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
+import { Textarea } from '@/components/ui/textarea'
 import { createFileRoute } from '@tanstack/react-router'
-import { CheckCircle2, Clock, Filter, MessageSquare, Star } from 'lucide-react'
+import { CheckCircle2, Clock, Filter, MessageSquare, Star, Trash2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/__main/reviews')({
@@ -86,16 +87,29 @@ const MOCK_REVIEWS: Review[] = [
 
 function RouteComponent() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [reviews, setReviews] = useState<Review[]>(MOCK_REVIEWS)
+
+  const handleReply = (id: string, text: string) => {
+    setReviews(prev => prev.map(review =>
+      review.id === id
+        ? { ...review, status: 'Replied', replyText: text }
+        : review
+    ))
+  }
+
+  const handleDelete = (id: string) => {
+    setReviews(prev => prev.filter(review => review.id !== id))
+  }
 
   const filteredReviews = useMemo(() => {
-    return MOCK_REVIEWS.filter((review) => {
+    return reviews.filter((review) => {
       const matchesSearch =
         review.guestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         review.property.toLowerCase().includes(searchQuery.toLowerCase()) ||
         review.text.toLowerCase().includes(searchQuery.toLowerCase())
       return matchesSearch
     })
-  }, [searchQuery])
+  }, [searchQuery, reviews])
 
   return (
     <>
@@ -131,14 +145,25 @@ function RouteComponent() {
             <p className="text-muted-foreground">Try adjusting your filters or search query.</p>
           </div>
         ) : (
-          filteredReviews.map((review) => <ReviewCard key={review.id} review={review} />)
+          filteredReviews.map((review) => <ReviewCard key={review.id} review={review} onReply={handleReply} onDelete={handleDelete} />)
         )}
       </div>
     </>
   )
 }
 
-function ReviewCard({ review }: { review: Review }) {
+function ReviewCard({ review, onReply, onDelete }: { review: Review, onReply: (id: string, text: string) => void, onDelete: (id: string) => void }) {
+  const [isReplying, setIsReplying] = useState(false)
+  const [replyText, setReplyText] = useState('')
+
+  const handleSubmitReply = () => {
+    if (replyText.trim()) {
+      onReply(review.id, replyText.trim())
+      setIsReplying(false)
+      setReplyText('')
+    }
+  }
+
   return (
     <div className="bg-card rounded-xl border border-border/50 shadow-sm p-5 sm:p-6 flex flex-col gap-5 transition-all duration-200 hover:shadow-md hover:border-border group">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
@@ -149,27 +174,43 @@ function ReviewCard({ review }: { review: Review }) {
             className="w-12 h-12 rounded-full border-2 border-background shadow-sm object-cover shrink-0"
           />
           <div>
-            <h3 className="font-semibold text-foreground text-lg leading-tight mb-1">{review.guestName}</h3>
-            <p className="text-sm text-muted-foreground">
-              Stayed at <span className="font-medium text-foreground">{review.property}</span> • {review.date}
-            </p>
+            <h3 className="font-semibold text-foreground text-lg leading-tight mb-1.5">{review.guestName}</h3>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#FFF8F0] text-[#D97706] rounded-lg font-medium text-[13px] border border-[#FDE6D5]">
+                <div className="relative flex items-center justify-center">
+                  <MessageSquare className="w-[15px] h-[15px]" />
+                  <Star className="w-[7px] h-[7px] absolute fill-[#D97706] mb-[2px] ml-[1px]" />
+                </div>
+                For {review.property}
+              </div>
+              <span className="text-sm text-muted-foreground font-medium">{review.date}</span>
+            </div>
           </div>
         </div>
 
         <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between gap-3 sm:gap-2 border-t sm:border-t-0 border-border/50 pt-3 sm:pt-0">
-          <div className="flex items-center bg-muted/50 px-3 py-1.5 rounded-lg border border-border/50">
-            <span className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground mr-3">
-              {review.platform}
-            </span>
-            <div className="flex gap-0.5">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`w-3.5 h-3.5 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'
-                    }`}
-                />
-              ))}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center bg-muted/50 px-3 py-1.5 rounded-lg border border-border/50">
+              <span className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground mr-3">
+                {review.platform}
+              </span>
+              <div className="flex gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`w-3.5 h-3.5 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'
+                      }`}
+                  />
+                ))}
+              </div>
             </div>
+            <button
+              onClick={() => onDelete(review.id)}
+              className="flex items-center justify-center h-[34px] w-[34px] rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors cursor-pointer shrink-0"
+              title="Delete review"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
           </div>
           {review.status === 'Replied' ? (
             <span className="flex items-center text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 px-2.5 py-1 rounded-full">
@@ -203,14 +244,63 @@ function ReviewCard({ review }: { review: Review }) {
         </div>
       )}
 
-      {review.status === 'Pending' && (
+      {review.status === 'Pending' && !isReplying && (
         <div className="ml-4 sm:ml-12 mt-1 flex gap-3 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <Button className="rounded-lg px-6 h-10 text-sm shadow-sm transition-all">
+          <Button
+            className="rounded-lg px-6 h-10 text-sm shadow-sm transition-all cursor-pointer"
+            onClick={() => setIsReplying(true)}
+          >
             Write a Reply
           </Button>
-          <Button variant="outline" className="rounded-lg h-10 text-sm transition-all">
+          <Button variant="outline" className="rounded-lg h-10 text-sm transition-all cursor-pointer">
             Use Template
           </Button>
+        </div>
+      )}
+
+      {review.status === 'Pending' && isReplying && (
+        <div className="ml-4 sm:ml-12 mt-2 flex flex-col gap-3">
+          <div className="relative">
+            <Textarea
+              placeholder="Type your reply here..."
+              className="min-h-[100px] resize-none pr-10 bg-background"
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              autoFocus
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-6 w-6 rounded-full cursor-pointer hover:bg-muted"
+              onClick={() => {
+                setIsReplying(false)
+                setReplyText('')
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsReplying(false)
+                setReplyText('')
+              }}
+              className="cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSubmitReply}
+              disabled={!replyText.trim()}
+              className="cursor-pointer"
+            >
+              Send Reply
+            </Button>
+          </div>
         </div>
       )}
     </div>
