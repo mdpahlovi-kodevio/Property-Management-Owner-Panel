@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { DataTableFooter } from '@/components/ui/data-table'
 
 export const Route = createFileRoute('/__main/rentals')({
     component: RentalsComponent,
@@ -18,39 +19,131 @@ export const Route = createFileRoute('/__main/rentals')({
 
 const MOCK_PROPERTIES = [
     {
-        id: '1',
-        title: 'Sea View Villa',
-        location: 'Coastal Avenue, Riviera',
-        details: '4 Beds • 3 Baths • 250m²',
-        price: '$220',
-        period: '/Night',
-        status: 'Active',
-        imageUrl: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&q=80&w=800',
+        id: "1",
+        title: "Sea View Villa",
+        location: "Coastal Avenue, Riviera",
+        details: "4 Beds • 3 Baths • 250m²",
+        price: "$120",
+        period: "/Night",
+        status: "Active",
+        imageUrl: "https://picsum.photos/seed/prop1/800/600"
     },
     {
-        id: '2',
-        title: 'Mountain Retreat',
-        location: 'Highland Park, Aspen',
-        details: '3 Beds • 2 Baths • 180m²',
-        price: '$180',
-        period: '/Night',
-        status: 'Active',
-        imageUrl: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800',
+        id: "2",
+        title: "Mountain Retreat",
+        location: "Highland Park, Aspen",
+        details: "3 Beds • 2 Baths • 180m²",
+        price: "$90",
+        period: "/Night",
+        status: "Active",
+        imageUrl: "https://picsum.photos/seed/prop2/800/600"
     },
     {
-        id: '3',
-        title: 'Urban Oasis Penthouse',
-        location: 'Downtown Metro District',
-        details: '2 Beds • 2 Baths • 140m²',
-        price: '$350',
-        period: '/Night',
-        status: 'Active',
-        imageUrl: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800',
+        id: "3",
+        title: "Urban Oasis Penthouse",
+        location: "Downtown Metro District",
+        details: "2 Beds • 2 Baths • 120m²",
+        price: "$150",
+        period: "/Night",
+        status: "Maintenance",
+        imageUrl: "https://picsum.photos/seed/prop3/800/600"
     },
+    {
+        id: "4",
+        title: "Cozy Cottage",
+        location: "Quiet Suburbia",
+        details: "3 Beds • 1 Bath • 100m²",
+        price: "$70",
+        period: "/Night",
+        status: "Active",
+        imageUrl: "https://picsum.photos/seed/prop4/800/600"
+    },
+    {
+        id: "5",
+        title: "Luxury Apartment",
+        location: "City Center",
+        details: "1 Bed • 1 Bath • 80m²",
+        price: "$110",
+        period: "/Night",
+        status: "Active",
+        imageUrl: "https://picsum.photos/seed/prop5/800/600"
+    },
+    {
+        id: "6",
+        title: "Beachfront House",
+        location: "Sunny Beach",
+        details: "5 Beds • 4 Baths • 300m²",
+        price: "$200",
+        period: "/Night",
+        status: "Active",
+        imageUrl: "https://picsum.photos/seed/prop6/800/600"
+    },
+    {
+        id: "7",
+        title: "Modern Loft",
+        location: "Arts District",
+        details: "1 Bed • 1.5 Baths • 95m²",
+        price: "$95",
+        period: "/Night",
+        status: "Active",
+        imageUrl: "https://picsum.photos/seed/prop7/800/600"
+    },
+    {
+        id: "8",
+        title: "Rustic Cabin",
+        location: "Pine Grove",
+        details: "2 Beds • 1 Bath • 85m²",
+        price: "$65",
+        period: "/Night",
+        status: "Maintenance",
+        imageUrl: "https://picsum.photos/seed/prop8/800/600"
+    },
+    {
+        id: "9",
+        title: "Riverside Estate",
+        location: "Valley Edge",
+        details: "4 Beds • 3 Baths • 280m²",
+        price: "$180",
+        period: "/Night",
+        status: "Active",
+        imageUrl: "https://picsum.photos/seed/prop9/800/600"
+    },
+    {
+        id: "10",
+        title: "Skyview Condo",
+        location: "Uptown Core",
+        details: "2 Beds • 2 Baths • 110m²",
+        price: "$135",
+        period: "/Night",
+        status: "Active",
+        imageUrl: "https://picsum.photos/seed/prop10/800/600"
+    },
+    {
+        id: "11",
+        title: "Desert Villa",
+        location: "Canyon Ridge",
+        details: "3 Beds • 2.5 Baths • 210m²",
+        price: "$145",
+        period: "/Night",
+        status: "Active",
+        imageUrl: "https://picsum.photos/seed/prop11/800/600"
+    },
+    {
+        id: "12",
+        title: "Historic Townhouse",
+        location: "Old Town Square",
+        details: "3 Beds • 2 Baths • 160m²",
+        price: "$115",
+        period: "/Night",
+        status: "Maintenance",
+        imageUrl: "https://picsum.photos/seed/prop12/800/600"
+    }
 ]
 
 function RentalsComponent() {
     const [searchQuery, setSearchQuery] = useState('')
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage, setItemsPerPage] = useState(8)
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [editingProperty, setEditingProperty] = useState<typeof MOCK_PROPERTIES[0] | null>(null)
     const [selectedProperty, setSelectedProperty] = useState<typeof MOCK_PROPERTIES[0] | null>(null)
@@ -95,7 +188,10 @@ function RentalsComponent() {
                     <SearchInput
                         placeholder="Search properties..."
                         value={searchQuery}
-                        onValueChange={setSearchQuery}
+                        onValueChange={(val) => {
+                            setSearchQuery(val)
+                            setCurrentPage(1)
+                        }}
                         className="w-full sm:w-[320px]"
                     />
                     <Button
@@ -111,100 +207,116 @@ function RentalsComponent() {
                     </Button>
                 </div>
             </div>
-
-            <div className="flex flex-col gap-8 min-h-screen">
-                {/* Properties Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
-                    {MOCK_PROPERTIES.filter(property => {
+            <div className="flex flex-col gap-8">
+                {(() => {
+                    const filteredProperties = MOCK_PROPERTIES.filter(property => {
                         const query = searchQuery.toLowerCase()
                         return property.title.toLowerCase().includes(query) ||
                             property.location.toLowerCase().includes(query) ||
                             property.details.toLowerCase().includes(query)
-                    }).map((property) => (
-                        <div
-                            key={property.id}
-                            className="group bg-white border border-slate-200/60 rounded-3xl overflow-hidden shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-500 ease-out hover:-translate-y-1.5 flex flex-col relative"
-                        >
-                            {/* Image & Badges */}
-                            <div className="relative w-full h-60 shrink-0 overflow-hidden bg-slate-100">
-                                <img
-                                    src={property.imageUrl}
-                                    alt={property.title}
-                                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                                />
-                                {/* Subtle gradient overlay for better text contrast if needed */}
-                                <div className="absolute inset-0 bg-linear-to-t from-slate-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    })
+                    const paginatedProperties = filteredProperties.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
-                                {/* Status Badge - Top Left */}
-                                <div className="absolute top-4 left-4 z-10">
-                                    <span className="bg-white/95 backdrop-blur-md text-[#243E8B] px-3.5 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest shadow-sm flex items-center gap-2 border border-white/20">
-                                        <span className="relative flex h-1.5 w-1.5">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-600"></span>
-                                        </span>
-                                        {property.status}
-                                    </span>
-                                </div>
+                    return (
+                        <>
+                            {/* Properties Grid */}
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[16px]">
+                                {paginatedProperties.map((property) => (
+                                    <div
+                                        key={property.id}
+                                        className="group h-full bg-white border border-slate-200/60 rounded-3xl overflow-hidden shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-500 ease-out hover:-translate-y-1.5 flex flex-col relative"
+                                    >
+                                        {/* Image & Badges */}
+                                        <div className="relative w-full aspect-video shrink-0 overflow-hidden bg-slate-100">
+                                            <img
+                                                src={property.imageUrl}
+                                                alt={property.title}
+                                                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                                            />
+                                            {/* Subtle gradient overlay for better text contrast if needed */}
+                                            <div className="absolute inset-0 bg-linear-to-t from-slate-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                                {/* Price Tag - Top Right */}
-                                <div className="absolute top-4 right-4 z-10">
-                                    <div className="bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-sm border border-white/20 flex items-baseline gap-0.5">
-                                        <span className="text-[15px] font-black text-slate-900">{property.price}</span>
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{property.period}</span>
+
+                                            {/* Price Tag - Top Right */}
+                                            <div className="absolute top-3 right-3 z-10">
+                                                <div className="bg-white/95 px-3 py-1.5 rounded-2xl shadow-sm border border-white/20 flex items-baseline gap-0.5">
+                                                    <span className="text-[15px] font-black text-slate-900">{property.price}</span>
+                                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{property.period}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Details */}
+                                        <div className="p-4 flex flex-col gap-3 grow">
+                                            <div className="flex flex-col gap-1.5">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <h3 className="text-[1.1rem] font-bold text-slate-900 tracking-tight group-hover:text-[#243E8B] transition-colors duration-300 leading-tight truncate">
+                                                        {property.title}
+                                                    </h3>
+                                                    <span className={`shrink-0 px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-widest flex items-center gap-1.5 border ${property.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : 'bg-amber-50 text-amber-700 border-amber-200/60'}`}>
+                                                        <span className="relative flex h-1.5 w-1.5">
+                                                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${property.status === 'Active' ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+                                                            <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${property.status === 'Active' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+                                                        </span>
+                                                        {property.status}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5 text-slate-500">
+                                                    <MapPin className="size-3.5 shrink-0 text-slate-400" />
+                                                    <span className="text-[12px] font-medium mt-0.5 truncate">
+                                                        {property.location} <span className="mx-1.5 text-slate-300">•</span> <span className="text-[11px] font-semibold text-slate-600 tracking-wide">{property.details}</span>
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Actions Grid */}
+                                            <div className="grid grid-cols-2 gap-2 mt-auto pt-1">
+                                                <Button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setEditingProperty(property)
+                                                        form.reset()
+                                                        form.setFieldValue('propertyName', property.title)
+                                                        form.setFieldValue('location', property.location)
+                                                        form.setFieldValue('price', property.price.replace('$', ''))
+                                                        setIsAddOpen(true)
+                                                    }}
+                                                    variant="outline"
+                                                    className="w-full gap-1.5 rounded-xl border-slate-200 text-slate-600 font-semibold h-9 hover:bg-slate-50 hover:text-[#243E8B] hover:border-[#243E8B]/30 transition-all duration-300 group/btn text-[13px]"
+                                                >
+                                                    <Edit className="size-3.5 group-hover/btn:-rotate-12 transition-transform duration-300" />
+                                                    Edit
+                                                </Button>
+                                                <Button
+                                                    onClick={() => setSelectedProperty(property)}
+                                                    variant="default"
+                                                    className="w-full gap-1.5 rounded-xl bg-[#243E8B] text-white font-semibold h-9 hover:bg-[#1D3270] shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300 group/btn text-[13px]"
+                                                >
+                                                    <Eye className="size-3.5 group-hover/btn:scale-110 transition-transform duration-300" />
+                                                    View
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                ))}
                             </div>
 
-                            {/* Details */}
-                            <div className="p-6 flex flex-col gap-4 grow">
-                                <div className="flex flex-col gap-2">
-                                    <h3 className="text-[1.35rem] font-bold text-slate-900 tracking-tight group-hover:text-[#243E8B] transition-colors duration-300 leading-tight">
-                                        {property.title}
-                                    </h3>
-                                    <div className="flex items-center gap-1.5 text-slate-500">
-                                        <MapPin className="size-4 shrink-0 text-slate-400" />
-                                        <span className="text-[13px] font-medium mt-0.5">{property.location}</span>
-                                    </div>
-                                </div>
-
-                                {/* Property Specs */}
-                                <div className="flex items-center gap-4 py-3.5 border-y border-slate-100 mt-1">
-                                    <span className="text-[12px] font-semibold text-slate-600 tracking-wide">
-                                        {property.details}
-                                    </span>
-                                </div>
-
-                                {/* Actions Grid */}
-                                <div className="grid grid-cols-2 gap-3 mt-auto pt-2">
-                                    <Button
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            setEditingProperty(property)
-                                            form.reset()
-                                            form.setFieldValue('propertyName', property.title)
-                                            form.setFieldValue('location', property.location)
-                                            form.setFieldValue('price', property.price.replace('$', ''))
-                                            setIsAddOpen(true)
-                                        }}
-                                        variant="outline"
-                                        className="w-full gap-2 rounded-xl border-slate-200 text-slate-600 font-semibold h-11 hover:bg-slate-50 hover:text-[#243E8B] hover:border-[#243E8B]/30 transition-all duration-300 group/btn"
-                                    >
-                                        <Edit className="size-4 group-hover/btn:-rotate-12 transition-transform duration-300" />
-                                        Edit
-                                    </Button>
-                                    <Button
-                                        onClick={() => setSelectedProperty(property)}
-                                        variant="default"
-                                        className="w-full gap-2 rounded-xl bg-[#243E8B] text-white font-semibold h-11 hover:bg-[#1D3270] shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300 group/btn"
-                                    >
-                                        <Eye className="size-4 group-hover/btn:scale-110 transition-transform duration-300" />
-                                        View
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                            {/* Pagination Controls */}
+                            <DataTableFooter
+                                page={currentPage}
+                                limit={itemsPerPage}
+                                total={filteredProperties.length}
+                                onPageChange={setCurrentPage}
+                                onLimitChange={(limit) => {
+                                    setItemsPerPage(limit)
+                                    setCurrentPage(1)
+                                }}
+                                limitOptions={[4, 8, 12, 24]}
+                                noun="properties"
+                            />
+                        </>
+                    )
+                })()}
             </div>
 
             {/* Add Property Dialog */}
