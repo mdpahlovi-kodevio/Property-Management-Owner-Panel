@@ -220,7 +220,6 @@ function ReviewCard({ review, onReply, onDelete }: { review: Review, onReply: (i
           </button>
         </div>
       </div>
-
       {/* Review Content */}
       <p className="text-foreground/90 leading-relaxed text-[15px]">
         "{review.text}"
