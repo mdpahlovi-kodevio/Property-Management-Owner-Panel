@@ -445,7 +445,7 @@ function RouteComponent() {
                                                 }
                                             }}
                                             className={cn(
-                                                'w-full flex items-start gap-2 p-2 rounded-xl text-left transition-all group outline-none',
+                                                'w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all group outline-none',
                                                 isActive
                                                     ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
                                                     : 'hover:bg-muted/50 active:bg-muted cursor-pointer',
@@ -571,7 +571,7 @@ function RouteComponent() {
                         )}
                     >
                         {/* Chat Header */}
-                        <div className="h-18 px-4 flex items-center justify-between border-b bg-card/80 backdrop-blur-xl shrink-0 z-10">
+                        <div className="h-19 px-4 md:px-6 flex items-center justify-between border-b bg-card/80 backdrop-blur-xl shrink-0 z-10">
                             <div className="flex items-center gap-3 md:gap-4">
                                 <Button
                                     variant="ghost"
@@ -637,7 +637,7 @@ function RouteComponent() {
                         </div>
 
                         {/* Messages Area */}
-                        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/5 scroll-smooth">
+                        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-muted/5 scroll-smooth">
                             {activeConversation.messages.map((msg, index) => {
                                 const isMe = msg.senderId === CURRENT_USER_ID
 
@@ -653,7 +653,7 @@ function RouteComponent() {
                                 return (
                                     <React.Fragment key={msg.id}>
                                         {showGroup && (
-                                            <div className="flex justify-center my-4 first:mt-0">
+                                            <div className="flex justify-center my-6 first:mt-0">
                                                 <span className="bg-card border px-3 py-1 rounded-full text-[10px] font-semibold text-muted-foreground shadow-sm">
                                                     {group}
                                                 </span>
@@ -682,16 +682,16 @@ function RouteComponent() {
                                                 <div className="flex flex-col gap-1 min-w-0 group/bubble relative">
                                                     {isMe && (
                                                         <div className="absolute top-1/2 -translate-y-1/2 -left-9 opacity-0 group-hover/bubble:opacity-100 transition-opacity">
-                                                            <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground bg-card/50 backdrop-blur border shadow-sm hover:bg-card hover:text-foreground">
+                                                            {/* <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground bg-card/50 backdrop-blur border shadow-sm hover:bg-card hover:text-foreground">
                                                                 <MoreHorizontal className="size-3.5" />
-                                                            </Button>
+                                                            </Button> */}
                                                         </div>
                                                     )}
                                                     {!isMe && (
                                                         <div className="absolute top-1/2 -translate-y-1/2 -right-9 opacity-0 group-hover/bubble:opacity-100 transition-opacity">
-                                                            <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground bg-card/50 backdrop-blur border shadow-sm hover:bg-card hover:text-foreground">
+                                                            {/* <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground bg-card/50 backdrop-blur border shadow-sm hover:bg-card hover:text-foreground">
                                                                 <MoreHorizontal className="size-3.5" />
-                                                            </Button>
+                                                            </Button> */}
                                                         </div>
                                                     )}
 
@@ -775,7 +775,7 @@ function RouteComponent() {
                             >
                                 <Button
                                     variant="ghost"
-                                    size="icon-sm"
+                                    size="icon"
                                     className={cn(
                                         "shrink-0 rounded-xl",
                                         isInternalNote ? "text-amber-600 hover:bg-amber-100" : "text-muted-foreground hover:bg-background/80"
@@ -800,13 +800,13 @@ function RouteComponent() {
                                 />
 
                                 <div className="flex items-center gap-0.5 mr-1">
-                                    <Button variant="ghost" size="icon-sm" className={isInternalNote ? "text-amber-600 hover:bg-amber-100" : "text-muted-foreground"}>
+                                    <Button variant="ghost" size="icon" className={cn("size-8 rounded-lg", isInternalNote ? "text-amber-600 hover:bg-amber-100" : "text-muted-foreground")}>
                                         <Smile className="size-4" />
                                     </Button>
 
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon-sm" className={isInternalNote ? "text-amber-600 hover:bg-amber-100" : "text-muted-foreground"}>
+                                            <Button variant="ghost" size="icon" className={cn("size-8 rounded-lg", isInternalNote ? "text-amber-600 hover:bg-amber-100" : "text-muted-foreground")}>
                                                 <Zap className="size-4" />
                                             </Button>
                                         </DropdownMenuTrigger>
@@ -861,10 +861,10 @@ function RouteComponent() {
                 {/* ─── Guest Info Sidebar (Right) ─── */}
                 {activeConversation && isInfoOpen && (
                     <div className="w-75 flex flex-col border-l bg-card shrink-0 z-10 relative lg:flex">
-                        <div className="h-18 flex items-center px-4 border-b shrink-0">
+                        <div className="h-19 flex items-center px-4 border-b shrink-0">
                             <h3 className="font-semibold">Guest Details</h3>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        <div className="flex-1 overflow-y-auto p-5 space-y-6">
                             {/* Guest Profile */}
                             <div className="flex flex-col items-center text-center">
                                 <div className="size-20 rounded-full overflow-hidden border-2 border-muted mb-3 relative">
@@ -1012,12 +1012,12 @@ function RouteComponent() {
                                     <span className="font-medium">+1 (555) 123-4567</span>
                                 </div>
                                 <div className="flex flex-col gap-1 p-3 bg-muted/40 rounded-lg">
-                                    <span className="text-muted-foreground text-xs">Total Stays</span>
+                                    <span className="text-muted-foreground text-xs">Total Bookings</span>
                                     <span className="font-medium">4</span>
                                 </div>
                                 <div className="flex flex-col gap-1 p-3 bg-muted/40 rounded-lg">
-                                    <span className="text-muted-foreground text-xs">Loyalty Tier</span>
-                                    <span className="font-medium text-amber-600">Gold Member</span>
+                                    <span className="text-muted-foreground text-xs">Status</span>
+                                    <span className="font-medium text-green-600">Active</span>
                                 </div>
                             </div>
                         </div>
