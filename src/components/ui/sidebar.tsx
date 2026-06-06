@@ -404,7 +404,7 @@ const sidebarMenuButtonVariants = cva(
     {
         variants: {
             variant: {
-                default: 'hover:bg-sidebar-primary hover:text-sidebar-primary-foreground',
+                default: 'hover:bg-sidebar-primary/85 hover:text-sidebar-primary-foreground',
                 outline:
                     'bg-background shadow-[0_0_0_1px_var(--sidebar-border)] hover:bg-sidebar-primary hover:text-sidebar-primary-foreground hover:shadow-[0_0_0_1px_var(--sidebar-primary)]',
             },
