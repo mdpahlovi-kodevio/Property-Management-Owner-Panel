@@ -213,11 +213,6 @@ function RouteComponent() {
                                 <RefreshCw className={cn('size-3.5', isRefreshing && 'animate-spin')} />
                             </Button>
 
-                            {/* New booking */}
-                            <Button id="calendar-new-booking" size="sm" className="h-8 gap-1.5 text-xs">
-                                <Plus className="size-3.5" data-icon="inline-start" />
-                                New Booking
-                            </Button>
                         </div>
                     </div>
                 </CardHeader>
