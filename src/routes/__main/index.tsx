@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { StatCard } from '@/components/ui/stat-card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { createFileRoute } from '@tanstack/react-router'
-import { Activity, ArrowUpRight, DollarSign, Clock, ExternalLink, UsersRound } from 'lucide-react'
+import { Activity, ArrowUpRight, DollarSign, Clock, ExternalLink, UsersRound, CalendarDays, Ban, Star, UserCheck, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import {
     Area,
@@ -236,36 +236,73 @@ function RouteComponent() {
                                     <ExternalLink className="h-3.5 w-3.5" />
                                 </button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-106.25">
+                            <DialogContent className="sm:max-w-md">
                                 <DialogHeader>
-                                    <DialogTitle>Detailed Analytics</DialogTitle>
+                                    <DialogTitle className="text-xl flex items-center gap-2">
+                                        <Activity className="w-5 h-5 text-primary" />
+                                        Detailed Analytics
+                                    </DialogTitle>
                                     <DialogDescription>
-                                        Detailed breakdown of customer bookings and user statistics.
+                                        In-depth breakdown of customer behaviors and performance metrics.
                                     </DialogDescription>
                                 </DialogHeader>
-                                <div className="grid gap-4 py-4">
-                                    <div className="grid grid-cols-2 items-center gap-4">
-                                        `<div className="flex flex-col gap-1">
-                                            <span className="text-sm font-medium leading-none">Returning Users</span>
-                                            <span className="text-sm text-muted-foreground">70% of total bookings</span>
+                                <div className="grid gap-6 py-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="flex flex-col gap-2 p-4 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30">
+                                            <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                                                <UserCheck className="w-4 h-4" />
+                                                <span className="text-sm font-semibold">Returning Users</span>
+                                            </div>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-2xl font-bold text-blue-700 dark:text-blue-300">70%</span>
+                                                <span className="text-xs text-blue-600/70 dark:text-blue-400/70">of total</span>
+                                            </div>
                                         </div>
-                                        <div className="flex flex-col gap-1 text-right">
-                                            <span className="text-sm font-medium leading-none">New Users</span>
-                                            <span className="text-sm text-muted-foreground">30% of total bookings</span>
+                                        <div className="flex flex-col gap-2 p-4 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/30">
+                                            <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                                                <UserPlus className="w-4 h-4" />
+                                                <span className="text-sm font-semibold">New Users</span>
+                                            </div>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-2xl font-bold text-green-700 dark:text-green-300">30%</span>
+                                                <span className="text-xs text-green-600/70 dark:text-green-400/70">of total</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="h-px bg-border my-2" />
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm font-medium">Average Booking Duration</span>
-                                        <span className="text-sm text-muted-foreground">4.2 days</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm font-medium">Cancellation Rate</span>
-                                        <span className="text-sm text-muted-foreground">3.1%</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm font-medium">Customer Satisfaction</span>
-                                        <span className="text-sm text-muted-foreground">4.8 / 5.0</span>
+
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 rounded-md bg-primary/10 text-primary">
+                                                    <CalendarDays className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-sm font-medium">Average Booking Duration</span>
+                                            </div>
+                                            <span className="text-sm font-semibold">4.2 days</span>
+                                        </div>
+
+                                        <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 rounded-md bg-destructive/10 text-destructive">
+                                                    <Ban className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-sm font-medium">Cancellation Rate</span>
+                                            </div>
+                                            <span className="text-sm font-semibold">3.1%</span>
+                                        </div>
+
+                                        <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 rounded-md bg-amber-500/10 text-amber-500">
+                                                    <Star className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-sm font-medium">Customer Satisfaction</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-sm font-semibold">4.8</span>
+                                                <span className="text-xs text-muted-foreground">/ 5.0</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </DialogContent>
