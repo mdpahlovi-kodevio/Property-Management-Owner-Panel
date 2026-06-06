@@ -31,6 +31,7 @@ import { Route as _authForgotPasswordRouteImport } from './routes/__auth/forgot-
 import { Route as _mainSupportIndexRouteImport } from './routes/__main/support.index'
 import { Route as _mainSupportIdRouteImport } from './routes/__main/support.$id'
 import { Route as _mainReportsSourceRouteImport } from './routes/__main/reports_.$source'
+import { Route as _mainRentalsPropertyIdRouteImport } from './routes/__main/rentals_.$propertyId'
 
 const _mainRouteRoute = _mainRouteRouteImport.update({
   id: '/__main',
@@ -140,6 +141,11 @@ const _mainReportsSourceRoute = _mainReportsSourceRouteImport.update({
   path: '/reports/$source',
   getParentRoute: () => _mainRouteRoute,
 } as any)
+const _mainRentalsPropertyIdRoute = _mainRentalsPropertyIdRouteImport.update({
+  id: '/rentals_/$propertyId',
+  path: '/rentals/$propertyId',
+  getParentRoute: () => _mainRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof _mainIndexRoute
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/role-management': typeof _mainRoleManagementRoute
   '/settings': typeof _mainSettingsRoute
   '/user-management': typeof _mainUserManagementRoute
+  '/rentals/$propertyId': typeof _mainRentalsPropertyIdRoute
   '/reports/$source': typeof _mainReportsSourceRoute
   '/support/$id': typeof _mainSupportIdRoute
   '/support/': typeof _mainSupportIndexRoute
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/role-management': typeof _mainRoleManagementRoute
   '/settings': typeof _mainSettingsRoute
   '/user-management': typeof _mainUserManagementRoute
+  '/rentals/$propertyId': typeof _mainRentalsPropertyIdRoute
   '/reports/$source': typeof _mainReportsSourceRoute
   '/support/$id': typeof _mainSupportIdRoute
   '/support': typeof _mainSupportIndexRoute
@@ -206,6 +214,7 @@ export interface FileRoutesById {
   '/__main/settings': typeof _mainSettingsRoute
   '/__main/user-management': typeof _mainUserManagementRoute
   '/__main/': typeof _mainIndexRoute
+  '/__main/rentals_/$propertyId': typeof _mainRentalsPropertyIdRoute
   '/__main/reports_/$source': typeof _mainReportsSourceRoute
   '/__main/support/$id': typeof _mainSupportIdRoute
   '/__main/support/': typeof _mainSupportIndexRoute
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/role-management'
     | '/settings'
     | '/user-management'
+    | '/rentals/$propertyId'
     | '/reports/$source'
     | '/support/$id'
     | '/support/'
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/role-management'
     | '/settings'
     | '/user-management'
+    | '/rentals/$propertyId'
     | '/reports/$source'
     | '/support/$id'
     | '/support'
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/__main/settings'
     | '/__main/user-management'
     | '/__main/'
+    | '/__main/rentals_/$propertyId'
     | '/__main/reports_/$source'
     | '/__main/support/$id'
     | '/__main/support/'
@@ -442,6 +454,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof _mainReportsSourceRouteImport
       parentRoute: typeof _mainRouteRoute
     }
+    '/__main/rentals_/$propertyId': {
+      id: '/__main/rentals_/$propertyId'
+      path: '/rentals/$propertyId'
+      fullPath: '/rentals/$propertyId'
+      preLoaderRoute: typeof _mainRentalsPropertyIdRouteImport
+      parentRoute: typeof _mainRouteRoute
+    }
   }
 }
 
@@ -477,6 +496,7 @@ interface _mainRouteRouteChildren {
   _mainSettingsRoute: typeof _mainSettingsRoute
   _mainUserManagementRoute: typeof _mainUserManagementRoute
   _mainIndexRoute: typeof _mainIndexRoute
+  _mainRentalsPropertyIdRoute: typeof _mainRentalsPropertyIdRoute
   _mainReportsSourceRoute: typeof _mainReportsSourceRoute
   _mainSupportIdRoute: typeof _mainSupportIdRoute
   _mainSupportIndexRoute: typeof _mainSupportIndexRoute
@@ -496,6 +516,7 @@ const _mainRouteRouteChildren: _mainRouteRouteChildren = {
   _mainSettingsRoute: _mainSettingsRoute,
   _mainUserManagementRoute: _mainUserManagementRoute,
   _mainIndexRoute: _mainIndexRoute,
+  _mainRentalsPropertyIdRoute: _mainRentalsPropertyIdRoute,
   _mainReportsSourceRoute: _mainReportsSourceRoute,
   _mainSupportIdRoute: _mainSupportIdRoute,
   _mainSupportIndexRoute: _mainSupportIndexRoute,
