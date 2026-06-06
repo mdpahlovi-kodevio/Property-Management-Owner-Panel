@@ -132,33 +132,12 @@ function RouteComponent() {
                 key: 'action',
                 header: 'Action',
                 render: (user) => (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button size="sm" className="bg-[#24357B] hover:bg-[#24357B]/90 text-white rounded-md h-9">
-                                Action <ChevronDown className="ml-1 h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-white">
-                            <DropdownMenuItem onClick={() => openEdit(user)}>
-                                <Edit className="size-3.5" /> Edit Details
-                            </DropdownMenuItem>
-                            <StatusConfirm
-                                name={user.name}
-                                currentStatus={user.status}
-                                newStatus={user.status === 'Active' ? 'Blocked' : 'Active'}
-                                onConfirm={() => handleToggleStatus(user.id)}
-                            >
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <Check className="size-3.5" /> Toggle Status
-                                </DropdownMenuItem>
-                            </StatusConfirm>
-                            <TrashConfirm name={user.name} onConfirm={() => handleDeleteUser(user.id)}>
-                                <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()}>
-                                    <Trash2 className="size-3.5" /> Delete User
-                                </DropdownMenuItem>
-                            </TrashConfirm>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <UserActionCell
+                        user={user}
+                        onEdit={() => openEdit(user)}
+                        onToggleStatus={() => handleToggleStatus(user.id)}
+                        onDelete={() => handleDeleteUser(user.id)}
+                    />
                 ),
             },
         ],
@@ -307,5 +286,58 @@ function UserForm({
                 </form.AppForm>
             </DialogFooter>
         </form>
+    )
+}
+
+function UserActionCell({
+    user,
+    onEdit,
+    onToggleStatus,
+    onDelete,
+}: {
+    user: User
+    onEdit: () => void
+    onToggleStatus: () => void
+    onDelete: () => void
+}) {
+    const [statusOpen, setStatusOpen] = useState(false)
+    const [deleteOpen, setDeleteOpen] = useState(false)
+
+    return (
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button size="sm" className="bg-[#24357B] hover:bg-[#24357B]/90 text-white rounded-md h-9">
+                        Action <ChevronDown className="ml-1 h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-white">
+                    <DropdownMenuItem onClick={onEdit}>
+                        <Edit className="size-3.5" /> Edit Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setStatusOpen(true)}>
+                        <Check className="size-3.5" /> Toggle Status
+                    </DropdownMenuItem>
+                    <DropdownMenuItem variant="destructive" onSelect={() => setDeleteOpen(true)}>
+                        <Trash2 className="size-3.5" /> Delete User
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            <StatusConfirm
+                open={statusOpen}
+                onOpenChange={setStatusOpen}
+                name={user.name}
+                currentStatus={user.status}
+                newStatus={user.status === 'Active' ? 'Blocked' : 'Active'}
+                onConfirm={onToggleStatus}
+            />
+            <TrashConfirm
+                open={deleteOpen}
+                onOpenChange={setDeleteOpen}
+                name={user.name}
+                onConfirm={onDelete}
+            />
+        </>
     )
 }

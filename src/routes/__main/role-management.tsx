@@ -233,23 +233,11 @@ function RouteComponent() {
                 key: 'action',
                 header: 'Action',
                 render: (r) => (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button size="sm">
-                                Action <ChevronDown className="h-3.5 w-3.5" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-white">
-                            <DropdownMenuItem onClick={() => openEdit(r)}>
-                                <Edit className="size-3.5" /> Edit Details
-                            </DropdownMenuItem>
-                            <TrashConfirm name={r.roleName} onConfirm={() => handleDeleteRole(r.id)}>
-                                <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()}>
-                                    <Trash2 className="size-3.5" /> Delete Role
-                                </DropdownMenuItem>
-                            </TrashConfirm>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <RoleActionCell
+                        role={r}
+                        onEdit={() => openEdit(r)}
+                        onDelete={() => handleDeleteRole(r.id)}
+                    />
                 ),
             },
         ],
@@ -358,5 +346,44 @@ function RoleForm({
                 </form.AppForm>
             </DialogFooter>
         </form>
+    )
+}
+
+function RoleActionCell({
+    role,
+    onEdit,
+    onDelete,
+}: {
+    role: RoleItem
+    onEdit: () => void
+    onDelete: () => void
+}) {
+    const [deleteOpen, setDeleteOpen] = useState(false)
+
+    return (
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button size="sm">
+                        Action <ChevronDown className="h-3.5 w-3.5" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-white">
+                    <DropdownMenuItem onClick={onEdit}>
+                        <Edit className="size-3.5" /> Edit Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem variant="destructive" onSelect={() => setDeleteOpen(true)}>
+                        <Trash2 className="size-3.5" /> Delete Role
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            <TrashConfirm
+                open={deleteOpen}
+                onOpenChange={setDeleteOpen}
+                name={role.roleName}
+                onConfirm={onDelete}
+            />
+        </>
     )
 }

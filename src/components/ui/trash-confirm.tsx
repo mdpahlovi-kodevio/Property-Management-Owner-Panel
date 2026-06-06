@@ -13,7 +13,7 @@ import type { ReactNode } from 'react'
 
 type TrashConfirmProps = {
     /** The trigger element — rendered inside AlertDialogTrigger with asChild */
-    children: ReactNode
+    children?: ReactNode
     /** The name shown in the confirmation message */
     name: ReactNode
     /** Title of the confirmation dialog */
@@ -22,6 +22,8 @@ type TrashConfirmProps = {
     description?: string
     /** Called when the user confirms the action */
     onConfirm: () => void
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
 export function TrashConfirm({
@@ -30,10 +32,12 @@ export function TrashConfirm({
     title = 'Are you sure?',
     description = 'Are you sure you want to remove',
     onConfirm,
+    open,
+    onOpenChange,
 }: TrashConfirmProps) {
     return (
-        <AlertDialog>
-            <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+        <AlertDialog open={open} onOpenChange={onOpenChange}>
+            {children && <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>}
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>{title}</AlertDialogTitle>

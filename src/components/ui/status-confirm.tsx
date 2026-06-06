@@ -13,7 +13,7 @@ import type { ReactNode } from 'react'
 
 type StatusConfirmProps = {
     /** The trigger element — rendered inside AlertDialogTrigger with asChild */
-    children: ReactNode
+    children?: ReactNode
     /** The name shown in the confirmation message */
     name: ReactNode
     /** The current status of the item */
@@ -24,6 +24,8 @@ type StatusConfirmProps = {
     title?: string
     /** Called when the user confirms the action */
     onConfirm: () => void
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
 export function StatusConfirm({
@@ -33,10 +35,12 @@ export function StatusConfirm({
     newStatus,
     title = 'Confirm Status Change',
     onConfirm,
+    open,
+    onOpenChange,
 }: StatusConfirmProps) {
     return (
-        <AlertDialog>
-            <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+        <AlertDialog open={open} onOpenChange={onOpenChange}>
+            {children && <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>}
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>{title}</AlertDialogTitle>

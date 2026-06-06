@@ -229,33 +229,12 @@ function RouteComponent() {
                 key: 'action',
                 header: 'Action',
                 render: (emp) => (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button size="sm">
-                                Action <ChevronDown className="h-3.5 w-3.5" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-white">
-                            <DropdownMenuItem onClick={() => openEdit(emp)}>
-                                <Edit className="size-3.5" /> Edit Details
-                            </DropdownMenuItem>
-                            <StatusConfirm
-                                name={emp.name}
-                                currentStatus={emp.status}
-                                newStatus={emp.status === 'Active' ? 'Blocked' : 'Active'}
-                                onConfirm={() => handleToggleStatus(emp.id)}
-                            >
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <Check className="size-3.5" /> Toggle Status
-                                </DropdownMenuItem>
-                            </StatusConfirm>
-                            <TrashConfirm name={emp.name} onConfirm={() => handleDeleteEmployee(emp.id)}>
-                                <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()}>
-                                    <Trash2 className="size-3.5" /> Delete Employee
-                                </DropdownMenuItem>
-                            </TrashConfirm>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <EmployeeActionCell
+                        employee={emp}
+                        onEdit={() => openEdit(emp)}
+                        onToggleStatus={() => handleToggleStatus(emp.id)}
+                        onDelete={() => handleDeleteEmployee(emp.id)}
+                    />
                 ),
             },
         ],
@@ -427,5 +406,58 @@ function EmployeeForm({
                 </form.AppForm>
             </DialogFooter>
         </form>
+    )
+}
+
+function EmployeeActionCell({
+    employee,
+    onEdit,
+    onToggleStatus,
+    onDelete,
+}: {
+    employee: Employee
+    onEdit: () => void
+    onToggleStatus: () => void
+    onDelete: () => void
+}) {
+    const [statusOpen, setStatusOpen] = useState(false)
+    const [deleteOpen, setDeleteOpen] = useState(false)
+
+    return (
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button size="sm">
+                        Action <ChevronDown className="h-3.5 w-3.5" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-white">
+                    <DropdownMenuItem onClick={onEdit}>
+                        <Edit className="size-3.5" /> Edit Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setStatusOpen(true)}>
+                        <Check className="size-3.5" /> Toggle Status
+                    </DropdownMenuItem>
+                    <DropdownMenuItem variant="destructive" onSelect={() => setDeleteOpen(true)}>
+                        <Trash2 className="size-3.5" /> Delete Employee
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            <StatusConfirm
+                open={statusOpen}
+                onOpenChange={setStatusOpen}
+                name={employee.name}
+                currentStatus={employee.status}
+                newStatus={employee.status === 'Active' ? 'Blocked' : 'Active'}
+                onConfirm={onToggleStatus}
+            />
+            <TrashConfirm
+                open={deleteOpen}
+                onOpenChange={setDeleteOpen}
+                name={employee.name}
+                onConfirm={onDelete}
+            />
+        </>
     )
 }
