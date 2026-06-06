@@ -34,6 +34,7 @@ import { StatCardsGrid } from '@/components/ui/stat-card'
 import { Legend } from '@/components/calendar/Legend'
 import { BookingDetailDialog } from '@/components/calendar/BookingDetailDialog'
 import { CalendarRow } from '@/components/calendar/CalendarRow'
+import { PageHeader } from '#/components/ui/page-header'
 
 export const Route = createFileRoute('/__main/calendar')({
     component: RouteComponent,
@@ -80,6 +81,10 @@ function RouteComponent() {
 
     return (
         <>
+            <PageHeader
+                title="Calender"
+                description="Manage your Schedules via Calender"
+            />
             {/* ── Stat Cards Grid ───────────────────────────────────────────── */}
             <StatCardsGrid
                 cards={[
