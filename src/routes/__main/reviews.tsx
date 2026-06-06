@@ -227,7 +227,7 @@ function ReviewCard({ review, onReply, onDelete }: { review: Review, onReply: (i
       </p>
 
       {/* Host Reply Box */}
-      {review.status === 'Replied' && review.replyText && (
+      {/* review.status === 'Replied' && review.replyText && (
         <div className="bg-muted/30 rounded-xl p-4 border border-border/50">
           <div className="flex items-center gap-2 mb-2">
             <MessageSquare className="w-4 h-4 text-primary" />
@@ -235,10 +235,10 @@ function ReviewCard({ review, onReply, onDelete }: { review: Review, onReply: (i
           </div>
           <p className="text-[14px] text-muted-foreground leading-relaxed pl-6">{review.replyText}</p>
         </div>
-      )}
+      ) */}
 
       {/* Action Area */}
-      {review.status === 'Pending' && !isReplying && (
+      {/* review.status === 'Pending' && !isReplying && (
         <div className="flex gap-3 pt-1">
           <Button
             className="rounded-lg px-6 h-10 text-sm shadow-sm transition-all cursor-pointer"
@@ -250,10 +250,10 @@ function ReviewCard({ review, onReply, onDelete }: { review: Review, onReply: (i
             Use Template
           </Button>
         </div>
-      )}
+      ) */}
 
       {/* Reply Form */}
-      {review.status === 'Pending' && isReplying && (
+      {/* review.status === 'Pending' && isReplying && (
         <div className="flex flex-col gap-3 pt-1">
           <div className="relative">
             <Textarea
@@ -297,7 +297,7 @@ function ReviewCard({ review, onReply, onDelete }: { review: Review, onReply: (i
             </Button>
           </div>
         </div>
-      )}
+      ) */}
     </div>
   )
 }
