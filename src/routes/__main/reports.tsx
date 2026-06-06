@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { Link } from '@tanstack/react-router'
 import { DataTable } from '@/components/ui/data-table'
 import type { DataTableColumn } from '@/components/ui/data-table';
 import { PageHeader } from '@/components/ui/page-header'
@@ -111,10 +112,10 @@ function RouteComponent() {
             {
                 key: 'action',
                 header: 'Action',
-                render: () => (
-                    <Button size="sm" className="bg-[#24357B] hover:bg-[#24357B]/90 text-white rounded-md h-8 px-4 text-xs font-medium">
+                render: (r) => (
+                    <Link to="/reports/$source" params={{ source: r.source.toLowerCase() }} className="inline-flex items-center justify-center whitespace-nowrap bg-[#24357B] hover:bg-[#24357B]/90 text-white rounded-md h-8 px-4 text-xs font-medium">
                         View
-                    </Button>
+                    </Link>
                 )
             },
         ],

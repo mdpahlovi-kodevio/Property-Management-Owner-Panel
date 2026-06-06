@@ -30,6 +30,7 @@ import { Route as _authResetPasswordRouteImport } from './routes/__auth/reset-pa
 import { Route as _authForgotPasswordRouteImport } from './routes/__auth/forgot-password'
 import { Route as _mainSupportIndexRouteImport } from './routes/__main/support.index'
 import { Route as _mainSupportIdRouteImport } from './routes/__main/support.$id'
+import { Route as _mainReportsSourceRouteImport } from './routes/__main/reports_.$source'
 
 const _mainRouteRoute = _mainRouteRouteImport.update({
   id: '/__main',
@@ -134,6 +135,11 @@ const _mainSupportIdRoute = _mainSupportIdRouteImport.update({
   path: '/support/$id',
   getParentRoute: () => _mainRouteRoute,
 } as any)
+const _mainReportsSourceRoute = _mainReportsSourceRouteImport.update({
+  id: '/reports_/$source',
+  path: '/reports/$source',
+  getParentRoute: () => _mainRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof _mainIndexRoute
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/role-management': typeof _mainRoleManagementRoute
   '/settings': typeof _mainSettingsRoute
   '/user-management': typeof _mainUserManagementRoute
+  '/reports/$source': typeof _mainReportsSourceRoute
   '/support/$id': typeof _mainSupportIdRoute
   '/support/': typeof _mainSupportIndexRoute
 }
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/role-management': typeof _mainRoleManagementRoute
   '/settings': typeof _mainSettingsRoute
   '/user-management': typeof _mainUserManagementRoute
+  '/reports/$source': typeof _mainReportsSourceRoute
   '/support/$id': typeof _mainSupportIdRoute
   '/support': typeof _mainSupportIndexRoute
 }
@@ -198,6 +206,7 @@ export interface FileRoutesById {
   '/__main/settings': typeof _mainSettingsRoute
   '/__main/user-management': typeof _mainUserManagementRoute
   '/__main/': typeof _mainIndexRoute
+  '/__main/reports_/$source': typeof _mainReportsSourceRoute
   '/__main/support/$id': typeof _mainSupportIdRoute
   '/__main/support/': typeof _mainSupportIndexRoute
 }
@@ -221,6 +230,7 @@ export interface FileRouteTypes {
     | '/role-management'
     | '/settings'
     | '/user-management'
+    | '/reports/$source'
     | '/support/$id'
     | '/support/'
   fileRoutesByTo: FileRoutesByTo
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/role-management'
     | '/settings'
     | '/user-management'
+    | '/reports/$source'
     | '/support/$id'
     | '/support'
   id:
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/__main/settings'
     | '/__main/user-management'
     | '/__main/'
+    | '/__main/reports_/$source'
     | '/__main/support/$id'
     | '/__main/support/'
   fileRoutesById: FileRoutesById
@@ -423,6 +435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof _mainSupportIdRouteImport
       parentRoute: typeof _mainRouteRoute
     }
+    '/__main/reports_/$source': {
+      id: '/__main/reports_/$source'
+      path: '/reports/$source'
+      fullPath: '/reports/$source'
+      preLoaderRoute: typeof _mainReportsSourceRouteImport
+      parentRoute: typeof _mainRouteRoute
+    }
   }
 }
 
@@ -458,6 +477,7 @@ interface _mainRouteRouteChildren {
   _mainSettingsRoute: typeof _mainSettingsRoute
   _mainUserManagementRoute: typeof _mainUserManagementRoute
   _mainIndexRoute: typeof _mainIndexRoute
+  _mainReportsSourceRoute: typeof _mainReportsSourceRoute
   _mainSupportIdRoute: typeof _mainSupportIdRoute
   _mainSupportIndexRoute: typeof _mainSupportIndexRoute
 }
@@ -476,6 +496,7 @@ const _mainRouteRouteChildren: _mainRouteRouteChildren = {
   _mainSettingsRoute: _mainSettingsRoute,
   _mainUserManagementRoute: _mainUserManagementRoute,
   _mainIndexRoute: _mainIndexRoute,
+  _mainReportsSourceRoute: _mainReportsSourceRoute,
   _mainSupportIdRoute: _mainSupportIdRoute,
   _mainSupportIndexRoute: _mainSupportIndexRoute,
 }
