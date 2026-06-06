@@ -3,7 +3,11 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { SearchInput } from '@/components/ui/search-input'
-import { Plus, MapPin, Edit, Eye, CheckCircle2, XCircle, Building, ArrowRight } from 'lucide-react'
+import {
+    Plus, MapPin, Edit, Eye, CheckCircle2, XCircle,
+    Building, ArrowRight, Wifi, ParkingCircle, Waves,
+    Dumbbell, UtensilsCrossed, Car, Accessibility, Clock, X
+} from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useForm } from '@tanstack/react-form'
 import { toast } from 'sonner'
@@ -13,6 +17,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { DataTableFooter } from '@/components/ui/data-table'
 import { Switch } from '@/components/ui/switch'
+import { Separator } from '@/components/ui/separator'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 export type CreatePropertyForm = {
     name: string
@@ -66,10 +73,70 @@ const MOCK_PROPERTIES = [
     { id: 'historic-townhouse', title: 'Historic Townhouse', location: 'Old Town Square', details: 'Townhouse • 4 Units', price: '$115', period: 'FROM', status: 'Maintenance', imageUrl: 'https://picsum.photos/seed/prop12/800/600' },
 ]
 
-const PROP_AMENITIES = ['WiFi', 'Parking', 'Pool', 'Spa', 'Gym', 'Restaurant', 'Bar', 'Airport shuttle', 'Elevator', 'Laundry', 'Pet friendly', 'Wheelchair accessible', '24-hr front desk', 'Business center']
+const PROP_AMENITIES = [
+    { label: 'WiFi', icon: Wifi },
+    { label: 'Parking', icon: ParkingCircle },
+    { label: 'Pool', icon: Waves },
+    { label: 'Gym', icon: Dumbbell },
+    { label: 'Restaurant', icon: UtensilsCrossed },
+    { label: 'Airport shuttle', icon: Car },
+    { label: 'Wheelchair accessible', icon: Accessibility },
+    { label: '24-hr front desk', icon: Clock },
+    { label: 'Spa', icon: null },
+    { label: 'Bar', icon: null },
+    { label: 'Elevator', icon: null },
+    { label: 'Laundry', icon: null },
+    { label: 'Pet friendly', icon: null },
+    { label: 'Business center', icon: null },
+]
+
 const PROP_TABS = ['Basics', 'Location', 'Operations', 'Amenities', 'Policies', 'Media'] as const
 type PropTab = typeof PROP_TABS[number]
 
+// ─── Shared primitives ─────────────────────────────────────────────
+function FormField({ label, required, hint, children, className }: {
+    label: string; required?: boolean; hint?: string; children: React.ReactNode; className?: string
+}) {
+    return (
+        <div className={cn('flex flex-col gap-1.5', className)}>
+            <Label className="text-[12.5px] font-semibold text-slate-700">
+                {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+            </Label>
+            {children}
+            {hint && <p className="text-[11px] text-slate-400 leading-none">{hint}</p>}
+        </div>
+    )
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+    return (
+        <div className="flex items-center gap-3 mb-4">
+            <span className="text-[10.5px] font-extrabold uppercase tracking-[0.12em] text-slate-400">{children}</span>
+            <div className="flex-1 h-px bg-slate-100" />
+        </div>
+    )
+}
+
+// ─── Status badge ────────────────────────────────────────────────────
+function StatusBadge({ status }: { status: string }) {
+    const isActive = status === 'Active'
+    return (
+        <span className={cn(
+            'shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border',
+            isActive
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
+                : 'bg-amber-50 text-amber-700 border-amber-200/60'
+        )}>
+            <span className="relative flex size-1.5">
+                <span className={cn('animate-ping absolute inline-flex size-full rounded-full opacity-75', isActive ? 'bg-emerald-400' : 'bg-amber-400')} />
+                <span className={cn('relative inline-flex rounded-full size-1.5', isActive ? 'bg-emerald-500' : 'bg-amber-500')} />
+            </span>
+            {status}
+        </span>
+    )
+}
+
+// ─── Component ───────────────────────────────────────────────────────
 function RentalsComponent() {
     const navigate = useNavigate()
     const [searchQuery, setSearchQuery] = useState('')
@@ -86,15 +153,13 @@ function RentalsComponent() {
             email: '', phone: '', website: '',
             country: '', state: '', city: '', postalCode: '',
             address1: '', address2: '',
-            latitude: 0, longitude: 0,
-            timezone: '',
+            latitude: 0, longitude: 0, timezone: '',
             checkInTime: '', checkOutTime: '',
             amenities: [] as string[],
             policies: { smokingAllowed: false, petsAllowed: false, childrenAllowed: false, partiesAllowed: false },
             minGuestAge: undefined as number | undefined,
             securityDeposit: undefined as number | undefined,
-            houseRules: '',
-            logoUrl: '', videoUrl: '',
+            houseRules: '', logoUrl: '', videoUrl: '',
             images: [] as File[],
         } as CreatePropertyForm,
         onSubmit: async ({ value }) => {
@@ -106,7 +171,13 @@ function RentalsComponent() {
         },
     })
 
-    const openAdd = () => { setEditingProperty(null); form.reset(); setActiveTab('Basics'); setIsAddOpen(true) }
+    const openAdd = () => {
+        setEditingProperty(null)
+        form.reset()
+        setActiveTab('Basics')
+        setIsAddOpen(true)
+    }
+
     const openEdit = (property: typeof MOCK_PROPERTIES[0]) => {
         setEditingProperty(property)
         form.reset()
@@ -117,29 +188,34 @@ function RentalsComponent() {
 
     return (
         <>
+            {/* ── Page header ── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <PageHeader title="Rentals" description="Manage your Rentals" />
-                <div className="flex items-center gap-4 w-full sm:w-auto">
+                <div className="flex items-center gap-3 w-full sm:w-auto">
                     <SearchInput
                         placeholder="Search properties..."
                         value={searchQuery}
                         onValueChange={(val) => { setSearchQuery(val); setCurrentPage(1) }}
-                        className="w-full sm:w-[320px]"
+                        className="w-full sm:w-[300px]"
                     />
-                    <Button onClick={openAdd} className="w-full sm:w-auto">
-                        <Plus className="size-4 mr-2" />
+                    <Button
+                        onClick={openAdd}
+                        className="shrink-0 gap-1.5 rounded-xl font-semibold bg-[#243E8B] hover:bg-[#1D3270] text-white shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300"
+                    >
+                        <Plus className="size-4" />
                         Add Property
                     </Button>
                 </div>
             </div>
 
+            {/* ── Grid + pagination ── */}
             <div className="flex flex-col gap-8 mt-6">
                 {(() => {
-                    const filteredProperties = MOCK_PROPERTIES.filter(p => {
+                    const filtered = MOCK_PROPERTIES.filter(p => {
                         const q = searchQuery.toLowerCase()
                         return p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q) || p.details.toLowerCase().includes(q)
                     })
-                    const paginated = filteredProperties.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                    const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                     return (
                         <>
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4.5">
@@ -151,43 +227,43 @@ function RentalsComponent() {
                                     >
                                         {/* Image */}
                                         <div className="relative w-full aspect-video shrink-0 overflow-hidden bg-slate-100">
-                                            <img src={property.imageUrl} alt={property.title} className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
-                                            <div className="absolute inset-0 bg-linear-to-t from-slate-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                            {/* Price tag */}
+                                            <img
+                                                src={property.imageUrl}
+                                                alt={property.title}
+                                                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                            {/* Price badge */}
                                             <div className="absolute top-3 right-3 z-10">
-                                                <div className="bg-white/95 px-2.5 py-1 rounded-xl shadow-sm border border-white/20 flex items-baseline gap-0.5">
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mr-0.5">{property.period}</span>
+                                                <div className="bg-white/95 backdrop-blur-sm px-2.5 py-1.5 rounded-xl shadow-sm border border-white/30 flex items-baseline gap-1">
+                                                    <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wide">{property.period}</span>
                                                     <span className="text-[15px] font-black text-slate-900">{property.price}</span>
                                                 </div>
                                             </div>
                                         </div>
+
                                         {/* Details */}
                                         <div className="p-4 flex flex-col gap-3 grow">
                                             <div className="flex flex-col gap-2">
                                                 <div className="flex items-start justify-between gap-2">
-                                                    <h3 className="text-[1rem] font-bold text-slate-900 tracking-tight group-hover:text-[#243E8B] transition-colors duration-300 leading-tight">
+                                                    <h3 className="text-[0.95rem] font-bold text-slate-900 tracking-tight group-hover:text-[#243E8B] transition-colors duration-300 leading-tight">
                                                         {property.title}
                                                     </h3>
-                                                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-widest flex items-center gap-1 border ${property.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : 'bg-amber-50 text-amber-700 border-amber-200/60'}`}>
-                                                        <span className="relative flex h-1.5 w-1.5">
-                                                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${property.status === 'Active' ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
-                                                            <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${property.status === 'Active' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
-                                                        </span>
-                                                        {property.status}
-                                                    </span>
+                                                    <StatusBadge status={property.status} />
                                                 </div>
                                                 <div className="flex flex-col gap-1.5">
-                                                    <div className="flex items-center gap-2 text-slate-500">
+                                                    <div className="flex items-center gap-1.5 text-slate-500">
                                                         <MapPin className="size-3.5 shrink-0 text-slate-400" />
-                                                        <span className="text-[12.5px] font-medium leading-none truncate">{property.location}</span>
+                                                        <span className="text-[12px] font-medium leading-none truncate">{property.location}</span>
                                                     </div>
-                                                    <div className="flex items-center gap-2 text-slate-500">
+                                                    <div className="flex items-center gap-1.5 text-slate-500">
                                                         <Building className="size-3.5 shrink-0 text-slate-400" />
-                                                        <span className="text-[12.5px] font-semibold text-slate-600 tracking-wide leading-none truncate">{property.details}</span>
+                                                        <span className="text-[12px] font-semibold text-slate-600 leading-none truncate">{property.details}</span>
                                                     </div>
                                                 </div>
                                             </div>
-                                            {/* Actions */}
+
+                                            {/* Action buttons — match dialog footer style */}
                                             <div className="grid grid-cols-2 gap-2 mt-auto pt-1">
                                                 <Button
                                                     onClick={(e) => { e.stopPropagation(); openEdit(property) }}
@@ -199,7 +275,6 @@ function RentalsComponent() {
                                                 </Button>
                                                 <Button
                                                     onClick={(e) => { e.stopPropagation(); setSelectedProperty(property) }}
-                                                    variant="default"
                                                     className="w-full gap-1.5 rounded-xl bg-[#243E8B] text-white font-semibold h-9 hover:bg-[#1D3270] shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300 group/btn text-[13px]"
                                                 >
                                                     <Eye className="size-3.5 group-hover/btn:scale-110 transition-transform duration-300" />
@@ -214,7 +289,7 @@ function RentalsComponent() {
                             <DataTableFooter
                                 page={currentPage}
                                 limit={itemsPerPage}
-                                total={filteredProperties.length}
+                                total={filtered.length}
                                 onPageChange={setCurrentPage}
                                 onLimitChange={(limit) => { setItemsPerPage(limit); setCurrentPage(1) }}
                                 limitOptions={[4, 8, 12, 24]}
@@ -225,65 +300,79 @@ function RentalsComponent() {
                 })()}
             </div>
 
-            {/* ── CREATE / EDIT PROPERTY DIALOG ── */}
+            {/* ══════════════════════════════════════════════════
+                CREATE / EDIT PROPERTY DIALOG
+            ══════════════════════════════════════════════════ */}
             <Dialog open={isAddOpen} onOpenChange={(open) => { setIsAddOpen(open); if (!open) setEditingProperty(null) }}>
-                <DialogContent className="w-[95vw] sm:max-w-2xl flex flex-col p-0 rounded-2xl overflow-hidden max-h-[90vh] gap-0 bg-white">
+                <DialogContent className="w-[95vw] sm:max-w-[680px] flex flex-col p-0 rounded-2xl overflow-hidden max-h-[88vh] gap-0 bg-white shadow-2xl shadow-slate-900/15">
 
-                    {/* Header */}
-                    <DialogHeader className="flex-row items-center gap-3 px-5 py-4 border-b border-slate-100 shrink-0 space-y-0">
-                        <div className="h-7 w-7 rounded-lg bg-[#243E8B]/10 flex items-center justify-center shrink-0">
-                            <Building className="size-3.5 text-[#243E8B]" />
+                    {/* ── Dialog header ── */}
+                    <DialogHeader className="flex-row items-center gap-3 px-6 py-4 border-b border-slate-100 shrink-0 space-y-0">
+                        <div className="size-8 rounded-lg bg-[#243E8B]/10 flex items-center justify-center shrink-0">
+                            <Building className="size-4 text-[#243E8B]" />
                         </div>
-                        <DialogTitle className="text-[14px] font-semibold text-slate-900 flex-1">
-                            {editingProperty ? 'Edit property' : 'Create property'}
-                        </DialogTitle>
-                        <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                            {editingProperty ? 'Editing' : 'New'}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                            <DialogTitle className="text-[14.5px] font-bold text-slate-900 leading-none">
+                                {editingProperty ? 'Edit property' : 'Create property'}
+                            </DialogTitle>
+                            <p className="text-[11.5px] text-slate-400 mt-0.5 leading-none">
+                                {editingProperty ? `Editing "${editingProperty.title}"` : 'Add a new property to your portfolio'}
+                            </p>
+                        </div>
+                        <Badge variant="secondary" className="shrink-0 text-[10.5px] font-bold tracking-wide rounded-full px-2.5">
+                            {editingProperty ? 'Edit' : 'New'}
+                        </Badge>
                         <DialogDescription className="sr-only">Property form</DialogDescription>
                     </DialogHeader>
 
-                    {/* Tab bar */}
-                    <div className="flex border-b border-slate-100 bg-white overflow-x-auto shrink-0">
-                        {PROP_TABS.map(tab => (
+                    {/* ── Tab bar ── */}
+                    <div className="flex border-b border-slate-100 bg-slate-50/60 overflow-x-auto shrink-0">
+                        {PROP_TABS.map((tab) => (
                             <button
                                 key={tab}
                                 type="button"
                                 onClick={() => setActiveTab(tab)}
-                                className={`flex-1 min-w-fit px-4 py-2.5 text-[12.5px] font-medium whitespace-nowrap border-b-2 transition-all ${activeTab === tab ? 'border-[#243E8B] text-[#243E8B] bg-[#EEF3FF]/40' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+                                className={cn(
+                                    'flex-1 min-w-[70px] px-4 py-3 text-[12.5px] font-semibold whitespace-nowrap border-b-2 transition-all duration-200',
+                                    activeTab === tab
+                                        ? 'border-[#243E8B] text-[#243E8B] bg-white'
+                                        : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-white/60'
+                                )}
                             >
                                 {tab}
                             </button>
                         ))}
                     </div>
 
-                    {/* Panel content */}
+                    {/* ── Panel content ── */}
                     <form
                         onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); form.handleSubmit() }}
                         className="flex flex-col flex-1 min-h-0"
                     >
-                        <div className="flex-1 overflow-y-auto px-5 py-5 min-h-0">
+                        <div className="flex-1 overflow-y-auto min-h-0 px-6 py-5">
 
-                            {/* ── BASICS ── */}
+                            {/* ════════ BASICS ════════ */}
                             {activeTab === 'Basics' && (
                                 <div className="flex flex-col gap-6">
                                     <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                                            <span className="h-px flex-1 bg-slate-100" />Basic Information<span className="h-px flex-1 bg-slate-100" />
-                                        </p>
+                                        <SectionLabel>Basic Information</SectionLabel>
                                         <div className="flex flex-col gap-3">
                                             <form.Field name="name" children={(field) => (
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">Property name <span className="text-red-500">*</span></Label>
-                                                    <Input placeholder="e.g. Seaside Villa Bali" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </div>
+                                                <FormField label="Property name" required>
+                                                    <Input
+                                                        placeholder="e.g. Seaside Villa Bali"
+                                                        className="h-9 rounded-xl border-slate-200 text-[13px] focus:border-[#243E8B]/50 focus:ring-[#243E8B]/10"
+                                                        value={field.state.value}
+                                                        onChange={(e) => field.handleChange(e.target.value)}
+                                                    />
+                                                </FormField>
                                             )} />
+
                                             <div className="grid grid-cols-2 gap-3">
                                                 <form.Field name="propertyType" children={(field) => (
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <Label className="text-[12px] font-medium text-slate-600">Property type <span className="text-red-500">*</span></Label>
+                                                    <FormField label="Property type" required>
                                                         <Select value={field.state.value} onValueChange={field.handleChange}>
-                                                            <SelectTrigger className="h-9 rounded-lg border-slate-200 text-[13px] text-slate-600 bg-white">
+                                                            <SelectTrigger className="h-9 rounded-xl border-slate-200 text-[13px] bg-white">
                                                                 <SelectValue placeholder="Select type" />
                                                             </SelectTrigger>
                                                             <SelectContent>
@@ -292,12 +381,11 @@ function RentalsComponent() {
                                                                 ))}
                                                             </SelectContent>
                                                         </Select>
-                                                    </div>
+                                                    </FormField>
                                                 )} />
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">Status <span className="text-red-500">*</span></Label>
+                                                <FormField label="Status" required>
                                                     <Select defaultValue="active">
-                                                        <SelectTrigger className="h-9 rounded-lg border-slate-200 text-[13px] text-slate-600 bg-white">
+                                                        <SelectTrigger className="h-9 rounded-xl border-slate-200 text-[13px] bg-white">
                                                             <SelectValue />
                                                         </SelectTrigger>
                                                         <SelectContent>
@@ -305,58 +393,56 @@ function RentalsComponent() {
                                                             <SelectItem value="inactive">Inactive</SelectItem>
                                                         </SelectContent>
                                                     </Select>
-                                                </div>
+                                                </FormField>
                                             </div>
+
                                             <form.Field name="description" children={(field) => (
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">Description <span className="text-red-500">*</span></Label>
-                                                    <Textarea placeholder="Describe your property for guests and OTA listings..." className="min-h-[80px] rounded-lg border-slate-200 text-[13px] resize-none" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </div>
+                                                <FormField label="Description" required>
+                                                    <Textarea
+                                                        placeholder="Describe your property for guests and OTA listings..."
+                                                        className="min-h-[90px] rounded-xl border-slate-200 text-[13px] resize-none leading-relaxed"
+                                                        value={field.state.value}
+                                                        onChange={(e) => field.handleChange(e.target.value)}
+                                                    />
+                                                </FormField>
                                             )} />
                                         </div>
                                     </div>
+
                                     <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                                            <span className="h-px flex-1 bg-slate-100" />Contact Information<span className="h-px flex-1 bg-slate-100" />
-                                        </p>
+                                        <SectionLabel>Contact Information</SectionLabel>
                                         <div className="grid grid-cols-3 gap-3">
                                             <form.Field name="email" children={(field) => (
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">Email <span className="text-red-500">*</span></Label>
-                                                    <Input type="email" placeholder="info@property.com" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </div>
+                                                <FormField label="Email" required>
+                                                    <Input type="email" placeholder="info@property.com" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                                </FormField>
                                             )} />
                                             <form.Field name="phone" children={(field) => (
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">Phone <span className="text-red-500">*</span></Label>
-                                                    <Input type="tel" placeholder="+1 234 567 8900" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </div>
+                                                <FormField label="Phone" required>
+                                                    <Input type="tel" placeholder="+1 234 567 8900" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                                </FormField>
                                             )} />
                                             <form.Field name="website" children={(field) => (
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">Website</Label>
-                                                    <Input type="url" placeholder="https://..." className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </div>
+                                                <FormField label="Website">
+                                                    <Input type="url" placeholder="https://..." className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value)} />
+                                                </FormField>
                                             )} />
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* ── LOCATION ── */}
+                            {/* ════════ LOCATION ════════ */}
                             {activeTab === 'Location' && (
                                 <div className="flex flex-col gap-6">
                                     <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                                            <span className="h-px flex-1 bg-slate-100" />Address<span className="h-px flex-1 bg-slate-100" />
-                                        </p>
+                                        <SectionLabel>Address</SectionLabel>
                                         <div className="flex flex-col gap-3">
                                             <div className="grid grid-cols-2 gap-3">
                                                 <form.Field name="country" children={(field) => (
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <Label className="text-[12px] font-medium text-slate-600">Country <span className="text-red-500">*</span></Label>
+                                                    <FormField label="Country" required>
                                                         <Select value={field.state.value} onValueChange={field.handleChange}>
-                                                            <SelectTrigger className="h-9 rounded-lg border-slate-200 text-[13px] text-slate-600 bg-white">
+                                                            <SelectTrigger className="h-9 rounded-xl border-slate-200 text-[13px] bg-white">
                                                                 <SelectValue placeholder="Select country" />
                                                             </SelectTrigger>
                                                             <SelectContent>
@@ -365,138 +451,124 @@ function RentalsComponent() {
                                                                 ))}
                                                             </SelectContent>
                                                         </Select>
-                                                    </div>
+                                                    </FormField>
                                                 )} />
                                                 <form.Field name="state" children={(field) => (
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <Label className="text-[12px] font-medium text-slate-600">State / Province</Label>
-                                                        <Input placeholder="e.g. Bali" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                    </div>
+                                                    <FormField label="State / Province">
+                                                        <Input placeholder="e.g. Bali" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                                    </FormField>
                                                 )} />
                                                 <form.Field name="city" children={(field) => (
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <Label className="text-[12px] font-medium text-slate-600">City <span className="text-red-500">*</span></Label>
-                                                        <Input placeholder="e.g. Seminyak" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                    </div>
+                                                    <FormField label="City" required>
+                                                        <Input placeholder="e.g. Seminyak" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                                    </FormField>
                                                 )} />
                                                 <form.Field name="postalCode" children={(field) => (
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <Label className="text-[12px] font-medium text-slate-600">Postal code</Label>
-                                                        <Input placeholder="80361" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                    </div>
+                                                    <FormField label="Postal code">
+                                                        <Input placeholder="80361" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                                    </FormField>
                                                 )} />
                                             </div>
                                             <form.Field name="address1" children={(field) => (
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">Address line 1 <span className="text-red-500">*</span></Label>
-                                                    <Input placeholder="Street address" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </div>
+                                                <FormField label="Address line 1" required>
+                                                    <Input placeholder="Street address" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                                </FormField>
                                             )} />
                                             <form.Field name="address2" children={(field) => (
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">Address line 2</Label>
-                                                    <Input placeholder="Apartment, suite, unit (optional)" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </div>
+                                                <FormField label="Address line 2">
+                                                    <Input placeholder="Apartment, suite, unit (optional)" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value)} />
+                                                </FormField>
                                             )} />
                                         </div>
                                     </div>
+
                                     <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                                            <span className="h-px flex-1 bg-slate-100" />Coordinates<span className="h-px flex-1 bg-slate-100" />
-                                        </p>
+                                        <SectionLabel>Coordinates</SectionLabel>
                                         <div className="grid grid-cols-2 gap-3">
                                             <form.Field name="latitude" children={(field) => (
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">Latitude</Label>
-                                                    <Input type="number" step="any" placeholder="-8.691195" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} />
-                                                    <p className="text-[11px] text-slate-400">Auto-fill from address recommended</p>
-                                                </div>
+                                                <FormField label="Latitude" hint="Auto-fill from address recommended">
+                                                    <Input type="number" step="any" placeholder="-8.691195" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} />
+                                                </FormField>
                                             )} />
                                             <form.Field name="longitude" children={(field) => (
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">Longitude</Label>
-                                                    <Input type="number" step="any" placeholder="115.167820" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} />
-                                                </div>
+                                                <FormField label="Longitude">
+                                                    <Input type="number" step="any" placeholder="115.167820" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} />
+                                                </FormField>
                                             )} />
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* ── OPERATIONS ── */}
+                            {/* ════════ OPERATIONS ════════ */}
                             {activeTab === 'Operations' && (
                                 <div className="flex flex-col gap-6">
                                     <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                                            <span className="h-px flex-1 bg-slate-100" />Check-in / Check-out<span className="h-px flex-1 bg-slate-100" />
-                                        </p>
+                                        <SectionLabel>Check-in / Check-out</SectionLabel>
                                         <div className="grid grid-cols-2 gap-3">
                                             <form.Field name="checkInTime" children={(field) => (
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">Check-in time <span className="text-red-500">*</span></Label>
-                                                    <Input type="time" defaultValue="14:00" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </div>
+                                                <FormField label="Check-in time" required>
+                                                    <Input type="time" defaultValue="14:00" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                                </FormField>
                                             )} />
                                             <form.Field name="checkOutTime" children={(field) => (
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">Check-out time <span className="text-red-500">*</span></Label>
-                                                    <Input type="time" defaultValue="11:00" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </div>
+                                                <FormField label="Check-out time" required>
+                                                    <Input type="time" defaultValue="11:00" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                                </FormField>
                                             )} />
                                         </div>
                                     </div>
+
                                     <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                                            <span className="h-px flex-1 bg-slate-100" />Timezone<span className="h-px flex-1 bg-slate-100" />
-                                        </p>
-                                        <div className="max-w-xs">
-                                            <form.Field name="timezone" children={(field) => (
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">Property timezone <span className="text-red-500">*</span></Label>
-                                                    <Select value={field.state.value} onValueChange={field.handleChange}>
-                                                        <SelectTrigger className="h-9 rounded-lg border-slate-200 text-[13px] text-slate-600 bg-white">
-                                                            <SelectValue placeholder="Select timezone" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {[
-                                                                { label: 'Asia/Dhaka (UTC+6)', value: 'Asia/Dhaka' },
-                                                                { label: 'Asia/Bali (UTC+8)', value: 'Asia/Makassar' },
-                                                                { label: 'America/New_York (UTC-5)', value: 'America/New_York' },
-                                                                { label: 'Europe/London (UTC+0)', value: 'Europe/London' },
-                                                                { label: 'Europe/Paris (UTC+1)', value: 'Europe/Paris' },
-                                                                { label: 'Asia/Bangkok (UTC+7)', value: 'Asia/Bangkok' },
-                                                            ].map(tz => <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>)}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                            )} />
-                                        </div>
+                                        <SectionLabel>Timezone</SectionLabel>
+                                        <form.Field name="timezone" children={(field) => (
+                                            <FormField label="Property timezone" required className="max-w-xs">
+                                                <Select value={field.state.value} onValueChange={field.handleChange}>
+                                                    <SelectTrigger className="h-9 rounded-xl border-slate-200 text-[13px] bg-white">
+                                                        <SelectValue placeholder="Select timezone" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {[
+                                                            { label: 'Asia/Dhaka (UTC+6)', value: 'Asia/Dhaka' },
+                                                            { label: 'Asia/Bali (UTC+8)', value: 'Asia/Makassar' },
+                                                            { label: 'America/New_York (UTC-5)', value: 'America/New_York' },
+                                                            { label: 'Europe/London (UTC+0)', value: 'Europe/London' },
+                                                            { label: 'Europe/Paris (UTC+1)', value: 'Europe/Paris' },
+                                                            { label: 'Asia/Bangkok (UTC+7)', value: 'Asia/Bangkok' },
+                                                        ].map(tz => <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                            </FormField>
+                                        )} />
                                     </div>
                                 </div>
                             )}
 
-                            {/* ── AMENITIES ── */}
+                            {/* ════════ AMENITIES ════════ */}
                             {activeTab === 'Amenities' && (
                                 <div className="flex flex-col gap-4">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                        <span className="h-px flex-1 bg-slate-100" />Property amenities<span className="h-px flex-1 bg-slate-100" />
-                                    </p>
+                                    <SectionLabel>Property Amenities</SectionLabel>
                                     <form.Field name="amenities" children={(field) => (
                                         <div className="flex flex-wrap gap-2">
-                                            {PROP_AMENITIES.map((amenity) => {
-                                                const isOn = field.state.value.includes(amenity)
+                                            {PROP_AMENITIES.map(({ label, icon: Icon }) => {
+                                                const isOn = field.state.value.includes(label)
                                                 return (
                                                     <button
-                                                        key={amenity}
+                                                        key={label}
                                                         type="button"
                                                         onClick={() => {
                                                             const cur = field.state.value
-                                                            field.handleChange(isOn ? cur.filter(a => a !== amenity) : [...cur, amenity])
+                                                            field.handleChange(isOn ? cur.filter(a => a !== label) : [...cur, label])
                                                         }}
-                                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] transition-all ${isOn ? 'border-[#243E8B] bg-[#EEF3FF] text-[#243E8B] font-semibold' : 'border-slate-200 text-slate-500 hover:border-slate-300 bg-white'}`}
+                                                        className={cn(
+                                                            'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] font-medium transition-all duration-200',
+                                                            isOn
+                                                                ? 'border-[#243E8B] bg-[#243E8B] text-white shadow-sm shadow-[#243E8B]/20'
+                                                                : 'border-slate-200 text-slate-600 bg-white hover:border-slate-300 hover:bg-slate-50'
+                                                        )}
                                                     >
-                                                        {isOn && <CheckCircle2 className="size-3.5" />}
-                                                        {amenity}
+                                                        {Icon && <Icon className="size-3.5" />}
+                                                        {label}
                                                     </button>
                                                 )
                                             })}
@@ -505,14 +577,12 @@ function RentalsComponent() {
                                 </div>
                             )}
 
-                            {/* ── POLICIES ── */}
+                            {/* ════════ POLICIES ════════ */}
                             {activeTab === 'Policies' && (
                                 <div className="flex flex-col gap-6">
                                     <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                                            <span className="h-px flex-1 bg-slate-100" />Guest Policies<span className="h-px flex-1 bg-slate-100" />
-                                        </p>
-                                        <div className="rounded-xl border border-slate-100 overflow-hidden divide-y divide-slate-100">
+                                        <SectionLabel>Guest Policies</SectionLabel>
+                                        <div className="rounded-2xl border border-slate-100 overflow-hidden divide-y divide-slate-100">
                                             {([
                                                 { name: 'policies.smokingAllowed' as const, label: 'Smoking allowed', sub: 'Guests may smoke on premises' },
                                                 { name: 'policies.petsAllowed' as const, label: 'Pets allowed', sub: 'Guests may bring animals' },
@@ -520,10 +590,10 @@ function RentalsComponent() {
                                                 { name: 'policies.partiesAllowed' as const, label: 'Parties / events allowed', sub: 'Guests may host gatherings' },
                                             ] as const).map(policy => (
                                                 <form.Field key={policy.name} name={policy.name} children={(f) => (
-                                                    <div className="flex items-center justify-between px-4 py-3 bg-white hover:bg-slate-50/60 transition-colors">
+                                                    <div className="flex items-center justify-between px-4 py-3.5 bg-white hover:bg-slate-50/70 transition-colors">
                                                         <div>
-                                                            <p className="text-[13px] font-medium text-slate-800">{policy.label}</p>
-                                                            <p className="text-[11px] text-slate-400">{policy.sub}</p>
+                                                            <p className="text-[13px] font-semibold text-slate-800">{policy.label}</p>
+                                                            <p className="text-[11.5px] text-slate-400 mt-0.5">{policy.sub}</p>
                                                         </div>
                                                         <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
                                                     </div>
@@ -531,67 +601,63 @@ function RentalsComponent() {
                                             ))}
                                         </div>
                                     </div>
+
                                     <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                                            <span className="h-px flex-1 bg-slate-100" />Fees & Rules<span className="h-px flex-1 bg-slate-100" />
-                                        </p>
+                                        <SectionLabel>Fees &amp; Rules</SectionLabel>
                                         <div className="flex flex-col gap-3">
                                             <div className="grid grid-cols-2 gap-3">
                                                 <form.Field name="minGuestAge" children={(field) => (
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <Label className="text-[12px] font-medium text-slate-600">Minimum guest age</Label>
-                                                        <Input type="number" placeholder="18" min="0" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value ?? ''} onChange={(e) => field.handleChange(e.target.value ? parseInt(e.target.value) : undefined)} />
-                                                    </div>
+                                                    <FormField label="Minimum guest age">
+                                                        <Input type="number" placeholder="18" min="0" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value ?? ''} onChange={(e) => field.handleChange(e.target.value ? parseInt(e.target.value) : undefined)} />
+                                                    </FormField>
                                                 )} />
                                                 <form.Field name="securityDeposit" children={(field) => (
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <Label className="text-[12px] font-medium text-slate-600">Security deposit</Label>
-                                                        <Input type="number" placeholder="0.00" min="0" step="0.01" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value ?? ''} onChange={(e) => field.handleChange(e.target.value ? parseFloat(e.target.value) : undefined)} />
-                                                    </div>
+                                                    <FormField label="Security deposit">
+                                                        <Input type="number" placeholder="0.00" min="0" step="0.01" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value ?? ''} onChange={(e) => field.handleChange(e.target.value ? parseFloat(e.target.value) : undefined)} />
+                                                    </FormField>
                                                 )} />
                                             </div>
                                             <form.Field name="houseRules" children={(field) => (
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">House rules</Label>
-                                                    <Textarea placeholder="e.g. No loud music after 10pm..." className="min-h-[80px] rounded-lg border-slate-200 text-[13px] resize-none" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </div>
+                                                <FormField label="House rules">
+                                                    <Textarea placeholder="e.g. No loud music after 10pm..." className="min-h-[90px] rounded-xl border-slate-200 text-[13px] resize-none leading-relaxed" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value)} />
+                                                </FormField>
                                             )} />
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* ── MEDIA ── */}
+                            {/* ════════ MEDIA ════════ */}
                             {activeTab === 'Media' && (
                                 <div className="flex flex-col gap-6">
                                     <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                                            <span className="h-px flex-1 bg-slate-100" />Property Photos<span className="h-px flex-1 bg-slate-100" />
-                                        </p>
-                                        <div className="border border-dashed border-slate-300 rounded-xl p-8 flex flex-col items-center gap-2 cursor-pointer hover:border-[#243E8B]/50 hover:bg-[#EEF3FF]/20 transition-all">
-                                            <div className="h-11 w-11 rounded-xl bg-slate-100 flex items-center justify-center">
-                                                <Plus className="size-5 text-slate-400" />
+                                        <SectionLabel>Property Photos</SectionLabel>
+                                        <div
+                                            className="border-2 border-dashed border-slate-200 rounded-2xl p-10 flex flex-col items-center gap-3 cursor-pointer hover:border-[#243E8B]/40 hover:bg-[#EEF3FF]/20 transition-all duration-300 group"
+                                            onClick={() => {/* file pick */}}
+                                        >
+                                            <div className="size-12 rounded-2xl bg-slate-100 group-hover:bg-[#EEF3FF] flex items-center justify-center transition-colors duration-300">
+                                                <Plus className="size-5 text-slate-400 group-hover:text-[#243E8B] transition-colors duration-300" />
                                             </div>
-                                            <p className="text-[13px] font-medium text-slate-600">Click to upload or drag &amp; drop</p>
-                                            <p className="text-[11px] text-slate-400">JPG, PNG, WEBP · max 10MB each</p>
+                                            <div className="text-center">
+                                                <p className="text-[13px] font-semibold text-slate-700">Click to upload or drag &amp; drop</p>
+                                                <p className="text-[11.5px] text-slate-400 mt-0.5">JPG, PNG, WEBP · max 10MB each</p>
+                                            </div>
                                         </div>
                                     </div>
+
                                     <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                                            <span className="h-px flex-1 bg-slate-100" />Media URLs<span className="h-px flex-1 bg-slate-100" />
-                                        </p>
+                                        <SectionLabel>Media URLs</SectionLabel>
                                         <div className="grid grid-cols-2 gap-3">
                                             <form.Field name="logoUrl" children={(field) => (
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">Logo URL</Label>
-                                                    <Input type="url" placeholder="https://..." className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </div>
+                                                <FormField label="Logo URL">
+                                                    <Input type="url" placeholder="https://..." className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value)} />
+                                                </FormField>
                                             )} />
                                             <form.Field name="videoUrl" children={(field) => (
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">Video / virtual tour URL</Label>
-                                                    <Input type="url" placeholder="https://youtube.com/..." className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </div>
+                                                <FormField label="Video / virtual tour URL">
+                                                    <Input type="url" placeholder="https://youtube.com/..." className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value)} />
+                                                </FormField>
                                             )} />
                                         </div>
                                     </div>
@@ -599,96 +665,142 @@ function RentalsComponent() {
                             )}
                         </div>
 
-                        {/* Footer */}
-                        <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-slate-100 bg-slate-50/50 shrink-0">
-                            <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditingProperty(null) }} className="h-9 px-5 rounded-lg font-medium text-[13px]">
-                                Cancel
-                            </Button>
-                            <form.Subscribe
-                                selector={(state) => [state.canSubmit, state.isSubmitting]}
-                                children={([canSubmit, isSubmitting]) => (
-                                    <Button type="submit" disabled={!canSubmit} className="h-9 px-5 rounded-lg font-semibold bg-[#243E8B] hover:bg-[#1D3270] text-white text-[13px]">
-                                        {isSubmitting ? 'Saving...' : 'Save property'}
-                                    </Button>
-                                )}
-                            />
+                        {/* ── Dialog footer ── matches card button style exactly ── */}
+                        <Separator />
+                        <div className="flex items-center justify-between px-6 py-4 shrink-0">
+                            {/* Tab navigation hints */}
+                            <div className="flex items-center gap-1">
+                                {PROP_TABS.map((tab) => (
+                                    <button
+                                        key={tab}
+                                        type="button"
+                                        onClick={() => setActiveTab(tab)}
+                                        className={cn(
+                                            'size-1.5 rounded-full transition-all duration-200',
+                                            activeTab === tab ? 'bg-[#243E8B] w-4' : 'bg-slate-200 hover:bg-slate-300'
+                                        )}
+                                    />
+                                ))}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => { setIsAddOpen(false); setEditingProperty(null) }}
+                                    className="h-9 px-5 rounded-xl font-semibold text-[13px] border-slate-200"
+                                >
+                                    Cancel
+                                </Button>
+                                <form.Subscribe
+                                    selector={(state) => [state.canSubmit, state.isSubmitting]}
+                                    children={([canSubmit, isSubmitting]) => (
+                                        <Button
+                                            type="submit"
+                                            disabled={!canSubmit}
+                                            className="h-9 px-5 rounded-xl font-semibold bg-[#243E8B] hover:bg-[#1D3270] text-white text-[13px] shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300"
+                                        >
+                                            {isSubmitting ? 'Saving...' : 'Save property'}
+                                        </Button>
+                                    )}
+                                />
+                            </div>
                         </div>
                     </form>
                 </DialogContent>
             </Dialog>
 
-            {/* ── VIEW PROPERTY DIALOG ── */}
+            {/* ══════════════════════════════════════════════════
+                VIEW PROPERTY DETAIL DIALOG
+            ══════════════════════════════════════════════════ */}
             <Dialog open={!!selectedProperty} onOpenChange={(open) => !open && setSelectedProperty(null)}>
-                <DialogContent className="w-[95%] sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-white p-6 rounded-3xl gap-0">
-                    <DialogHeader className="mb-4 text-left">
-                        <DialogTitle className="text-2xl font-bold">Property Details</DialogTitle>
-                        <DialogDescription className="sr-only">Details for {selectedProperty?.title}</DialogDescription>
-                    </DialogHeader>
+                <DialogContent className="w-[95%] sm:max-w-xl max-h-[88vh] overflow-y-auto bg-white p-0 rounded-2xl gap-0 shadow-2xl shadow-slate-900/15">
                     {selectedProperty && (
-                        <div className="flex flex-col gap-6">
-                            <div className="relative h-56 w-full">
-                                <img src={selectedProperty.imageUrl} alt={selectedProperty.title} className="w-full h-full object-cover rounded-2xl" />
-                                <div className="absolute top-4 right-4 flex gap-2">
-                                    <span className="bg-white/95 backdrop-blur-md text-[#243E8B] px-3 py-1.5 rounded text-[11px] font-bold shadow-sm">{selectedProperty.status}</span>
-                                    <span className="bg-white/95 backdrop-blur-md text-[#243E8B] px-3 py-1.5 rounded text-[11px] font-bold shadow-sm">{selectedProperty.period} {selectedProperty.price}</span>
+                        <>
+                            {/* Hero image */}
+                            <div className="relative h-52 w-full overflow-hidden rounded-t-2xl">
+                                <img src={selectedProperty.imageUrl} alt={selectedProperty.title} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+                                    <div>
+                                        <p className="text-[10.5px] font-bold text-white/70 uppercase tracking-widest mb-0.5">{selectedProperty.period}</p>
+                                        <p className="text-2xl font-black text-white leading-none">{selectedProperty.price}</p>
+                                    </div>
+                                    <StatusBadge status={selectedProperty.status} />
                                 </div>
                             </div>
-                            <div className="flex flex-col gap-5">
+
+                            <div className="p-5 flex flex-col gap-5">
+                                {/* Title & meta */}
                                 <div>
-                                    <h2 className="text-[20px] font-bold text-slate-900">{selectedProperty.title}</h2>
+                                    <DialogTitle className="text-[18px] font-bold text-slate-900">{selectedProperty.title}</DialogTitle>
+                                    <DialogDescription className="sr-only">Details for {selectedProperty.title}</DialogDescription>
                                     <div className="flex flex-col gap-1.5 mt-2">
-                                        <div className="flex items-center gap-2 text-slate-500">
-                                            <MapPin className="size-3.5 text-slate-400" />
-                                            <span className="text-[13px]">{selectedProperty.location}</span>
+                                        <div className="flex items-center gap-1.5 text-slate-500">
+                                            <MapPin className="size-3.5 text-slate-400 shrink-0" />
+                                            <span className="text-[12.5px] font-medium">{selectedProperty.location}</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-slate-500">
-                                            <Building className="size-3.5 text-slate-400" />
-                                            <span className="text-[13px] font-semibold text-slate-600">{selectedProperty.details}</span>
+                                        <div className="flex items-center gap-1.5 text-slate-500">
+                                            <Building className="size-3.5 text-slate-400 shrink-0" />
+                                            <span className="text-[12.5px] font-semibold text-slate-600">{selectedProperty.details}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {['Free WiFi', 'Air Conditioning', 'Pool', 'Parking'].map(a => (
-                                        <div key={a} className="flex items-center gap-2">
-                                            <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
-                                            <span className="text-[13px] text-slate-600 font-medium">{a}</span>
-                                        </div>
-                                    ))}
+
+                                <Separator />
+
+                                {/* Amenities sample */}
+                                <div>
+                                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3">Amenities</p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {['Free WiFi', 'Air Conditioning', 'Pool', 'Parking'].map(a => (
+                                            <div key={a} className="flex items-center gap-2">
+                                                <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
+                                                <span className="text-[12.5px] text-slate-600 font-medium">{a}</span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
+
+                                {/* Check-in / Check-out */}
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div className="border rounded-2xl p-4 flex gap-3 items-center">
-                                        <div className="bg-blue-50/80 p-2.5 rounded-xl text-blue-600 shrink-0 border border-blue-100">
+                                    <div className="border border-slate-100 rounded-2xl p-4 flex gap-3 items-center bg-slate-50/50">
+                                        <div className="bg-[#EEF3FF] p-2.5 rounded-xl text-[#243E8B] shrink-0">
                                             <ArrowRight className="size-4" />
                                         </div>
                                         <div>
-                                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wide block">Check-in</span>
+                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide block">Check-in</span>
                                             <span className="text-[13px] font-bold text-slate-800">After 3:00 PM</span>
                                         </div>
                                     </div>
-                                    <div className="border rounded-2xl p-4 flex gap-3 items-center">
-                                        <div className="bg-red-50/80 p-2.5 rounded-xl text-red-500 shrink-0 border border-red-100">
+                                    <div className="border border-slate-100 rounded-2xl p-4 flex gap-3 items-center bg-slate-50/50">
+                                        <div className="bg-red-50 p-2.5 rounded-xl text-red-500 shrink-0">
                                             <XCircle className="size-4" />
                                         </div>
                                         <div>
-                                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wide block">Check-out</span>
+                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide block">Check-out</span>
                                             <span className="text-[13px] font-bold text-slate-800">Before 11:00 AM</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+
+                                <Separator />
+
+                                {/* Actions — same style as card buttons */}
+                                <div className="grid grid-cols-2 gap-3">
                                     <Button
                                         variant="outline"
                                         onClick={() => { openEdit(selectedProperty); setSelectedProperty(null) }}
-                                        className="rounded-xl h-11 font-bold border-slate-200 text-slate-700"
+                                        className="rounded-xl h-10 font-semibold text-[13px] border-slate-200 hover:bg-slate-50 hover:text-[#243E8B] hover:border-[#243E8B]/30 gap-1.5 transition-all duration-300"
                                     >
+                                        <Edit className="size-3.5" />
                                         Edit Property
                                     </Button>
-                                    <Button className="rounded-xl h-11 font-bold bg-[#DCE6F5] text-[#243E8B] hover:bg-[#DCE6F5]/80">
+                                    <Button className="rounded-xl h-10 font-semibold text-[13px] bg-[#243E8B] hover:bg-[#1D3270] text-white shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300">
                                         Manage Availability
                                     </Button>
                                 </div>
                             </div>
-                        </div>
+                        </>
                     )}
                 </DialogContent>
             </Dialog>

@@ -111,7 +111,7 @@
     --chart-4: oklch(0.78 0.1 140); /* green  - Others */
     --chart-5: oklch(0.78 0.08 350); /* light pink - Valentine */
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
     --sidebar: rgb(255, 255, 255);
     --sidebar-foreground: rgb(17, 17, 17);
     --sidebar-primary: rgb(30, 58, 138);
