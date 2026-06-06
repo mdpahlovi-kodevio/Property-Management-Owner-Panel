@@ -115,9 +115,6 @@ function RouteComponent() {
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <PageHeader title="Guest Reviews" description="Monitor and respond to guest feedback across all channels." className="mb-0" />
-        <Button>
-          Generate Insights Report
-        </Button>
       </div>
 
       {/* Filters and Search */}
