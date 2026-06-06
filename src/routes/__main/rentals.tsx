@@ -12,6 +12,43 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { DataTableFooter } from '@/components/ui/data-table'
+import { Switch } from '@/components/ui/switch'
+
+export type CreatePropertyForm = {
+    name: string;
+    propertyType: string;
+    description: string;
+
+    email: string;
+    phone: string;
+
+    country: string;
+    state: string;
+    city: string;
+    postalCode: string;
+
+    address1: string;
+    address2?: string;
+
+    latitude: number;
+    longitude: number;
+
+    timezone: string;
+
+    checkInTime: string;
+    checkOutTime: string;
+
+    amenities: string[];
+
+    policies: {
+        smokingAllowed: boolean;
+        petsAllowed: boolean;
+        childrenAllowed: boolean;
+        partiesAllowed: boolean;
+    };
+
+    images: File[];
+};
 
 export const Route = createFileRoute('/__main/rentals')({
     component: RentalsComponent,
@@ -150,19 +187,31 @@ function RentalsComponent() {
 
     const form = useForm({
         defaultValues: {
-            propertyName: '',
-            location: '',
-            totalRooms: '',
-            totalBathroom: '',
-            parkingAvailable: '',
-            propertySize: '',
-            price: '',
-            amenities: [] as string[],
-            checkInPolicy: '',
-            checkOutPolicy: '',
-            cancellationPolicy: '',
+            name: '',
+            propertyType: '',
             description: '',
-        },
+            email: '',
+            phone: '',
+            country: '',
+            state: '',
+            city: '',
+            postalCode: '',
+            address1: '',
+            address2: '',
+            latitude: 0,
+            longitude: 0,
+            timezone: '',
+            checkInTime: '',
+            checkOutTime: '',
+            amenities: [] as string[],
+            policies: {
+                smokingAllowed: false,
+                petsAllowed: false,
+                childrenAllowed: false,
+                partiesAllowed: false,
+            },
+            images: [] as File[],
+        } as CreatePropertyForm,
         onSubmit: async ({ value }) => {
             console.log('Submitted values:', value)
             toast.success('Property saved successfully!')
@@ -276,9 +325,7 @@ function RentalsComponent() {
                                                         e.stopPropagation()
                                                         setEditingProperty(property)
                                                         form.reset()
-                                                        form.setFieldValue('propertyName', property.title)
-                                                        form.setFieldValue('location', property.location)
-                                                        form.setFieldValue('price', property.price.replace('$', ''))
+                                                        form.setFieldValue('name', property.title)
                                                         setIsAddOpen(true)
                                                     }}
                                                     variant="outline"
@@ -336,126 +383,209 @@ function RentalsComponent() {
                             e.stopPropagation()
                             form.handleSubmit()
                         }}
-                        className="flex flex-col gap-5"
+                        className="flex flex-col gap-6"
                     >
-                        <form.Field
-                            name="propertyName"
-                            children={(field) => (
-                                <div className="space-y-1.5">
-                                    <Label className="font-semibold text-slate-800">Property Name</Label>
-                                    <Input
-                                        placeholder="Enter name"
-                                        className="rounded-lg border-slate-200"
-                                        value={field.state.value}
-                                        onChange={(e) => field.handleChange(e.target.value)}
-                                    />
-                                </div>
-                            )}
-                        />
-
-                        <form.Field
-                            name="location"
-                            children={(field) => (
-                                <div className="space-y-1.5">
-                                    <Label className="font-semibold text-slate-800">Location</Label>
-                                    <Input
-                                        placeholder="Enter location"
-                                        className="rounded-lg border-slate-200"
-                                        value={field.state.value}
-                                        onChange={(e) => field.handleChange(e.target.value)}
-                                    />
-                                </div>
-                            )}
-                        />
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <form.Field
-                                name="totalRooms"
-                                children={(field) => (
+                        {/* Basic Info */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-bold text-slate-900 border-b pb-2">Basic Information</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <form.Field name="name" children={(field) => (
                                     <div className="space-y-1.5">
-                                        <Label className="font-semibold text-slate-800">Total Rooms</Label>
-                                        <Input
-                                            placeholder="Enter rooms"
-                                            className="rounded-lg border-slate-200"
-                                            value={field.state.value}
-                                            onChange={(e) => field.handleChange(e.target.value)}
-                                        />
+                                        <Label className="font-semibold text-slate-800">Property Name</Label>
+                                        <Input placeholder="Enter name" className="rounded-lg border-slate-200" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
                                     </div>
-                                )}
-                            />
-                            <form.Field
-                                name="totalBathroom"
-                                children={(field) => (
+                                )} />
+                                <form.Field name="propertyType" children={(field) => (
                                     <div className="space-y-1.5">
-                                        <Label className="font-semibold text-slate-800">Total Bathroom</Label>
-                                        <Input
-                                            placeholder="Enter bathroom"
-                                            className="rounded-lg border-slate-200"
-                                            value={field.state.value}
-                                            onChange={(e) => field.handleChange(e.target.value)}
-                                        />
-                                    </div>
-                                )}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <form.Field
-                                name="parkingAvailable"
-                                children={(field) => (
-                                    <div className="space-y-1.5">
-                                        <Label className="font-semibold text-slate-800">Parking Available</Label>
+                                        <Label className="font-semibold text-slate-800">Property Type</Label>
                                         <Select value={field.state.value} onValueChange={field.handleChange}>
                                             <SelectTrigger className="rounded-lg border-slate-200 text-slate-500">
-                                                <SelectValue placeholder="Select one" />
+                                                <SelectValue placeholder="Select type" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="yes">Yes</SelectItem>
-                                                <SelectItem value="no">No</SelectItem>
+                                                <SelectItem value="apartment">Apartment</SelectItem>
+                                                <SelectItem value="house">House</SelectItem>
+                                                <SelectItem value="villa">Villa</SelectItem>
+                                                <SelectItem value="cabin">Cabin</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                )}
-                            />
-                            <form.Field
-                                name="propertySize"
-                                children={(field) => (
-                                    <div className="space-y-1.5">
-                                        <Label className="font-semibold text-slate-800">Property Size</Label>
-                                        <Input
-                                            placeholder="Enter property size"
-                                            className="rounded-lg border-slate-200"
-                                            value={field.state.value}
-                                            onChange={(e) => field.handleChange(e.target.value)}
-                                        />
-                                    </div>
-                                )}
-                            />
+                                )} />
+                            </div>
+                            <form.Field name="description" children={(field) => (
+                                <div className="space-y-1.5">
+                                    <Label className="font-semibold text-slate-800">Description</Label>
+                                    <Textarea placeholder="Describe the property" className="rounded-lg border-slate-200 min-h-24" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                </div>
+                            )} />
                         </div>
 
-                        <form.Field
-                            name="price"
-                            children={(field) => (
-                                <div className="space-y-1.5">
-                                    <Label className="font-semibold text-slate-800">Price</Label>
-                                    <Input
-                                        placeholder="Enter price"
-                                        className="rounded-lg border-slate-200"
-                                        value={field.state.value}
-                                        onChange={(e) => field.handleChange(e.target.value)}
-                                    />
-                                </div>
-                            )}
-                        />
+                        {/* Contact Info */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-bold text-slate-900 border-b pb-2">Contact Information</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <form.Field name="email" children={(field) => (
+                                    <div className="space-y-1.5">
+                                        <Label className="font-semibold text-slate-800">Email</Label>
+                                        <Input type="email" placeholder="Contact email" className="rounded-lg border-slate-200" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                    </div>
+                                )} />
+                                <form.Field name="phone" children={(field) => (
+                                    <div className="space-y-1.5">
+                                        <Label className="font-semibold text-slate-800">Phone</Label>
+                                        <Input placeholder="Contact phone number" className="rounded-lg border-slate-200" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                    </div>
+                                )} />
+                            </div>
+                        </div>
 
-                        <div className="space-y-2 mt-2">
-                            <Label className="font-semibold text-slate-800">Add Property Images</Label>
+                        {/* Location */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-bold text-slate-900 border-b pb-2">Location Details</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <form.Field name="country" children={(field) => (
+                                    <div className="space-y-1.5">
+                                        <Label className="font-semibold text-slate-800">Country</Label>
+                                        <Input placeholder="Country" className="rounded-lg border-slate-200" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                    </div>
+                                )} />
+                                <form.Field name="state" children={(field) => (
+                                    <div className="space-y-1.5">
+                                        <Label className="font-semibold text-slate-800">State/Province</Label>
+                                        <Input placeholder="State" className="rounded-lg border-slate-200" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                    </div>
+                                )} />
+                                <form.Field name="city" children={(field) => (
+                                    <div className="space-y-1.5">
+                                        <Label className="font-semibold text-slate-800">City</Label>
+                                        <Input placeholder="City" className="rounded-lg border-slate-200" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                    </div>
+                                )} />
+                                <form.Field name="postalCode" children={(field) => (
+                                    <div className="space-y-1.5">
+                                        <Label className="font-semibold text-slate-800">Postal Code</Label>
+                                        <Input placeholder="Postal code" className="rounded-lg border-slate-200" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                    </div>
+                                )} />
+                            </div>
+                            <form.Field name="address1" children={(field) => (
+                                <div className="space-y-1.5">
+                                    <Label className="font-semibold text-slate-800">Address Line 1</Label>
+                                    <Input placeholder="Street address" className="rounded-lg border-slate-200" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                </div>
+                            )} />
+                            <form.Field name="address2" children={(field) => (
+                                <div className="space-y-1.5">
+                                    <Label className="font-semibold text-slate-800">Address Line 2 (Optional)</Label>
+                                    <Input placeholder="Apt, suite, etc." className="rounded-lg border-slate-200" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value)} />
+                                </div>
+                            )} />
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <form.Field name="latitude" children={(field) => (
+                                    <div className="space-y-1.5">
+                                        <Label className="font-semibold text-slate-800">Latitude</Label>
+                                        <Input type="number" step="any" placeholder="0.0000" className="rounded-lg border-slate-200" value={field.state.value} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} />
+                                    </div>
+                                )} />
+                                <form.Field name="longitude" children={(field) => (
+                                    <div className="space-y-1.5">
+                                        <Label className="font-semibold text-slate-800">Longitude</Label>
+                                        <Input type="number" step="any" placeholder="0.0000" className="rounded-lg border-slate-200" value={field.state.value} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} />
+                                    </div>
+                                )} />
+                                <form.Field name="timezone" children={(field) => (
+                                    <div className="space-y-1.5">
+                                        <Label className="font-semibold text-slate-800">Timezone</Label>
+                                        <Input placeholder="e.g. America/New_York" className="rounded-lg border-slate-200" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                    </div>
+                                )} />
+                            </div>
+                        </div>
+
+                        {/* Scheduling & Policies */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-bold text-slate-900 border-b pb-2">Scheduling & Policies</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <form.Field name="checkInTime" children={(field) => (
+                                    <div className="space-y-1.5">
+                                        <Label className="font-semibold text-slate-800">Check-in Time</Label>
+                                        <Input type="time" className="rounded-lg border-slate-200" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                    </div>
+                                )} />
+                                <form.Field name="checkOutTime" children={(field) => (
+                                    <div className="space-y-1.5">
+                                        <Label className="font-semibold text-slate-800">Check-out Time</Label>
+                                        <Input type="time" className="rounded-lg border-slate-200" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                    </div>
+                                )} />
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+                                <form.Field name="policies.smokingAllowed" children={(field) => (
+                                    <div className="flex items-center gap-2">
+                                        <Switch checked={field.state.value} onCheckedChange={field.handleChange} />
+                                        <Label className="font-medium text-slate-700 cursor-pointer">Smoking Allowed</Label>
+                                    </div>
+                                )} />
+                                <form.Field name="policies.petsAllowed" children={(field) => (
+                                    <div className="flex items-center gap-2">
+                                        <Switch checked={field.state.value} onCheckedChange={field.handleChange} />
+                                        <Label className="font-medium text-slate-700 cursor-pointer">Pets Allowed</Label>
+                                    </div>
+                                )} />
+                                <form.Field name="policies.childrenAllowed" children={(field) => (
+                                    <div className="flex items-center gap-2">
+                                        <Switch checked={field.state.value} onCheckedChange={field.handleChange} />
+                                        <Label className="font-medium text-slate-700 cursor-pointer">Children Allowed</Label>
+                                    </div>
+                                )} />
+                                <form.Field name="policies.partiesAllowed" children={(field) => (
+                                    <div className="flex items-center gap-2">
+                                        <Switch checked={field.state.value} onCheckedChange={field.handleChange} />
+                                        <Label className="font-medium text-slate-700 cursor-pointer">Parties Allowed</Label>
+                                    </div>
+                                )} />
+                            </div>
+                        </div>
+
+                        {/* Amenities */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-bold text-slate-900 border-b pb-2">Amenities</h3>
+                            <form.Field name="amenities" children={(field) => (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                                    {['Free WiFi', 'Air Conditioning', 'Pool', 'Ocean View', 'Gym', 'Parking', 'Kitchen', 'TV'].map((amenity) => {
+                                        const isSelected = field.state.value.includes(amenity)
+                                        return (
+                                            <div
+                                                key={amenity}
+                                                onClick={() => toggleAmenity(amenity)}
+                                                className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${isSelected ? 'border-[#243E8B] bg-[#E5F0FF]/50' : 'border-slate-200 hover:border-slate-300'}`}
+                                            >
+                                                {isSelected ? (
+                                                    <CheckCircle2 className="size-4 text-[#243E8B]" />
+                                                ) : (
+                                                    <Circle className="size-4 text-slate-300" />
+                                                )}
+                                                <span className="text-sm text-slate-600 truncate">{amenity}</span>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )} />
+                        </div>
+
+                        {/* Images */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-bold text-slate-900 border-b pb-2">Images</h3>
                             <div className="flex gap-3 overflow-x-auto pb-2">
-                                <div className="h-28 w-32 shrink-0 rounded-xl overflow-hidden border">
+                                <div className="h-28 w-32 shrink-0 rounded-xl overflow-hidden border relative group">
                                     <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=300" alt="uploaded" className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <XCircle className="size-6 text-white cursor-pointer" />
+                                    </div>
                                 </div>
                                 {[1, 2].map((i) => (
-                                    <div key={i} className="h-28 w-32 shrink-0 rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-500 gap-1 hover:bg-slate-50 cursor-pointer">
+                                    <div key={i} className="h-28 w-32 shrink-0 rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-500 gap-1 hover:bg-slate-50 cursor-pointer transition-colors">
                                         <Plus className="size-5" />
                                         <span className="text-[11px] font-bold">upload image</span>
                                     </div>
@@ -463,99 +593,8 @@ function RentalsComponent() {
                             </div>
                         </div>
 
-                        <form.Field
-                            name="amenities"
-                            children={(field) => (
-                                <div className="space-y-2 mt-2">
-                                    <Label className="font-semibold text-slate-800">Add Property Amenities</Label>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {['Free WiFi', 'Air Conditioning', 'Pool', 'Ocean View', 'Gym', 'Parking'].map((amenity) => {
-                                            const isSelected = field.state.value.includes(amenity)
-                                            return (
-                                                <div
-                                                    key={amenity}
-                                                    onClick={() => toggleAmenity(amenity)}
-                                                    className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors ${isSelected ? 'border-[#243E8B] bg-[#E5F0FF]/50' : 'border-slate-200 hover:border-slate-300'}`}
-                                                >
-                                                    {isSelected ? (
-                                                        <CheckCircle2 className="size-4 text-[#243E8B]" />
-                                                    ) : (
-                                                        <Circle className="size-4 text-slate-300" />
-                                                    )}
-                                                    <span className="text-sm text-slate-600">{amenity}</span>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-                        />
-
-                        <form.Field
-                            name="checkInPolicy"
-                            children={(field) => (
-                                <div className="space-y-1.5 mt-2">
-                                    <Label className="font-semibold text-slate-800">Check in policies</Label>
-                                    <Input
-                                        placeholder="After 2 pm"
-                                        className="rounded-lg border-slate-200"
-                                        value={field.state.value}
-                                        onChange={(e) => field.handleChange(e.target.value)}
-                                    />
-                                </div>
-                            )}
-                        />
-
-                        <form.Field
-                            name="checkOutPolicy"
-                            children={(field) => (
-                                <div className="space-y-1.5">
-                                    <Label className="font-semibold text-slate-800">Check out policies</Label>
-                                    <Input
-                                        placeholder="Before 11 am"
-                                        className="rounded-lg border-slate-200"
-                                        value={field.state.value}
-                                        onChange={(e) => field.handleChange(e.target.value)}
-                                    />
-                                </div>
-                            )}
-                        />
-
-                        <form.Field
-                            name="cancellationPolicy"
-                            children={(field) => (
-                                <div className="space-y-1.5 mt-2">
-                                    <Label className="font-semibold text-slate-800">Cancellation Policy</Label>
-                                    <Select value={field.state.value} onValueChange={field.handleChange}>
-                                        <SelectTrigger className="rounded-lg border-slate-200 text-slate-500">
-                                            <SelectValue placeholder="Flexible(Full refund up to 24h before)" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="flexible">Flexible(Full refund up to 24h before)</SelectItem>
-                                            <SelectItem value="moderate">Moderate</SelectItem>
-                                            <SelectItem value="strict">Strict</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            )}
-                        />
-
-                        <form.Field
-                            name="description"
-                            children={(field) => (
-                                <div className="space-y-1.5 mt-2">
-                                    <Label className="font-semibold text-slate-800">Description</Label>
-                                    <Textarea
-                                        placeholder="Typing"
-                                        className="rounded-lg border-slate-200 min-h-30"
-                                        value={field.state.value}
-                                        onChange={(e) => field.handleChange(e.target.value)}
-                                    />
-                                </div>
-                            )}
-                        />
-
-                        <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t">
+                        {/* Actions */}
+                        <div className="grid grid-cols-2 gap-4 mt-4 pt-6 border-t">
                             <Button type="button" variant="outline" onClick={() => {
                                 setIsAddOpen(false)
                                 setEditingProperty(null)
@@ -687,9 +726,7 @@ function RentalsComponent() {
                                             // if (selectedProperty ) {
                                             setEditingProperty(selectedProperty)
                                             form.reset()
-                                            form.setFieldValue('propertyName', selectedProperty.title)
-                                            form.setFieldValue('location', selectedProperty.location)
-                                            form.setFieldValue('price', selectedProperty.price.replace('$', ''))
+                                            form.setFieldValue('name', selectedProperty.title)
                                             setIsAddOpen(true)
                                             setSelectedProperty(null)
                                             // }
