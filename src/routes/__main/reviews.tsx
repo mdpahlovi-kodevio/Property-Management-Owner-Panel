@@ -2,6 +2,15 @@ import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { createFileRoute } from '@tanstack/react-router'
 import { CheckCircle2, Clock, Filter, MessageSquare, Star, Trash2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -87,6 +96,8 @@ const MOCK_REVIEWS: Review[] = [
 
 function RouteComponent() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [filterStatus, setFilterStatus] = useState<string>('All')
+  const [filterPlatform, setFilterPlatform] = useState<string>('All')
   const [reviews, setReviews] = useState<Review[]>(MOCK_REVIEWS)
 
   const handleReply = (id: string, text: string) => {
@@ -107,9 +118,11 @@ function RouteComponent() {
         review.guestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         review.property.toLowerCase().includes(searchQuery.toLowerCase()) ||
         review.text.toLowerCase().includes(searchQuery.toLowerCase())
-      return matchesSearch
+      const matchesStatus = filterStatus === 'All' || review.status === filterStatus
+      const matchesPlatform = filterPlatform === 'All' || review.platform === filterPlatform
+      return matchesSearch && matchesStatus && matchesPlatform
     })
-  }, [searchQuery, reviews])
+  }, [searchQuery, reviews, filterStatus, filterPlatform])
 
   return (
     <>
@@ -126,10 +139,36 @@ function RouteComponent() {
             placeholder="Search reviews..."
             className="w-full sm:w-64"
           />
-          <Button variant="outline" className="h-10 px-4">
-            <Filter className="w-4 h-4 mr-2" />
-            Filter
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-10 px-4">
+                <Filter className="w-4 h-4 mr-2" />
+                Filter
+                {(filterStatus !== 'All' || filterPlatform !== 'All') && (
+                  <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                    {(filterStatus !== 'All' ? 1 : 0) + (filterPlatform !== 'All' ? 1 : 0)}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={filterStatus} onValueChange={setFilterStatus}>
+                <DropdownMenuRadioItem value="All">All Statuses</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="Pending">Pending</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="Replied">Replied</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Filter by Platform</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={filterPlatform} onValueChange={setFilterPlatform}>
+                <DropdownMenuRadioItem value="All">All Platforms</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="Airbnb">Airbnb</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="Booking.com">Booking.com</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="Direct">Direct</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="Expedia">Expedia</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
