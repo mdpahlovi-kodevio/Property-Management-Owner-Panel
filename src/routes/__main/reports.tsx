@@ -87,7 +87,14 @@ const ARRIVALS_DATA: ArrivalsData[] = [
 ]
 
 function RouteComponent() {
-    const [activeTab, setActiveTab] = useState<'occupancy' | 'revenue' | 'arrivals'>('arrivals')
+    const [activeTab, setActiveTab] = useState<'occupancy' | 'revenue' | 'arrivals'>(() => {
+        return (sessionStorage.getItem('reportsTab') as any) || 'arrivals'
+    })
+
+    const handleTabChange = (tab: 'occupancy' | 'revenue' | 'arrivals') => {
+        setActiveTab(tab)
+        sessionStorage.setItem('reportsTab', tab)
+    }
 
     const occupancyColumns = useMemo<DataTableColumn<OccupancyData>[]>(
         () => [
@@ -153,21 +160,21 @@ function RouteComponent() {
                     <Button
                         variant={activeTab === 'occupancy' ? 'default' : 'outline'}
                         className={`rounded-md px-6 transition-colors ${activeTab === 'occupancy' ? 'bg-[#24357B] hover:bg-[#24357B]/90 text-white' : ''}`}
-                        onClick={() => setActiveTab('occupancy')}
+                        onClick={() => handleTabChange('occupancy')}
                     >
                         Occupancy
                     </Button>
                     <Button
                         variant={activeTab === 'revenue' ? 'default' : 'outline'}
                         className={`rounded-md px-6 transition-colors ${activeTab === 'revenue' ? 'bg-[#24357B] hover:bg-[#24357B]/90 text-white' : ''}`}
-                        onClick={() => setActiveTab('revenue')}
+                        onClick={() => handleTabChange('revenue')}
                     >
                         Revenue by Source
                     </Button>
                     <Button
                         variant={activeTab === 'arrivals' ? 'default' : 'outline'}
                         className={`rounded-md px-6 transition-colors ${activeTab === 'arrivals' ? 'bg-[#24357B] hover:bg-[#24357B]/90 text-white' : ''}`}
-                        onClick={() => setActiveTab('arrivals')}
+                        onClick={() => handleTabChange('arrivals')}
                     >
                         Arrivals / Departures
                     </Button>
