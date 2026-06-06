@@ -84,129 +84,35 @@ function RouteComponent() {
 
     return (
         <>
-            {/* ── Dashboard Tabs ───────────────────────────────────────────── */}
-            <Tabs defaultValue="stats" className="w-full gap-5">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center justify-between">
-                    <PageHeader
-                        title="Booking Calendar"
-                        description="Visual overview of all room reservations and availability"
-                    />
-                    <TabsList>
-                        <TabsTrigger value="stats">Confirmed Bookings This Month</TabsTrigger>
-                        {isCurrentMonth && <TabsTrigger value="availability">Room Availability Today</TabsTrigger>}
-                        {isCurrentMonth && <TabsTrigger value="activity">Today's Activity</TabsTrigger>}
-                    </TabsList>
-                </div>
-
-                {/* ── Summary Stats ────────────────────────────────────────────── */}
-                <TabsContent value="stats">
-                    <StatCardsGrid
-                        cards={[
-                            {
-                                icon: Home,
-                                label: "Total Rooms",
-                                value: todayStats.total,
-                                color: "blue"
-                            },
-                            {
-                                icon: BedDouble,
-                                label: "Booked Today",
-                                value: todayStats.booked,
-                                color: "rose"
-                            },
-                            {
-                                icon: DoorOpen,
-                                label: "Available Today",
-                                value: todayStats.available,
-                                color: "emerald"
-                            },
-                            {
-                                icon: Wrench,
-                                label: "Maintenance",
-                                value: todayStats.maintenance,
-                                color: "slate"
-                            }
-                        ]}
-                    />
-                </TabsContent>
-
-                {isCurrentMonth && (
-                    <TabsContent value="availability">
-                        <Card className="border-0 shadow-sm overflow-hidden">
-                            <CardHeader className="pb-2 pt-4 px-4">
-                                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                                    <BedDouble className="size-4 text-primary" />
-                                    Room Availability Today
-                                    <span className="ml-auto text-xs font-normal text-muted-foreground">
-                                        {availabilityByType.reduce((s, t) => s + t.free, 0)} of{' '}
-                                        {ROOMS.length} rooms available
-                                    </span>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="px-4 pb-4">
-                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                    {availabilityByType.map(({ type, total, free }) => {
-                                        const pct = total > 0 ? Math.round((free / total) * 100) : 0
-                                        const typeLabel = type.charAt(0).toUpperCase() + type.slice(1)
-                                        const allFree = free === total
-                                        const noneFree = free === 0
-                                        return (
-                                            <div key={type} className="flex flex-col gap-2">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <span className="text-muted-foreground">{ROOM_TYPE_ICONS[type]}</span>
-                                                        <span className="text-xs font-semibold capitalize">{typeLabel}</span>
-                                                    </div>
-                                                    <span
-                                                        className={cn(
-                                                            'text-xs font-bold',
-                                                            allFree
-                                                                ? 'text-emerald-600'
-                                                                : noneFree
-                                                                    ? 'text-destructive'
-                                                                    : 'text-amber-600',
-                                                        )}
-                                                    >
-                                                        {free}/{total}
-                                                    </span>
-                                                </div>
-                                                {/* Fill bar */}
-                                                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                                                    <div
-                                                        className={cn(
-                                                            'h-full rounded-full transition-all duration-500',
-                                                            allFree
-                                                                ? 'bg-emerald-500'
-                                                                : noneFree
-                                                                    ? 'bg-destructive'
-                                                                    : 'bg-amber-500',
-                                                        )}
-                                                        style={{ width: `${pct}%` }}
-                                                    />
-                                                </div>
-                                                <p className="text-[10px] text-muted-foreground">
-                                                    {free === 0
-                                                        ? 'Fully occupied'
-                                                        : free === total
-                                                            ? 'All available'
-                                                            : `${free} free · ${total - free} occupied`}
-                                                </p>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                )}
-
-                {isCurrentMonth && (
-                    <TabsContent value="activity">
-                        <TodayPanel today={today} />
-                    </TabsContent>
-                )}
-            </Tabs>
-
+            {/* ── Stat Cards Grid ───────────────────────────────────────────── */}
+            <StatCardsGrid
+                cards={[
+                    {
+                        icon: Home,
+                        label: "Total Rooms",
+                        value: todayStats.total,
+                        color: "blue"
+                    },
+                    {
+                        icon: BedDouble,
+                        label: "Booked Today",
+                        value: todayStats.booked,
+                        color: "rose"
+                    },
+                    {
+                        icon: DoorOpen,
+                        label: "Available Today",
+                        value: todayStats.available,
+                        color: "emerald"
+                    },
+                    {
+                        icon: Wrench,
+                        label: "Maintenance",
+                        value: todayStats.maintenance,
+                        color: "slate"
+                    }
+                ]}
+            />
             {/* ── Calendar Card ──────────────────────────────────────────────── */}
             <Card className="border-0 shadow-sm overflow-hidden">
                 {/* Toolbar */}
