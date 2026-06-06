@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
-import { Textarea } from '@/components/ui/textarea'
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { createFileRoute } from '@tanstack/react-router'
-import { CheckCircle2, Clock, Filter, MessageSquare, Star, Trash2, X } from 'lucide-react'
+import { CheckCircle2, Clock, Filter, MessageSquare, Star, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/__main/reviews')({

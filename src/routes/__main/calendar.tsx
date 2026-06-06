@@ -15,7 +15,6 @@ import {
     BedDouble,
     ChevronLeft,
     ChevronRight,
-    Plus,
     RefreshCw,
     XCircle,
     Home,
