@@ -270,10 +270,6 @@ function UserForm({
                 {(field) => <field.FormInput label="Phone Number" placeholder="e.g. +1 416 555 0192" />}
             </form.AppField>
 
-            <form.AppField name="bookings">
-                {(field) => <field.FormInput type="number" label="Bookings" placeholder="e.g. 4" />}
-            </form.AppField>
-
             <form.AppField name="status">
                 {(field) => (
                     <div className="space-y-1.5">
