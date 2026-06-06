@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PageHeader } from '@/components/ui/page-header'
 import {
     Select,
     SelectContent,
@@ -10,7 +9,6 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import { createFileRoute } from '@tanstack/react-router'
 import {
@@ -29,12 +27,11 @@ import {
 import { useCalendarState } from '@/components/calendar/hooks/useCalendarState'
 import { useCalendarStats } from '@/components/calendar/hooks/useCalendarStats'
 import { isSameDay } from '@/lib/calendar-utils'
-import { MONTHS, ROOM_TYPE_ICONS, ROOMS } from '@/data/mock-calendar'
+import { MONTHS, ROOMS } from '@/data/mock-calendar'
 
 // UI Components
 import { StatCardsGrid } from '@/components/ui/stat-card'
 import { Legend } from '@/components/calendar/Legend'
-import { TodayPanel } from '@/components/calendar/TodayPanel'
 import { BookingDetailDialog } from '@/components/calendar/BookingDetailDialog'
 import { CalendarRow } from '@/components/calendar/CalendarRow'
 
@@ -66,7 +63,6 @@ function RouteComponent() {
     const {
         filteredRooms,
         bookingsForRoom,
-        availabilityByType,
         todayStats,
     } = useCalendarStats({
         currentYear,
