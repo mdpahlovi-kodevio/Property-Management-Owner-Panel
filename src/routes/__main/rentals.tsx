@@ -6,7 +6,7 @@ import { SearchInput } from '@/components/ui/search-input'
 import {
     Plus, MapPin, Edit, Eye, CheckCircle2, XCircle,
     Building, ArrowRight, Wifi, ParkingCircle, Waves,
-    Dumbbell, UtensilsCrossed, Car, Accessibility, Clock, X
+    Dumbbell, UtensilsCrossed, Car, Accessibility, Clock
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useForm } from '@tanstack/react-form'
@@ -18,7 +18,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { DataTableFooter } from '@/components/ui/data-table'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 export type CreatePropertyForm = {
@@ -319,9 +318,9 @@ function RentalsComponent() {
                                 {editingProperty ? `Editing "${editingProperty.title}"` : 'Add a new property to your portfolio'}
                             </p>
                         </div>
-                        <Badge variant="secondary" className="shrink-0 text-[10.5px] font-bold tracking-wide rounded-full px-2.5">
+                        <span className="shrink-0 text-[10.5px] font-bold tracking-wide rounded-full px-2.5 py-0.5 bg-slate-100 text-slate-600 border border-slate-200">
                             {editingProperty ? 'Edit' : 'New'}
-                        </Badge>
+                        </span>
                         <DialogDescription className="sr-only">Property form</DialogDescription>
                     </DialogHeader>
 
