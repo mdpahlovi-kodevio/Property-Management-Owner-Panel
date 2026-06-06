@@ -15,7 +15,6 @@ import {
     Smile,
     Zap,
     Lock,
-    MoreHorizontal,
     Edit2,
 } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
