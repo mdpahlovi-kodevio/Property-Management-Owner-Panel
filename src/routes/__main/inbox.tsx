@@ -530,7 +530,7 @@ function RouteComponent() {
                                                     <div className="h-5" /> // spacer
                                                 )}
 
-                                                <DropdownMenu>
+                                                {/* <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button
                                                             variant="ghost"
@@ -552,7 +552,7 @@ function RouteComponent() {
                                                             Block User
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
-                                                </DropdownMenu>
+                                                </DropdownMenu> */}
                                             </div>
                                         </div>
                                     )
