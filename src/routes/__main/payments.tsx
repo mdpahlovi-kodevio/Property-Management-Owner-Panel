@@ -6,9 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
-import { TrashConfirm } from '@/components/ui/trash-confirm'
 import { createFileRoute } from '@tanstack/react-router'
-import { ChevronDown, Eye, Trash2 } from 'lucide-react'
+import { ChevronDown, Eye } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/__main/payments')({
@@ -42,7 +41,7 @@ const INITIAL_PAYMENTS: Payment[] = [
 ]
 
 function RouteComponent() {
-    const [payments, setPayments] = useState<Payment[]>(INITIAL_PAYMENTS)
+    const [payments] = useState<Payment[]>(INITIAL_PAYMENTS)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
@@ -50,11 +49,6 @@ function RouteComponent() {
     const openDetails = useCallback((payment: Payment) => {
         setSelectedPayment(payment)
         setIsDetailsOpen(true)
-    }, [])
-
-    const handleDelete = useCallback((paymentId: number) => {
-        setPayments((prev) => prev.filter((p) => p.id !== paymentId))
-        toast.success('Payment deleted successfully!')
     }, [])
 
     const filteredPayments = useMemo(() => {
@@ -106,17 +100,12 @@ function RouteComponent() {
                             <DropdownMenuItem onClick={() => openDetails(p)}>
                                 <Eye className="size-3.5" /> View Details
                             </DropdownMenuItem>
-                            <TrashConfirm name={`Payment from ${p.userName}`} onConfirm={() => handleDelete(p.id)}>
-                                <DropdownMenuItem className="text-red-600 focus:text-red-600" onSelect={(e) => e.preventDefault()}>
-                                    <Trash2 className="size-3.5" /> Delete Payment
-                                </DropdownMenuItem>
-                            </TrashConfirm>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 ),
             },
         ],
-        [openDetails, handleDelete]
+        [openDetails]
     )
 
     return (
