@@ -22,24 +22,25 @@ const userSchema = z.object({
     name: z.string().min(1, 'Full name is required'),
     email: z.email('Please enter a valid email address'),
     phone: z.string(),
+    image: z.string(),
     bookings: z.number().min(0, 'Must be at least 0'),
     status: z.enum(['Active', 'Blocked']),
 })
 
 const INITIAL_USERS = [
-    { id: 1, name: 'Jane Cooper', phone: '+1 416 XXX XXXX', email: 'janecoper@gmail.com', bookings: 4, status: 'Active' as const },
-    { id: 2, name: 'Wade Warren', phone: '+1 416 XXX XXXX', email: 'weaver@example.com', bookings: 5, status: 'Active' as const },
-    { id: 3, name: 'Esther Howard', phone: '+1 416 XXX XXXX', email: 'esther@gmail.com', bookings: 3, status: 'Active' as const },
-    { id: 4, name: 'Leslie Alexander', phone: '+1 416 XXX XXXX', email: 'leslie@gmail.com', bookings: 7, status: 'Active' as const },
-    { id: 5, name: 'Jenny Wilson', phone: '+1 416 XXX XXXX', email: 'janecoper@gmail.com', bookings: 3, status: 'Active' as const },
-    { id: 6, name: 'Guy Hawkins', phone: '+1 416 XXX XXXX', email: 'hawkins@gmail.com', bookings: 2, status: 'Active' as const },
-    { id: 7, name: 'Robert Fox', phone: '+1 416 XXX XXXX', email: 'robert@gmail.com', bookings: 4, status: 'Active' as const },
-    { id: 8, name: 'Kristin Watson', phone: '+1 416 XXX XXXX', email: 'kristin@gmail.com', bookings: 2, status: 'Blocked' as const },
-    { id: 9, name: 'Jacob Jones', phone: '+1 416 XXX XXXX', email: 'jacob@gmail.com', bookings: 4, status: 'Active' as const },
-    { id: 10, name: 'Bessie Cooper', phone: '+1 416 XXX XXXX', email: 'bessie@gmail.com', bookings: 2, status: 'Active' as const },
-    { id: 11, name: 'Albert Flores', phone: '+1 416 XXX XXXX', email: 'albert@gmail.com', bookings: 2, status: 'Active' as const },
-    { id: 12, name: 'Dianne Russell', phone: '+1 416 XXX XXXX', email: 'dianne@gmail.com', bookings: 3, status: 'Blocked' as const },
-    { id: 13, name: 'Eleanor Pena', phone: '+1 416 XXX XXXX', email: 'eleanor@gmail.com', bookings: 4, status: 'Blocked' as const },
+    { id: 1, name: 'Jane Cooper', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Jane', phone: '+1 416 XXX XXXX', email: 'janecoper@gmail.com', bookings: 4, status: 'Active' as const },
+    { id: 2, name: 'Wade Warren', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Wade', phone: '+1 416 XXX XXXX', email: 'weaver@example.com', bookings: 5, status: 'Active' as const },
+    { id: 3, name: 'Esther Howard', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Esther', phone: '+1 416 XXX XXXX', email: 'esther@gmail.com', bookings: 3, status: 'Active' as const },
+    { id: 4, name: 'Leslie Alexander', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Leslie', phone: '+1 416 XXX XXXX', email: 'leslie@gmail.com', bookings: 7, status: 'Active' as const },
+    { id: 5, name: 'Jenny Wilson', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Jenny', phone: '+1 416 XXX XXXX', email: 'janecoper@gmail.com', bookings: 3, status: 'Active' as const },
+    { id: 6, name: 'Guy Hawkins', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Guy', phone: '+1 416 XXX XXXX', email: 'hawkins@gmail.com', bookings: 2, status: 'Active' as const },
+    { id: 7, name: 'Robert Fox', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Robert', phone: '+1 416 XXX XXXX', email: 'robert@gmail.com', bookings: 4, status: 'Active' as const },
+    { id: 8, name: 'Kristin Watson', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Kristin', phone: '+1 416 XXX XXXX', email: 'kristin@gmail.com', bookings: 2, status: 'Blocked' as const },
+    { id: 9, name: 'Jacob Jones', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Jacob', phone: '+1 416 XXX XXXX', email: 'jacob@gmail.com', bookings: 4, status: 'Active' as const },
+    { id: 10, name: 'Bessie Cooper', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Bessie', phone: '+1 416 XXX XXXX', email: 'bessie@gmail.com', bookings: 2, status: 'Active' as const },
+    { id: 11, name: 'Albert Flores', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Albert', phone: '+1 416 XXX XXXX', email: 'albert@gmail.com', bookings: 2, status: 'Active' as const },
+    { id: 12, name: 'Dianne Russell', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Dianne', phone: '+1 416 XXX XXXX', email: 'dianne@gmail.com', bookings: 3, status: 'Blocked' as const },
+    { id: 13, name: 'Eleanor Pena', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Eleanor', phone: '+1 416 XXX XXXX', email: 'eleanor@gmail.com', bookings: 4, status: 'Blocked' as const },
 ]
 
 type User = (typeof INITIAL_USERS)[number]
@@ -104,8 +105,15 @@ function RouteComponent() {
             {
                 key: 'name',
                 header: 'Name',
-                className: 'font-medium',
-                render: (user) => <span className="text-muted-foreground">{user.name}</span>,
+                className: 'flex items-center gap-3 font-medium',
+                render: (user) => (
+                    <>
+                        <div className="size-8 rounded-full overflow-hidden shrink-0 bg-slate-100">
+                            <img src={user.image} alt={user.name} className="size-full object-cover" />
+                        </div>
+                        <span className="text-muted-foreground">{user.name}</span>
+                    </>
+                ),
             },
             { key: 'phone', header: 'Phone Number', render: (user) => <span className="text-muted-foreground">{user.phone}</span> },
             { key: 'email', header: 'Email', render: (user) => <span className="text-muted-foreground">{user.email}</span> },
@@ -202,10 +210,11 @@ function RouteComponent() {
                                     name: editingUser.name,
                                     email: editingUser.email,
                                     phone: editingUser.phone,
+                                    image: editingUser.image,
                                     bookings: editingUser.bookings,
                                     status: editingUser.status,
                                 }
-                                : { name: '', email: '', phone: '', bookings: 0, status: 'Active' }
+                                : { name: '', email: '', phone: '', image: '', bookings: 0, status: 'Active' }
                         }
                         onSubmit={handleSave}
                         onCancel={closeDialog}
@@ -227,6 +236,7 @@ function UserForm({
         name: string
         email: string
         phone: string
+        image: string
         bookings: number
         status: 'Active' | 'Blocked'
     }
@@ -248,6 +258,8 @@ function UserForm({
             }}
             className="space-y-4"
         >
+            <form.AppField name="image">{(field) => <field.FormAvatar folder="users" />}</form.AppField>
+
             <form.AppField name="name">{(field) => <field.FormInput label="Full Name" placeholder="e.g. Jane Cooper" />}</form.AppField>
 
             <form.AppField name="email">
