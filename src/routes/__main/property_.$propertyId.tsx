@@ -10,8 +10,8 @@ import { useAppForm } from '@/components/form/form-context'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { getPropertyById, type Property } from '@/lib/properties'
 import * as z from 'zod'
@@ -409,8 +409,8 @@ function RoomTypeForm({
 
     const currencySymbol = propertyCurrency === 'USD' ? '$'
         : propertyCurrency === 'EUR' ? '€'
-        : propertyCurrency === 'GBP' ? '£'
-        : '$'
+            : propertyCurrency === 'GBP' ? '£'
+                : '$'
 
     return (
         <>
@@ -438,301 +438,310 @@ function RoomTypeForm({
             >
                 <div className="flex-1 overflow-y-auto px-5 py-5 min-h-0">
 
-                    {/* ── BASICS ── */}
+                    {/* ════ BASICS ════ */}
                     {activeTab === 'Basics' && (
-                        <div className="flex flex-col gap-5">
-                            <SectionHeader>Basic Information</SectionHeader>
-                            <div className="flex flex-col gap-3">
-                                <form.AppField name="name">
-                                    {(field) => <field.FormInput label="Room type name" placeholder="e.g. Deluxe King Room" />}
-                                </form.AppField>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="flex flex-col gap-1.5">
-                                        <form.AppField name="internalCode">
-                                            {(field) => <field.FormInput label="Internal code" placeholder="e.g. DLX-KNG-01" />}
-                                        </form.AppField>
-                                        <p className="text-[11px] text-slate-400">Used for internal mapping and reporting</p>
-                                    </div>
-                                    <div className="flex flex-col gap-1.5">
-                                        <Label className="text-[12px] font-medium text-slate-600">Room size</Label>
-                                        <div className="grid grid-cols-[1fr_80px] gap-2">
+                        <div className="flex flex-col gap-6">
+                            <Section>
+                                <SectionLabel>Basic Information</SectionLabel>
+                                <div className="flex flex-col gap-3">
+                                    <form.AppField name="name">
+                                        {(field) => <field.FormInput label="Room type name" placeholder="e.g. Deluxe King Room" />}
+                                    </form.AppField>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="flex flex-col gap-1.5">
+                                            <form.AppField name="internalCode">
+                                                {(field) => <field.FormInput label="Internal code" placeholder="e.g. DLX-KNG-01" />}
+                                            </form.AppField>
+                                            <p className="text-[11px] text-slate-400">Used for internal mapping and reporting</p>
+                                        </div>
+                                        <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
                                             <form.AppField name="roomSize">
                                                 {(field) => (
-                                                    <Input type="number" placeholder="28" min="1" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} onBlur={field.handleBlur} />
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <Label className="text-[12.5px] font-semibold text-slate-700">Room size</Label>
+                                                        <Input type="number" placeholder="28" min="1" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} onBlur={field.handleBlur} />
+                                                    </div>
                                                 )}
                                             </form.AppField>
                                             <form.AppField name="roomSizeUnit">
                                                 {(field) => (
-                                                    <Select value={field.state.value} onValueChange={(v: 'sqm' | 'sqft') => field.handleChange(v)}>
-                                                        <SelectTrigger className="h-9 rounded-lg border-slate-200 text-[13px] bg-white">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="sqm">sqm</SelectItem>
-                                                            <SelectItem value="sqft">sqft</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
+                                                    <field.FormSelect
+                                                        label="Unit"
+                                                        options={[
+                                                            { value: 'sqm', label: 'sqm' },
+                                                            { value: 'sqft', label: 'sqft' },
+                                                        ]}
+                                                    />
                                                 )}
                                             </form.AppField>
                                         </div>
                                     </div>
+
+                                    <form.AppField name="description">
+                                        {(field) => <field.FormTextarea label="Description" placeholder="Describe the room type for OTA listings..." />}
+                                    </form.AppField>
                                 </div>
-                                <form.AppField name="description">
-                                    {(field) => <field.FormTextarea label="Description" placeholder="Describe the room type for OTA listings..." />}
-                                </form.AppField>
-                            </div>
+                            </Section>
                         </div>
                     )}
 
-                    {/* ── PRICING ── */}
+                    {/* ════ PRICING ════ */}
                     {activeTab === 'Pricing' && (
-                        <div className="flex flex-col gap-5">
-                            <SectionHeader>Base Pricing Setup</SectionHeader>
-                            <div className="grid grid-cols-2 gap-4">
-                                <form.AppField name="basePrice">
-                                    {(field) => (
-                                        <div className="flex flex-col gap-1.5">
-                                            <Label className="text-[12px] font-medium text-slate-600">Base price / night</Label>
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[13px]">
-                                                    {currencySymbol}
-                                                </span>
-                                                <Input type="number" min="0" className="h-9 pl-7 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} onBlur={field.handleBlur} />
+                        <div className="flex flex-col gap-6">
+                            <Section>
+                                <SectionLabel>Base Pricing Setup</SectionLabel>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <form.AppField name="basePrice">
+                                        {(field) => (
+                                            <div className="flex flex-col gap-1.5">
+                                                <Label className="text-[12.5px] font-semibold text-slate-700">Base price / night</Label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[13px]">
+                                                        {currencySymbol}
+                                                    </span>
+                                                    <Input type="number" min="0" className="h-9 pl-7 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} onBlur={field.handleBlur} />
+                                                </div>
                                             </div>
+                                        )}
+                                    </form.AppField>
+                                    <div className="flex flex-col gap-1.5">
+                                        <Label className="text-[12.5px] font-semibold text-slate-700">Property currency</Label>
+                                        <div className="h-9 px-3 flex items-center rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-600">
+                                            {propertyCurrency ?? '—'} <span className="text-slate-400 ml-1">(inherited from property)</span>
                                         </div>
-                                    )}
-                                </form.AppField>
-                                <div className="flex flex-col gap-1.5">
-                                    <Label className="text-[12px] font-medium text-slate-600">Property currency</Label>
-                                    <div className="h-9 px-3 flex items-center rounded-lg border border-slate-200 bg-slate-50 text-[13px] text-slate-600">
-                                        {propertyCurrency ?? '—'} <span className="text-slate-400 ml-1">(inherited from property)</span>
                                     </div>
                                 </div>
-                            </div>
+                            </Section>
                         </div>
                     )}
 
-                    {/* ── OCCUPANCY ── */}
+                    {/* ════ OCCUPANCY ════ */}
                     {activeTab === 'Occupancy' && (
-                        <div className="flex flex-col gap-5">
-                            <SectionHeader>Capacity</SectionHeader>
-                            <div className="grid grid-cols-3 gap-4">
-                                <form.AppField name="maxAdults">
-                                    {(field) => (
-                                        <div className="flex flex-col gap-1.5">
-                                            <Label className="text-[12px] font-medium text-slate-600">Max adults</Label>
-                                            <Input type="number" min="1" max="20" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseInt(e.target.value) || 1)} onBlur={field.handleBlur} />
-                                        </div>
-                                    )}
-                                </form.AppField>
-                                <form.AppField name="maxChildren">
-                                    {(field) => (
-                                        <div className="flex flex-col gap-1.5">
-                                            <Label className="text-[12px] font-medium text-slate-600">Max children</Label>
-                                            <Input type="number" min="0" max="10" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseInt(e.target.value) || 0)} onBlur={field.handleBlur} />
-                                        </div>
-                                    )}
-                                </form.AppField>
-                                <form.AppField name="maxOccupancy">
-                                    {(field) => (
-                                        <div className="flex flex-col gap-1.5">
-                                            <Label className="text-[12px] font-medium text-slate-600">Max occupancy</Label>
-                                            <Input type="number" min="1" max="30" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseInt(e.target.value) || 1)} onBlur={field.handleBlur} />
-                                            <p className="text-[11px] text-slate-400">Total cap including children</p>
-                                        </div>
-                                    )}
-                                </form.AppField>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ── BEDS ── */}
-                    {activeTab === 'Beds' && (
-                        <div className="flex flex-col gap-5">
-                            <SectionHeader>Bed Configuration</SectionHeader>
-                            <form.AppField name="beds">
-                                {(field) => (
-                                    <div className="flex flex-col gap-3">
-                                        <div className="grid grid-cols-[1fr_80px_36px] gap-2 px-1">
-                                            <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide">Bed type</span>
-                                            <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide">Qty</span>
-                                            <span />
-                                        </div>
-                                        {field.state.value.map((_, i) => (
-                                            <div key={i} className="grid grid-cols-[1fr_80px_36px] gap-2 items-center">
-                                                <form.AppField name={`beds[${i}].bedType`}>
-                                                    {(subField) => (
-                                                        <Select value={subField.state.value} onValueChange={subField.handleChange}>
-                                                            <SelectTrigger className="h-9 rounded-lg border-slate-200 text-[13px] bg-white">
-                                                                <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {BED_TYPES.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    )}
-                                                </form.AppField>
-                                                <form.AppField name={`beds[${i}].quantity`}>
-                                                    {(subField) => (
-                                                        <Input type="number" min="1" max="10" className="h-9 rounded-lg border-slate-200 text-[13px] text-center" value={subField.state.value} onChange={(e) => subField.handleChange(parseInt(e.target.value) || 1)} onBlur={subField.handleBlur} />
-                                                    )}
-                                                </form.AppField>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => field.removeValue(i)}
-                                                    className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all"
-                                                >
-                                                    <Trash2 className="size-3.5" />
-                                                </button>
+                        <div className="flex flex-col gap-6">
+                            <Section>
+                                <SectionLabel>Capacity</SectionLabel>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <form.AppField name="maxAdults">
+                                        {(field) => (
+                                            <div className="flex flex-col gap-1.5">
+                                                <Label className="text-[12.5px] font-semibold text-slate-700">Max adults</Label>
+                                                <Input type="number" min="1" max="20" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseInt(e.target.value) || 1)} onBlur={field.handleBlur} />
                                             </div>
-                                        ))}
-                                        <button
-                                            type="button"
-                                            onClick={() => field.pushValue({ id: newId('bed'), bedType: 'King', quantity: 1 })}
-                                            className="flex items-center gap-1.5 text-[12.5px] text-slate-500 hover:text-[#243E8B] border border-dashed border-slate-300 hover:border-[#243E8B]/40 rounded-lg px-3 py-2 w-fit transition-all"
-                                        >
-                                            <Plus className="size-3.5" />
-                                            Add bed type
-                                        </button>
-                                    </div>
-                                )}
-                            </form.AppField>
+                                        )}
+                                    </form.AppField>
+                                    <form.AppField name="maxChildren">
+                                        {(field) => (
+                                            <div className="flex flex-col gap-1.5">
+                                                <Label className="text-[12.5px] font-semibold text-slate-700">Max children</Label>
+                                                <Input type="number" min="0" max="10" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseInt(e.target.value) || 0)} onBlur={field.handleBlur} />
+                                            </div>
+                                        )}
+                                    </form.AppField>
+                                    <form.AppField name="maxOccupancy">
+                                        {(field) => (
+                                            <div className="flex flex-col gap-1.5">
+                                                <Label className="text-[12.5px] font-semibold text-slate-700">Max occupancy</Label>
+                                                <Input type="number" min="1" max="30" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseInt(e.target.value) || 1)} onBlur={field.handleBlur} />
+                                                <p className="text-[11px] text-slate-400">Total cap including children</p>
+                                            </div>
+                                        )}
+                                    </form.AppField>
+                                </div>
+                            </Section>
                         </div>
                     )}
 
-                    {/* ── AMENITIES ── */}
-                    {activeTab === 'Amenities' && (
-                        <div className="flex flex-col gap-5">
-                            <SectionHeader>Room Amenities</SectionHeader>
-                            <form.AppField name="amenities">
-                                {(field) => (
-                                    <div className="flex flex-wrap gap-2">
-                                        {ROOM_AMENITIES.map((amenity) => {
-                                            const isOn = field.state.value.includes(amenity)
-                                            return (
-                                                <button
-                                                    key={amenity}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const cur = field.state.value
-                                                        field.handleChange(isOn ? cur.filter(a => a !== amenity) : [...cur, amenity])
-                                                    }}
-                                                    className={cn(
-                                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] transition-all',
-                                                        isOn
-                                                            ? 'border-[#243E8B] bg-[#EEF3FF] text-[#243E8B] font-semibold'
-                                                            : 'border-slate-200 text-slate-500 hover:border-slate-300 bg-white'
-                                                    )}
-                                                >
-                                                    {isOn && <CheckCircle2 className="size-3.5" />}
-                                                    {amenity}
-                                                </button>
-                                            )
-                                        })}
-                                    </div>
-                                )}
-                            </form.AppField>
-                        </div>
-                    )}
-
-                    {/* ── UNITS ── */}
-                    {activeTab === 'Units' && (
-                        <div className="flex flex-col gap-5">
-                            <SectionHeader>Physical Units</SectionHeader>
-                            <form.AppField name="units">
-                                {(field) => (
-                                    <div className="flex flex-col gap-4">
-                                        <div className="flex flex-wrap gap-2 min-h-[36px]">
-                                            {field.state.value.map((unit, i) => (
-                                                <div key={i} className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200 rounded-full text-[12.5px] font-semibold text-slate-700">
-                                                    <span>{unit.roomNumber}</span>
-                                                    <span className="text-slate-400 text-[11px]">· F{unit.floor}</span>
+                    {/* ════ BEDS ════ */}
+                    {activeTab === 'Beds' && (
+                        <div className="flex flex-col gap-6">
+                            <Section>
+                                <SectionLabel>Bed Configuration</SectionLabel>
+                                <form.AppField name="beds">
+                                    {(field) => (
+                                        <div className="flex flex-col gap-3">
+                                            <div className="grid grid-cols-[1fr_80px_36px] gap-2 px-1">
+                                                <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide">Bed type</span>
+                                                <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide">Qty</span>
+                                                <span />
+                                            </div>
+                                            {field.state.value.map((_, i) => (
+                                                <div key={i} className="grid grid-cols-[1fr_80px_36px] gap-2 items-center">
+                                                    <form.AppField name={`beds[${i}].bedType`}>
+                                                        {(subField) => (
+                                                            <subField.FormSelect
+                                                                label=""
+                                                                placeholder="Select type"
+                                                                options={BED_TYPES.map(b => ({ value: b, label: b }))}
+                                                            />
+                                                        )}
+                                                    </form.AppField>
+                                                    <form.AppField name={`beds[${i}].quantity`}>
+                                                        {(subField) => (
+                                                            <Input type="number" min="1" max="10" className="h-9 rounded-xl border-slate-200 text-[13px] text-center" value={subField.state.value} onChange={(e) => subField.handleChange(parseInt(e.target.value) || 1)} onBlur={subField.handleBlur} />
+                                                        )}
+                                                    </form.AppField>
                                                     <button
                                                         type="button"
                                                         onClick={() => field.removeValue(i)}
-                                                        className="text-slate-400 hover:text-red-500 transition-colors"
+                                                        className="h-9 w-9 flex items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all"
                                                     >
-                                                        <X className="size-3" />
+                                                        <Trash2 className="size-3.5" />
                                                     </button>
                                                 </div>
                                             ))}
-                                            {field.state.value.length === 0 && (
-                                                <p className="text-[12px] text-slate-400 italic">No units added yet</p>
-                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => field.pushValue({ id: newId('bed'), bedType: 'King', quantity: 1 })}
+                                                className="flex items-center gap-1.5 text-[12.5px] text-slate-500 hover:text-[#243E8B] border border-dashed border-slate-300 hover:border-[#243E8B]/40 rounded-xl px-3 py-2 w-fit transition-all"
+                                            >
+                                                <Plus className="size-3.5" />
+                                                Add bed type
+                                            </button>
                                         </div>
-
-                                        <div>
-                                            <Label className="text-[12px] font-medium text-slate-600 mb-1.5 block">Add single unit</Label>
-                                            <div className="grid grid-cols-[1fr_80px_auto] gap-2 max-w-sm">
-                                                <Input
-                                                    placeholder="e.g. 104"
-                                                    value={unitInput}
-                                                    onChange={(e) => setUnitInput(e.target.value)}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter' && unitInput.trim()) {
-                                                            e.preventDefault()
-                                                            field.pushValue({ id: newId('unit'), roomNumber: unitInput.trim(), floor: unitFloor || '1' })
-                                                            setUnitInput('')
-                                                        }
-                                                    }}
-                                                    className="h-9 rounded-lg border-slate-200 text-[13px]"
-                                                />
-                                                <Input
-                                                    placeholder="Floor"
-                                                    value={unitFloor}
-                                                    onChange={(e) => setUnitFloor(e.target.value)}
-                                                    className="h-9 rounded-lg border-slate-200 text-[13px]"
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    onClick={() => { if (unitInput.trim()) { field.pushValue({ id: newId('unit'), roomNumber: unitInput.trim(), floor: unitFloor || '1' }); setUnitInput('') } }}
-                                                    className="h-9 px-4 bg-[#243E8B] hover:bg-[#1D3270] text-white rounded-lg text-[13px] font-medium"
-                                                >
-                                                    Add unit
-                                                </Button>
-                                            </div>
-                                        </div>
-
-                                        <div className="border-t border-slate-100 pt-4">
-                                            <p className="text-[12px] font-semibold text-slate-600 mb-3">Bulk generate</p>
-                                            <div className="grid grid-cols-[1fr_1fr_80px_auto] gap-2 max-w-md items-end">
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[11px] text-slate-500">Count</Label>
-                                                    <Input type="number" min="1" max="200" value={genCount} onChange={(e) => setGenCount(parseInt(e.target.value) || 10)} className="h-9 rounded-lg border-slate-200 text-[13px]" />
-                                                </div>
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[11px] text-slate-500">Start number</Label>
-                                                    <Input type="number" value={genStart} onChange={(e) => setGenStart(parseInt(e.target.value) || 201)} className="h-9 rounded-lg border-slate-200 text-[13px]" />
-                                                </div>
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[11px] text-slate-500">Floor</Label>
-                                                    <Input value={genFloor} onChange={(e) => setGenFloor(e.target.value)} className="h-9 rounded-lg border-slate-200 text-[13px]" />
-                                                </div>
-                                                <Button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const newUnits = Array.from({ length: Math.min(genCount, 200) }, (_, i) => ({
-                                                            id: newId('unit'),
-                                                            roomNumber: String(genStart + i),
-                                                            floor: genFloor || '2',
-                                                        }))
-                                                        newUnits.forEach(u => field.pushValue(u))
-                                                    }}
-                                                    className="h-9 px-4 bg-[#243E8B] hover:bg-[#1D3270] text-white rounded-lg text-[13px] font-medium"
-                                                >
-                                                    Generate
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </form.AppField>
+                                    )}
+                                </form.AppField>
+                            </Section>
                         </div>
                     )}
 
-                    {/* ── OTA ── */}
+                    {/* ════ AMENITIES ════ */}
+                    {activeTab === 'Amenities' && (
+                        <div className="flex flex-col gap-6">
+                            <Section>
+                                <SectionLabel>Room Amenities</SectionLabel>
+                                <form.AppField name="amenities">
+                                    {(field) => (
+                                        <div className="flex flex-wrap gap-2">
+                                            {ROOM_AMENITIES.map((amenity) => {
+                                                const isOn = field.state.value.includes(amenity)
+                                                return (
+                                                    <button
+                                                        key={amenity}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const cur = field.state.value
+                                                            field.handleChange(isOn ? cur.filter(a => a !== amenity) : [...cur, amenity])
+                                                        }}
+                                                        className={cn(
+                                                            'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] font-medium transition-all duration-200',
+                                                            isOn
+                                                                ? 'border-[#243E8B] bg-[#243E8B] text-white shadow-sm shadow-[#243E8B]/20'
+                                                                : 'border-slate-200 text-slate-600 bg-white hover:border-slate-300 hover:bg-slate-50'
+                                                        )}
+                                                    >
+                                                        {isOn && <CheckCircle2 className="size-3.5" />}
+                                                        {amenity}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+                                </form.AppField>
+                            </Section>
+                        </div>
+                    )}
+
+                    {/* ════ UNITS ════ */}
+                    {activeTab === 'Units' && (
+                        <div className="flex flex-col gap-6">
+                            <Section>
+                                <SectionLabel>Physical Units</SectionLabel>
+                                <form.AppField name="units">
+                                    {(field) => (
+                                        <div className="flex flex-col gap-4">
+                                            <div className="flex flex-wrap gap-2 min-h-[36px]">
+                                                {field.state.value.map((unit, i) => (
+                                                    <div key={i} className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200 rounded-full text-[12.5px] font-semibold text-slate-700">
+                                                        <span>{unit.roomNumber}</span>
+                                                        <span className="text-slate-400 text-[11px]">· F{unit.floor}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => field.removeValue(i)}
+                                                            className="text-slate-400 hover:text-red-500 transition-colors"
+                                                        >
+                                                            <X className="size-3" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                {field.state.value.length === 0 && (
+                                                    <p className="text-[12px] text-slate-400 italic">No units added yet</p>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <Label className="text-[12.5px] font-semibold text-slate-700 mb-1.5 block">Add single unit</Label>
+                                                <div className="grid grid-cols-[1fr_80px_auto] gap-2 max-w-sm">
+                                                    <Input
+                                                        placeholder="e.g. 104"
+                                                        value={unitInput}
+                                                        onChange={(e) => setUnitInput(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' && unitInput.trim()) {
+                                                                e.preventDefault()
+                                                                field.pushValue({ id: newId('unit'), roomNumber: unitInput.trim(), floor: unitFloor || '1' })
+                                                                setUnitInput('')
+                                                            }
+                                                        }}
+                                                        className="h-9 rounded-xl border-slate-200 text-[13px]"
+                                                    />
+                                                    <Input
+                                                        placeholder="Floor"
+                                                        value={unitFloor}
+                                                        onChange={(e) => setUnitFloor(e.target.value)}
+                                                        className="h-9 rounded-xl border-slate-200 text-[13px]"
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        onClick={() => { if (unitInput.trim()) { field.pushValue({ id: newId('unit'), roomNumber: unitInput.trim(), floor: unitFloor || '1' }); setUnitInput('') } }}
+                                                        className="h-9 px-4 bg-[#243E8B] hover:bg-[#1D3270] text-white rounded-xl text-[13px] font-semibold"
+                                                    >
+                                                        Add unit
+                                                    </Button>
+                                                </div>
+                                            </div>
+
+                                            <div className="border-t border-slate-100 pt-4">
+                                                <p className="text-[12.5px] font-semibold text-slate-600 mb-3">Bulk generate</p>
+                                                <div className="grid grid-cols-[1fr_1fr_80px_auto] gap-2 max-w-md items-end">
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <Label className="text-[11px] text-slate-500">Count</Label>
+                                                        <Input type="number" min="1" max="200" value={genCount} onChange={(e) => setGenCount(parseInt(e.target.value) || 10)} className="h-9 rounded-xl border-slate-200 text-[13px]" />
+                                                    </div>
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <Label className="text-[11px] text-slate-500">Start number</Label>
+                                                        <Input type="number" value={genStart} onChange={(e) => setGenStart(parseInt(e.target.value) || 201)} className="h-9 rounded-xl border-slate-200 text-[13px]" />
+                                                    </div>
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <Label className="text-[11px] text-slate-500">Floor</Label>
+                                                        <Input value={genFloor} onChange={(e) => setGenFloor(e.target.value)} className="h-9 rounded-xl border-slate-200 text-[13px]" />
+                                                    </div>
+                                                    <Button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const newUnits = Array.from({ length: Math.min(genCount, 200) }, (_, i) => ({
+                                                                id: newId('unit'),
+                                                                roomNumber: String(genStart + i),
+                                                                floor: genFloor || '2',
+                                                            }))
+                                                            newUnits.forEach(u => field.pushValue(u))
+                                                        }}
+                                                        className="h-9 px-4 bg-[#243E8B] hover:bg-[#1D3270] text-white rounded-xl text-[13px] font-semibold"
+                                                    >
+                                                        Generate
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </form.AppField>
+                            </Section>
+                        </div>
+                    )}
+
+                    {/* ════ OTA ════ */}
                     {activeTab === 'OTA' && (
-                        <div className="flex flex-col gap-5">
+                        <div className="flex flex-col gap-8">
                             <div className="flex items-start gap-3 p-3.5 bg-[#EEF3FF] rounded-xl border border-[#243E8B]/15">
                                 <Info className="size-4 text-[#243E8B] mt-0.5 shrink-0" />
                                 <p className="text-[12px] text-slate-600 leading-relaxed">
@@ -740,11 +749,9 @@ function RoomTypeForm({
                                 </p>
                             </div>
 
-                            <div>
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                                    <span className="h-px flex-1 bg-slate-100" />Room Attributes<span className="h-px flex-1 bg-slate-100" />
-                                </p>
-                                <div className="rounded-xl border border-slate-100 overflow-hidden divide-y divide-slate-100">
+                            <Section>
+                                <SectionLabel>Room Attributes</SectionLabel>
+                                <div className="rounded-2xl border border-slate-100 overflow-hidden divide-y divide-slate-100">
                                     {([
                                         { name: 'smokingRoom' as const, label: 'Smoking room', sub: 'Room permits smoking' },
                                         { name: 'accessibleRoom' as const, label: 'Accessible room', sub: 'Wheelchair / mobility accessible' },
@@ -753,10 +760,10 @@ function RoomTypeForm({
                                     ] as const).map(attr => (
                                         <form.AppField key={attr.name} name={attr.name}>
                                             {(f) => (
-                                                <div className="flex items-center justify-between px-4 py-3 bg-white hover:bg-slate-50/60 transition-colors">
+                                                <div className="flex items-center justify-between px-4 py-3.5 bg-white hover:bg-slate-50/70 transition-colors">
                                                     <div>
-                                                        <p className="text-[13px] font-medium text-slate-800">{attr.label}</p>
-                                                        <p className="text-[11px] text-slate-400">{attr.sub}</p>
+                                                        <p className="text-[13px] font-semibold text-slate-800">{attr.label}</p>
+                                                        <p className="text-[11.5px] text-slate-400 mt-0.5">{attr.sub}</p>
                                                     </div>
                                                     <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
                                                 </div>
@@ -764,12 +771,10 @@ function RoomTypeForm({
                                         </form.AppField>
                                     ))}
                                 </div>
-                            </div>
+                            </Section>
 
-                            <div>
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                                    <span className="h-px flex-1 bg-slate-100" />View Type<span className="h-px flex-1 bg-slate-100" />
-                                </p>
+                            <Section>
+                                <SectionLabel>View Type</SectionLabel>
                                 <form.AppField name="viewType">
                                     {(field) => (
                                         <div className="flex flex-wrap gap-2">
@@ -779,16 +784,15 @@ function RoomTypeForm({
                                                     <button
                                                         key={view}
                                                         type="button"
-                                                        onClick={() => {
-                                                            field.handleChange(isOn ? '' : view)
-                                                        }}
+                                                        onClick={() => field.handleChange(isOn ? '' : view)}
                                                         className={cn(
-                                                            'px-3 py-1.5 rounded-full border text-[12.5px] transition-all',
+                                                            'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] font-medium transition-all duration-200',
                                                             isOn
-                                                                ? 'border-[#243E8B] bg-[#EEF3FF] text-[#243E8B] font-semibold'
-                                                                : 'border-slate-200 text-slate-500 hover:border-slate-300 bg-white'
+                                                                ? 'border-[#243E8B] bg-[#243E8B] text-white shadow-sm shadow-[#243E8B]/20'
+                                                                : 'border-slate-200 text-slate-600 bg-white hover:border-slate-300 hover:bg-slate-50'
                                                         )}
                                                     >
+                                                        {isOn && <CheckCircle2 className="size-3.5" />}
                                                         {view}
                                                     </button>
                                                 )
@@ -796,12 +800,10 @@ function RoomTypeForm({
                                         </div>
                                     )}
                                 </form.AppField>
-                            </div>
+                            </Section>
 
-                            <div>
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                                    <span className="h-px flex-1 bg-slate-100" />Room Photos<span className="h-px flex-1 bg-slate-100" />
-                                </p>
+                            <Section>
+                                <SectionLabel>Room Photos</SectionLabel>
                                 <div className="flex flex-col gap-3">
                                     <form.AppField name="thumbnail">
                                         {(field) => <field.FormInput label="Thumbnail URL" type="url" placeholder="https://..." />}
@@ -809,24 +811,45 @@ function RoomTypeForm({
                                     <form.AppField name="gallery">
                                         {(field) => (
                                             <div className="flex flex-col gap-1.5">
-                                                <Label className="text-[12px] font-medium text-slate-600">Gallery URLs (comma separated)</Label>
-                                                <Input type="text" placeholder="https://a..., https://b..." className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value.join(', ')} onChange={(e) => field.handleChange(e.target.value.split(',').map(s => s.trim()).filter(Boolean))} onBlur={field.handleBlur} />
+                                                <Label className="text-[12.5px] font-semibold text-slate-700">Gallery URLs (comma separated)</Label>
+                                                <Input type="text" placeholder="https://a..., https://b..." className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value.join(', ')} onChange={(e) => field.handleChange(e.target.value.split(',').map(s => s.trim()).filter(Boolean))} onBlur={field.handleBlur} />
                                             </div>
                                         )}
                                     </form.AppField>
                                 </div>
-                            </div>
+                            </Section>
                         </div>
                     )}
                 </div>
 
-                <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-slate-100 bg-slate-50/50 shrink-0">
-                    <Button type="button" variant="outline" onClick={onCancel} className="h-9 px-5 rounded-lg font-medium text-[13px]">
-                        Cancel
-                    </Button>
-                    <form.AppForm>
-                        <form.FormSubmit label={submitLabel} />
-                    </form.AppForm>
+                <Separator />
+                <div className="flex items-center justify-between px-5 py-4 shrink-0">
+                    <div className="flex items-center gap-1">
+                        {ROOM_TABS.map((tab) => (
+                            <button
+                                key={tab}
+                                type="button"
+                                onClick={() => onActiveTabChange(tab)}
+                                className={cn(
+                                    'size-1.5 rounded-full transition-all duration-200',
+                                    activeTab === tab ? 'bg-[#243E8B] w-4' : 'bg-slate-200 hover:bg-slate-300'
+                                )}
+                            />
+                        ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onCancel}
+                            className="h-9 px-5 rounded-xl font-semibold text-[13px] border-slate-200"
+                        >
+                            Cancel
+                        </Button>
+                        <form.AppForm>
+                            <form.FormSubmit label={submitLabel} />
+                        </form.AppForm>
+                    </div>
                 </div>
             </form>
         </>

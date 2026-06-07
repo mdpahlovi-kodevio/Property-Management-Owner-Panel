@@ -27,7 +27,7 @@ const reservationSchema = z.object({
     checkOut: z.string().min(1, 'Check out date is required'),
     paymentMethod: z.string(),
     image: z.string().optional(),
-    status: z.enum(['Confirmed', 'Cancelled']),
+    status: z.enum(['Pending', 'Confirmed', 'Cancelled']),
 })
 
 type Reservation = {
@@ -40,7 +40,7 @@ type Reservation = {
     payment: string
     paymentMethod: string
     image?: string
-    status: 'Confirmed' | 'Cancelled'
+    status: 'Pending' | 'Confirmed' | 'Cancelled'
 }
 
 const INITIAL_RESERVATIONS: Reservation[] = [
@@ -160,7 +160,11 @@ function RouteComponent() {
     }, [reservations, searchQuery])
 
     const handleToggleStatus = (id: number) => {
-        setReservations((prev) => prev.map((r) => (r.id === id ? { ...r, status: r.status === 'Confirmed' ? 'Cancelled' : 'Confirmed' } : r)))
+        setReservations((prev) => prev.map((r) => {
+            if (r.id !== id) return r;
+            const nextStatus = r.status === 'Pending' ? 'Confirmed' : r.status === 'Confirmed' ? 'Cancelled' : 'Pending';
+            return { ...r, status: nextStatus };
+        }))
     }
 
     const handleDeleteReservation = (id: number) => {
@@ -189,7 +193,9 @@ function RouteComponent() {
                 key: 'status',
                 header: 'Status',
                 render: (r) =>
-                    r.status === 'Confirmed' ? (
+                    r.status === 'Pending' ? (
+                        <span className="text-xs font-semibold text-yellow-600 bg-yellow-500/10 px-2.5 py-1 rounded-full">Pending</span>
+                    ) : r.status === 'Confirmed' ? (
                         <span className="text-xs font-semibold text-green-600 bg-green-500/10 px-2.5 py-1 rounded-full">Confirmed</span>
                     ) : (
                         <span className="text-xs font-semibold text-red-600 bg-red-500/10 px-2.5 py-1 rounded-full">Cancelled</span>
@@ -212,7 +218,7 @@ function RouteComponent() {
                             <StatusConfirm
                                 name={r.userEmail}
                                 currentStatus={r.status}
-                                newStatus={r.status === 'Confirmed' ? 'Cancelled' : 'Confirmed'}
+                                newStatus={r.status === 'Pending' ? 'Confirmed' : r.status === 'Confirmed' ? 'Cancelled' : 'Pending'}
                                 onConfirm={() => handleToggleStatus(r.id)}
                             >
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
@@ -429,21 +435,22 @@ function ReservationForm({
                             <label className="flex items-center gap-2 text-sm cursor-pointer">
                                 <input
                                     type="radio"
+                                    checked={field.state.value === 'Pending'}
+                                    onChange={() => field.handleChange('Pending')}
+                                    className="h-4 w-4 accent-primary"
+                                />
+                                Pending
+                            </label>
+                            <label className="flex items-center gap-2 text-sm cursor-pointer">
+                                <input
+                                    type="radio"
                                     checked={field.state.value === 'Confirmed'}
                                     onChange={() => field.handleChange('Confirmed')}
                                     className="h-4 w-4 accent-primary"
                                 />
                                 Confirmed
                             </label>
-                            <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                <input
-                                    type="radio"
-                                    checked={field.state.value === 'Cancelled'}
-                                    onChange={() => field.handleChange('Cancelled')}
-                                    className="h-4 w-4 accent-primary"
-                                />
-                                Cancelled
-                            </label>
+
                         </div>
                     </div>
                 )}
