@@ -6,48 +6,60 @@ import { SearchInput } from '@/components/ui/search-input'
 import { Plus, MapPin, Edit, Eye, ArrowLeft, CheckCircle2, BedDouble, Trash2, X, Info } from 'lucide-react'
 import { DataTableFooter } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { useForm } from '@tanstack/react-form'
+import { useAppForm } from '@/components/form/form-context'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-
-export type CreateRoomTypeForm = {
-    name: string
-    internalCode: string
-    description: string
-    basePrice: number
-    weekendPrice: number
-    extraPersonFee: number
-    currency: string
-    maxAdults: number
-    maxChildren: number
-    maxOccupancy: number
-    roomSize: number
-    roomSizeUnit: 'sqm' | 'sqft'
-    beds: { bedType: string; quantity: number }[]
-    amenities: string[]
-    units: string[]
-    smokingRoom: boolean
-    accessibleRoom: boolean
-    privateBathroom: boolean
-    sharedBathroom: boolean
-    viewType: string[]
-    images: File[]
-}
+import { cn } from '@/lib/utils'
+import { getPropertyById, type Property } from '@/lib/properties'
+import * as z from 'zod'
 
 export const Route = createFileRoute('/__main/property_/$propertyId')({
     component: PropertyUnitComponent,
 })
 
-const MOCK_ROOM_TYPES = [
-    { id: 'master-suite-1', title: 'Master Suite', location: 'Floor 1', details: '1 Bed • 1 Bath • 45m²', basePrice: 120, totalUnits: 2, capacity: '2 Adults', status: 'Active', imageUrl: 'https://picsum.photos/seed/room1/800/600', units: ['101', '102'] },
-    { id: 'guest-bedroom-a', title: 'Guest Bedroom', location: 'Floor 2', details: '2 Beds • 1 Bath • 35m²', basePrice: 90, totalUnits: 4, capacity: '2 Adults, 1 Child', status: 'Active', imageUrl: 'https://picsum.photos/seed/room2/800/600', units: ['201', '202', '203', '204'] },
-    { id: 'penthouse-room', title: 'Penthouse', location: 'Top Floor', details: '1 Bed • 1 Bath • 55m²', basePrice: 150, totalUnits: 1, capacity: '2 Adults', status: 'Maintenance', imageUrl: 'https://picsum.photos/seed/room3/800/600', units: ['PH1'] },
-    { id: 'standard-room', title: 'Standard Room', location: 'Floor 1', details: '1 Bed • 1 Bath • 25m²', basePrice: 70, totalUnits: 8, capacity: '2 Adults', status: 'Active', imageUrl: 'https://picsum.photos/seed/room4/800/600', units: ['103', '104', '105', '106', '107', '108', '109', '110'] },
-]
+// ─── Card shape derived from PROPERTIES roomTypes ──────────────────
+type RoomTypeCard = {
+    id: string
+    title: string
+    location: string
+    details: string
+    basePrice: number
+    currency: string
+    totalUnits: number
+    capacity: string
+    status: 'Active' | 'Maintenance'
+    imageUrl: string
+    units: string[]
+    propertyId: string
+}
+
+function buildRoomTypeCards(property: Property | undefined): RoomTypeCard[] {
+    if (!property) return []
+    const currency = property.property.currency
+    return property.roomTypes.map((rt) => {
+        const bedsCount = rt.beds.reduce((s, b) => s + b.quantity, 0)
+        const floorLabel = rt.units.length > 0
+            ? Array.from(new Set(rt.units.map((u) => u.floor))).join(', ')
+            : '—'
+        return {
+            id: rt.id,
+            title: rt.name,
+            location: `Floor ${floorLabel}`,
+            details: `${bedsCount} Bed${bedsCount === 1 ? '' : 's'} • 1 Bath • ${rt.roomSize}${rt.roomSizeUnit}`,
+            basePrice: rt.basePrice,
+            currency,
+            totalUnits: rt.units.length,
+            capacity: `${rt.maxAdults} Adult${rt.maxAdults === 1 ? '' : 's'}${rt.maxChildren > 0 ? `, ${rt.maxChildren} Child${rt.maxChildren === 1 ? '' : 'ren'}` : ''}`,
+            status: 'Active' as const,
+            imageUrl: rt.images.thumbnail,
+            units: rt.units.map((u) => u.roomNumber),
+            propertyId: rt.propertyId,
+        }
+    })
+}
 
 const BED_TYPES = ['King', 'Queen', 'Double', 'Twin', 'Single', 'Bunk', 'Sofa Bed', 'Murphy Bed', 'Futon']
 const ROOM_AMENITIES = ['Air conditioning', 'TV', 'Mini bar', 'Coffee machine', 'Desk', 'Balcony', 'Kitchen', 'Microwave', 'Refrigerator', 'Safe', 'Hair dryer', 'Bathtub']
@@ -55,69 +67,140 @@ const VIEW_TYPES = ['Ocean view', 'Garden view', 'Pool view', 'Mountain view', '
 const ROOM_TABS = ['Basics', 'Pricing', 'Occupancy', 'Beds', 'Amenities', 'Units', 'OTA'] as const
 type RoomTab = typeof ROOM_TABS[number]
 
+// ─── Zod schema mirroring the lib roomTypes shape ──────────────────
+const roomTypeFormSchema = z.object({
+    id: z.string(),
+    propertyId: z.string(),
+    name: z.string().min(1, 'Name is required'),
+    internalCode: z.string().min(1, 'Internal code is required'),
+    description: z.string().min(1, 'Description is required'),
+    maxAdults: z.number().min(1),
+    maxChildren: z.number().min(0),
+    maxOccupancy: z.number().min(1),
+    basePrice: z.number().min(0),
+    roomSize: z.number().min(1),
+    roomSizeUnit: z.enum(['sqm', 'sqft']),
+    beds: z.array(z.object({ id: z.string(), bedType: z.string(), quantity: z.number().min(1) })),
+    amenities: z.array(z.string()),
+    units: z.array(z.object({ id: z.string(), roomNumber: z.string(), floor: z.string() })),
+    smokingRoom: z.boolean(),
+    accessibleRoom: z.boolean(),
+    privateBathroom: z.boolean(),
+    sharedBathroom: z.boolean(),
+    viewType: z.string(),
+    thumbnail: z.string(),
+    gallery: z.array(z.string()),
+})
+
+type RoomTypeFormValues = z.infer<typeof roomTypeFormSchema>
+
+const ROOM_FORM_DEFAULTS: RoomTypeFormValues = {
+    id: '',
+    propertyId: '',
+    name: '',
+    internalCode: '',
+    description: '',
+    maxAdults: 2,
+    maxChildren: 0,
+    maxOccupancy: 2,
+    basePrice: 100,
+    roomSize: 28,
+    roomSizeUnit: 'sqm',
+    beds: [{ id: 'bed_init_1', bedType: 'King', quantity: 1 }],
+    amenities: [],
+    units: [{ id: 'unit_init_1', roomNumber: '101', floor: '1' }],
+    smokingRoom: false,
+    accessibleRoom: false,
+    privateBathroom: true,
+    sharedBathroom: false,
+    viewType: '',
+    thumbnail: '',
+    gallery: [],
+}
+
+function valuesFromRoomType(rt: Property['roomTypes'][number]): RoomTypeFormValues {
+    return {
+        id: rt.id,
+        propertyId: rt.propertyId,
+        name: rt.name,
+        internalCode: rt.internalCode,
+        description: rt.description,
+        maxAdults: rt.maxAdults,
+        maxChildren: rt.maxChildren,
+        maxOccupancy: rt.maxOccupancy,
+        basePrice: rt.basePrice,
+        roomSize: rt.roomSize,
+        roomSizeUnit: rt.roomSizeUnit,
+        beds: rt.beds.map((b) => ({ ...b })),
+        amenities: [...rt.amenities],
+        units: rt.units.map((u) => ({ ...u })),
+        smokingRoom: rt.smokingRoom,
+        accessibleRoom: rt.accessibleRoom,
+        privateBathroom: rt.privateBathroom,
+        sharedBathroom: rt.sharedBathroom,
+        viewType: rt.viewType,
+        thumbnail: rt.images.thumbnail,
+        gallery: [...rt.images.gallery],
+    }
+}
+
+function newId(prefix: string) {
+    return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`
+}
+
+// ─── Component ───────────────────────────────────────────────────────
 function PropertyUnitComponent() {
     const { propertyId } = Route.useParams()
+    const property = getPropertyById(propertyId)
+    const roomCards = buildRoomTypeCards(property)
+
     const [searchQuery, setSearchQuery] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(4)
-
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<RoomTab>('Basics')
-    const [editingRoom, setEditingRoom] = useState<typeof MOCK_ROOM_TYPES[0] | null>(null)
+    const [editingRoomId, setEditingRoomId] = useState<string | null>(null)
 
-    // Unit management state
-    const [unitInput, setUnitInput] = useState('')
-    const [genCount, setGenCount] = useState(10)
-    const [genStart, setGenStart] = useState(201)
-
-    const form = useForm({
-        defaultValues: {
-            name: '',
-            internalCode: '',
-            description: '',
-            basePrice: 100,
-            weekendPrice: 120,
-            extraPersonFee: 20,
-            currency: 'USD',
-            maxAdults: 2,
-            maxChildren: 2,
-            maxOccupancy: 4,
-            roomSize: 28,
-            roomSizeUnit: 'sqm' as const,
-            beds: [{ bedType: 'King', quantity: 1 }],
-            amenities: [] as string[],
-            units: ['101', '102', '103'] as string[],
-            smokingRoom: false,
-            accessibleRoom: false,
-            privateBathroom: true,
-            sharedBathroom: false,
-            viewType: [] as string[],
-            images: [] as File[],
-        } as CreateRoomTypeForm,
-        onSubmit: async ({ value }) => {
-            console.log('Submitted room:', value)
-            toast.success('Room type saved successfully!')
-            setIsAddOpen(false)
-            setEditingRoom(null)
-            form.reset()
-        },
-    })
+    const isEditMode = editingRoomId !== null
 
     const openAdd = () => {
-        setEditingRoom(null)
-        form.reset()
+        setEditingRoomId(null)
         setActiveTab('Basics')
-        setUnitInput('')
         setIsAddOpen(true)
     }
 
-    const openEdit = (room: typeof MOCK_ROOM_TYPES[0]) => {
-        setEditingRoom(room)
-        form.reset()
-        form.setFieldValue('name', room.title)
+    const openEdit = (room: RoomTypeCard) => {
+        if (!property?.roomTypes.find((rt) => rt.id === room.id)) return
+        setEditingRoomId(room.id)
         setActiveTab('Basics')
         setIsAddOpen(true)
     }
+
+    const closeDialog = () => {
+        setIsAddOpen(false)
+        setEditingRoomId(null)
+    }
+
+    const editingCard = editingRoomId
+        ? roomCards.find(r => r.id === editingRoomId) ?? null
+        : null
+
+    const formDefaults: RoomTypeFormValues = editingCard
+        ? (() => {
+            const full = property?.roomTypes.find((rt) => rt.id === editingCard.id)
+            return full ? valuesFromRoomType(full) : ROOM_FORM_DEFAULTS
+        })()
+        : ROOM_FORM_DEFAULTS
+
+    const handleSave = (values: RoomTypeFormValues) => {
+        console.log('Submitted room:', values)
+        toast.success(isEditMode ? 'Room type updated successfully!' : 'Room type created successfully!')
+        closeDialog()
+    }
+
+    const pageTitle = property
+        ? `Room Types — ${property.property.name}`
+        : `Room Types — ${propertyId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}`
 
     return (
         <>
@@ -130,7 +213,7 @@ function PropertyUnitComponent() {
                         </Link>
                     </Button>
                     <PageHeader
-                        title={`Room Types — ${propertyId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}`}
+                        title={pageTitle}
                         description="Manage room types for this property"
                     />
                 </div>
@@ -150,11 +233,21 @@ function PropertyUnitComponent() {
 
             <div className="flex flex-col gap-8 mt-6">
                 {(() => {
-                    const filteredRooms = MOCK_ROOM_TYPES.filter(room => {
+                    const filteredRooms = roomCards.filter(room => {
                         const query = searchQuery.toLowerCase()
                         return room.title.toLowerCase().includes(query) || room.location.toLowerCase().includes(query) || room.details.toLowerCase().includes(query)
                     })
                     const paginatedRooms = filteredRooms.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
+                    if (paginatedRooms.length === 0) {
+                        return (
+                            <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">
+                                {property
+                                    ? 'No room types match your search.'
+                                    : `Property "${propertyId}" not found.`}
+                            </div>
+                        )
+                    }
 
                     return (
                         <>
@@ -164,48 +257,41 @@ function PropertyUnitComponent() {
                                         key={room.id}
                                         className="group h-full flex flex-col bg-white rounded-[2rem] shadow-[0_8px_24px_-12px_rgba(0,0,0,0.06)] hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.12)] border border-slate-100/80 transition-all duration-[600ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-2 overflow-hidden relative"
                                     >
-                                        {/* Hover Glow Effect */}
                                         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#EEF3FF]/0 group-hover:to-[#EEF3FF]/20 transition-colors duration-700 pointer-events-none" />
 
-                                        {/* Image Section */}
                                         <div className="relative w-full aspect-[16/9] overflow-hidden bg-slate-100 shrink-0 z-0">
                                             <img
                                                 src={room.imageUrl}
                                                 alt={room.title}
                                                 className="w-full h-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-105"
                                             />
-                                            {/* Subtle Inner Shadow */}
                                             <div className="absolute inset-0 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)] rounded-none pointer-events-none" />
-                                            
-                                            {/* Top Left Status Badge */}
+
                                             <div className="absolute top-4 left-4 z-10 transform transition-transform duration-500 group-hover:-translate-y-1">
                                                 <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest backdrop-blur-md shadow-sm transition-colors border ${room.status === 'Active' ? 'bg-[#10b981]/90 text-white border-white/20' : 'bg-[#f59e0b]/90 text-white border-white/20'}`}>
-                                                    <span className={`relative inline-flex rounded-full size-1.5 ${room.status === 'Active' ? 'bg-white' : 'bg-white'}`} />
+                                                    <span className={`relative inline-flex rounded-full size-1.5 bg-white`} />
                                                     {room.status}
                                                 </span>
                                             </div>
 
-                                            {/* Bottom Right Price Tag */}
                                             <div className="absolute bottom-4 right-4 z-10 transform transition-transform duration-500 group-hover:-translate-y-1">
                                                 <div className="bg-white/95 backdrop-blur-xl px-4 py-2 rounded-2xl shadow-[0_8px_20px_rgba(0,0,0,0.12)] border border-white/60 flex flex-col items-end">
-                                                    <span className="text-[18px] font-black text-slate-900 leading-none tracking-tight">${room.basePrice}</span>
+                                                    <span className="text-[18px] font-black text-slate-900 leading-none tracking-tight">
+                                                        {room.currency === 'USD' ? '$' : room.currency === 'EUR' ? '€' : room.currency === 'GBP' ? '£' : ''}{room.basePrice}
+                                                    </span>
                                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">/ Night</span>
                                                 </div>
                                             </div>
-                                            
-                                            {/* Decorative bottom gradient */}
+
                                             <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                                         </div>
 
-                                        {/* Details Section */}
                                         <div className="p-6 flex flex-col gap-5 grow relative z-10 bg-white">
-                                            {/* Header */}
                                             <div className="flex flex-col gap-3">
                                                 <h3 className="text-[1.25rem] font-bold text-slate-900 tracking-tight leading-snug group-hover:text-[#243E8B] transition-colors duration-300">
                                                     {room.title}
                                                 </h3>
-                                                
-                                                {/* Meta Info */}
+
                                                 <div className="flex items-center gap-4 text-slate-500">
                                                     <div className="flex items-center gap-1.5">
                                                         <BedDouble className="size-[15px] text-slate-400" />
@@ -219,7 +305,6 @@ function PropertyUnitComponent() {
                                                 </div>
                                             </div>
 
-                                            {/* Actions */}
                                             <div className="grid grid-cols-2 gap-3 mt-auto pt-3">
                                                 <Button
                                                     onClick={() => openEdit(room)}
@@ -256,202 +341,227 @@ function PropertyUnitComponent() {
                 })()}
             </div>
 
-            {/* ── CREATE / EDIT ROOM TYPE DIALOG ── */}
-            <Dialog open={isAddOpen} onOpenChange={(open) => { setIsAddOpen(open); if (!open) setEditingRoom(null) }}>
+            {/* ══════════════════════════════════════════════════
+                CREATE / EDIT ROOM TYPE DIALOG
+            ══════════════════════════════════════════════════ */}
+            <Dialog open={isAddOpen} onOpenChange={(open) => { if (!open) closeDialog() }}>
                 <DialogContent className="w-[95vw] sm:max-w-2xl flex flex-col p-0 rounded-2xl overflow-hidden max-h-[90vh] gap-0 bg-white">
 
-                    {/* Header */}
                     <DialogHeader className="flex-row items-center gap-3 px-5 py-4 border-b border-slate-100 shrink-0 space-y-0">
                         <div className="h-7 w-7 rounded-lg bg-[#243E8B]/10 flex items-center justify-center shrink-0">
                             <BedDouble className="size-3.5 text-[#243E8B]" />
                         </div>
                         <DialogTitle className="text-[14px] font-semibold text-slate-900 flex-1">
-                            {editingRoom ? 'Edit room type' : 'Create room type'}
+                            {isEditMode ? 'Edit room type' : 'Create room type'}
                         </DialogTitle>
                         <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                            {editingRoom ? 'Editing' : 'New'}
+                            {isEditMode ? 'Editing' : 'New'}
                         </span>
                         <DialogDescription className="sr-only">Room type form</DialogDescription>
                     </DialogHeader>
 
-                    {/* Tab bar */}
-                    <div className="flex border-b border-slate-100 bg-white overflow-x-auto shrink-0">
-                        {ROOM_TABS.map(tab => (
-                            <button
-                                key={tab}
-                                type="button"
-                                onClick={() => setActiveTab(tab)}
-                                className={`flex-1 min-w-fit px-4 py-2.5 text-[12.5px] font-medium whitespace-nowrap border-b-2 transition-all ${activeTab === tab ? 'border-[#243E8B] text-[#243E8B] bg-[#EEF3FF]/40' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
-                            >
-                                {tab}
-                            </button>
-                        ))}
-                    </div>
+                    <RoomTypeForm
+                        key={editingRoomId ?? 'add'}
+                        defaultValues={formDefaults}
+                        activeTab={activeTab}
+                        onActiveTabChange={setActiveTab}
+                        onSubmit={handleSave}
+                        onCancel={closeDialog}
+                        submitLabel={isEditMode ? 'Save changes' : 'Save room type'}
+                        propertyCurrency={property?.property.currency ?? null}
+                    />
+                </DialogContent>
+            </Dialog>
+        </>
+    )
+}
 
-                    {/* Panel content */}
-                    <form
-                        onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); form.handleSubmit() }}
-                        className="flex flex-col flex-1 min-h-0"
+// ─── RoomTypeForm sub-component (mirrors PropertyForm pattern) ─────
+function RoomTypeForm({
+    defaultValues,
+    activeTab,
+    onActiveTabChange,
+    onSubmit,
+    onCancel,
+    submitLabel,
+    propertyCurrency,
+}: {
+    defaultValues: RoomTypeFormValues
+    activeTab: RoomTab
+    onActiveTabChange: (tab: RoomTab) => void
+    onSubmit: (values: RoomTypeFormValues) => void
+    onCancel: () => void
+    submitLabel: string
+    propertyCurrency: string | null
+}) {
+    // Unit management local state (input fields, bulk generator)
+    const [unitInput, setUnitInput] = useState('')
+    const [unitFloor, setUnitFloor] = useState('1')
+    const [genCount, setGenCount] = useState(10)
+    const [genStart, setGenStart] = useState(201)
+    const [genFloor, setGenFloor] = useState('2')
+
+    const form = useAppForm({
+        defaultValues,
+        validators: { onChange: roomTypeFormSchema },
+        onSubmit: async ({ value }) => onSubmit(value),
+    })
+
+    const currencySymbol = propertyCurrency === 'USD' ? '$'
+        : propertyCurrency === 'EUR' ? '€'
+        : propertyCurrency === 'GBP' ? '£'
+        : '$'
+
+    return (
+        <>
+            <div className="flex border-b border-slate-100 bg-white overflow-x-auto shrink-0">
+                {ROOM_TABS.map(tab => (
+                    <button
+                        key={tab}
+                        type="button"
+                        onClick={() => onActiveTabChange(tab)}
+                        className={cn(
+                            'flex-1 min-w-fit px-4 py-2.5 text-[12.5px] font-medium whitespace-nowrap border-b-2 transition-all',
+                            activeTab === tab
+                                ? 'border-[#243E8B] text-[#243E8B] bg-[#EEF3FF]/40'
+                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                        )}
                     >
-                        <div className="flex-1 overflow-y-auto px-5 py-5 min-h-0">
+                        {tab}
+                    </button>
+                ))}
+            </div>
 
-                            {/* ── BASICS ── */}
-                            {activeTab === 'Basics' && (
-                                <div className="flex flex-col gap-5">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                        <span className="h-px flex-1 bg-slate-100" />Basic Information<span className="h-px flex-1 bg-slate-100" />
-                                    </p>
-                                    <div className="flex flex-col gap-3">
-                                        <form.Field name="name" children={(field) => (
-                                            <div className="flex flex-col gap-1.5">
-                                                <Label className="text-[12px] font-medium text-slate-600">Room type name <span className="text-red-500">*</span></Label>
-                                                <Input placeholder="e.g. Deluxe King Room" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                            </div>
-                                        )} />
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <form.Field name="internalCode" children={(field) => (
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label className="text-[12px] font-medium text-slate-600">Internal code <span className="text-red-500">*</span></Label>
-                                                    <Input placeholder="e.g. DLX-KNG-01" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                    <p className="text-[11px] text-slate-400">Used for internal mapping and reporting</p>
-                                                </div>
-                                            )} />
-                                            <div className="flex flex-col gap-1.5">
-                                                <Label className="text-[12px] font-medium text-slate-600">Room size</Label>
-                                                <div className="grid grid-cols-[1fr_80px] gap-2">
-                                                    <form.Field name="roomSize" children={(field) => (
-                                                        <Input type="number" placeholder="28" min="1" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} />
-                                                    )} />
-                                                    <form.Field name="roomSizeUnit" children={(field) => (
-                                                        <Select value={field.state.value} onValueChange={(v: 'sqm' | 'sqft') => field.handleChange(v)}>
-                                                            <SelectTrigger className="h-9 rounded-lg border-slate-200 text-[13px] bg-white">
-                                                                <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="sqm">sqm</SelectItem>
-                                                                <SelectItem value="sqft">sqft</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    )} />
-                                                </div>
+            <form
+                onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); form.handleSubmit() }}
+                className="flex flex-col flex-1 min-h-0"
+            >
+                <div className="flex-1 overflow-y-auto px-5 py-5 min-h-0">
+
+                    {/* ── BASICS ── */}
+                    {activeTab === 'Basics' && (
+                        <div className="flex flex-col gap-5">
+                            <SectionHeader>Basic Information</SectionHeader>
+                            <div className="flex flex-col gap-3">
+                                <form.AppField name="name">
+                                    {(field) => <field.FormInput label="Room type name" placeholder="e.g. Deluxe King Room" />}
+                                </form.AppField>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="flex flex-col gap-1.5">
+                                        <form.AppField name="internalCode">
+                                            {(field) => <field.FormInput label="Internal code" placeholder="e.g. DLX-KNG-01" />}
+                                        </form.AppField>
+                                        <p className="text-[11px] text-slate-400">Used for internal mapping and reporting</p>
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                        <Label className="text-[12px] font-medium text-slate-600">Room size</Label>
+                                        <div className="grid grid-cols-[1fr_80px] gap-2">
+                                            <form.AppField name="roomSize">
+                                                {(field) => (
+                                                    <Input type="number" placeholder="28" min="1" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} onBlur={field.handleBlur} />
+                                                )}
+                                            </form.AppField>
+                                            <form.AppField name="roomSizeUnit">
+                                                {(field) => (
+                                                    <Select value={field.state.value} onValueChange={(v: 'sqm' | 'sqft') => field.handleChange(v)}>
+                                                        <SelectTrigger className="h-9 rounded-lg border-slate-200 text-[13px] bg-white">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="sqm">sqm</SelectItem>
+                                                            <SelectItem value="sqft">sqft</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                            </form.AppField>
+                                        </div>
+                                    </div>
+                                </div>
+                                <form.AppField name="description">
+                                    {(field) => <field.FormTextarea label="Description" placeholder="Describe the room type for OTA listings..." />}
+                                </form.AppField>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── PRICING ── */}
+                    {activeTab === 'Pricing' && (
+                        <div className="flex flex-col gap-5">
+                            <SectionHeader>Base Pricing Setup</SectionHeader>
+                            <div className="grid grid-cols-2 gap-4">
+                                <form.AppField name="basePrice">
+                                    {(field) => (
+                                        <div className="flex flex-col gap-1.5">
+                                            <Label className="text-[12px] font-medium text-slate-600">Base price / night</Label>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[13px]">
+                                                    {currencySymbol}
+                                                </span>
+                                                <Input type="number" min="0" className="h-9 pl-7 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} onBlur={field.handleBlur} />
                                             </div>
                                         </div>
-                                        <form.Field name="description" children={(field) => (
-                                            <div className="flex flex-col gap-1.5">
-                                                <Label className="text-[12px] font-medium text-slate-600">Description <span className="text-red-500">*</span></Label>
-                                                <Textarea placeholder="Describe the room type for OTA listings..." className="min-h-[80px] rounded-lg border-slate-200 text-[13px] resize-none" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                            </div>
-                                        )} />
+                                    )}
+                                </form.AppField>
+                                <div className="flex flex-col gap-1.5">
+                                    <Label className="text-[12px] font-medium text-slate-600">Property currency</Label>
+                                    <div className="h-9 px-3 flex items-center rounded-lg border border-slate-200 bg-slate-50 text-[13px] text-slate-600">
+                                        {propertyCurrency ?? '—'} <span className="text-slate-400 ml-1">(inherited from property)</span>
                                     </div>
                                 </div>
-                            )}
+                            </div>
+                        </div>
+                    )}
 
-                            {/* ── PRICING ── */}
-                            {activeTab === 'Pricing' && (
-                                <div className="flex flex-col gap-5">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                        <span className="h-px flex-1 bg-slate-100" />Base Pricing Setup<span className="h-px flex-1 bg-slate-100" />
-                                    </p>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <form.Field name="basePrice" children={(field) => (
-                                            <div className="flex flex-col gap-1.5">
-                                                <Label className="text-[12px] font-medium text-slate-600">Base price / night <span className="text-red-500">*</span></Label>
-                                                <div className="relative">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[13px]">$</span>
-                                                    <Input type="number" min="0" className="h-9 pl-7 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} />
-                                                </div>
-                                            </div>
-                                        )} />
-                                        <form.Field name="weekendPrice" children={(field) => (
-                                            <div className="flex flex-col gap-1.5">
-                                                <Label className="text-[12px] font-medium text-slate-600">Weekend price / night</Label>
-                                                <div className="relative">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[13px]">$</span>
-                                                    <Input type="number" min="0" className="h-9 pl-7 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} />
-                                                </div>
-                                            </div>
-                                        )} />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <form.Field name="extraPersonFee" children={(field) => (
-                                            <div className="flex flex-col gap-1.5">
-                                                <Label className="text-[12px] font-medium text-slate-600">Extra person fee</Label>
-                                                <div className="relative">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[13px]">$</span>
-                                                    <Input type="number" min="0" className="h-9 pl-7 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} />
-                                                </div>
-                                                <p className="text-[11px] text-slate-400">Charged per person over base capacity</p>
-                                            </div>
-                                        )} />
-                                        <form.Field name="currency" children={(field) => (
-                                            <div className="flex flex-col gap-1.5">
-                                                <Label className="text-[12px] font-medium text-slate-600">Currency</Label>
-                                                <Select value={field.state.value} onValueChange={field.handleChange}>
-                                                    <SelectTrigger className="h-9 rounded-lg border-slate-200 text-[13px] bg-white">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="USD">USD ($)</SelectItem>
-                                                        <SelectItem value="EUR">EUR (€)</SelectItem>
-                                                        <SelectItem value="GBP">GBP (£)</SelectItem>
-                                                        <SelectItem value="AUD">AUD ($)</SelectItem>
-                                                        <SelectItem value="IDR">IDR (Rp)</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        )} />
-                                    </div>
-                                </div>
-                            )}
+                    {/* ── OCCUPANCY ── */}
+                    {activeTab === 'Occupancy' && (
+                        <div className="flex flex-col gap-5">
+                            <SectionHeader>Capacity</SectionHeader>
+                            <div className="grid grid-cols-3 gap-4">
+                                <form.AppField name="maxAdults">
+                                    {(field) => (
+                                        <div className="flex flex-col gap-1.5">
+                                            <Label className="text-[12px] font-medium text-slate-600">Max adults</Label>
+                                            <Input type="number" min="1" max="20" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseInt(e.target.value) || 1)} onBlur={field.handleBlur} />
+                                        </div>
+                                    )}
+                                </form.AppField>
+                                <form.AppField name="maxChildren">
+                                    {(field) => (
+                                        <div className="flex flex-col gap-1.5">
+                                            <Label className="text-[12px] font-medium text-slate-600">Max children</Label>
+                                            <Input type="number" min="0" max="10" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseInt(e.target.value) || 0)} onBlur={field.handleBlur} />
+                                        </div>
+                                    )}
+                                </form.AppField>
+                                <form.AppField name="maxOccupancy">
+                                    {(field) => (
+                                        <div className="flex flex-col gap-1.5">
+                                            <Label className="text-[12px] font-medium text-slate-600">Max occupancy</Label>
+                                            <Input type="number" min="1" max="30" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseInt(e.target.value) || 1)} onBlur={field.handleBlur} />
+                                            <p className="text-[11px] text-slate-400">Total cap including children</p>
+                                        </div>
+                                    )}
+                                </form.AppField>
+                            </div>
+                        </div>
+                    )}
 
-                            {/* ── OCCUPANCY ── */}
-                            {activeTab === 'Occupancy' && (
-                                <div className="flex flex-col gap-5">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                        <span className="h-px flex-1 bg-slate-100" />Capacity<span className="h-px flex-1 bg-slate-100" />
-                                    </p>
-                                    <div className="grid grid-cols-3 gap-4">
-                                        <form.Field name="maxAdults" children={(field) => (
-                                            <div className="flex flex-col gap-1.5">
-                                                <Label className="text-[12px] font-medium text-slate-600">Max adults <span className="text-red-500">*</span></Label>
-                                                <Input type="number" min="1" max="20" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseInt(e.target.value) || 1)} />
-                                            </div>
-                                        )} />
-                                        <form.Field name="maxChildren" children={(field) => (
-                                            <div className="flex flex-col gap-1.5">
-                                                <Label className="text-[12px] font-medium text-slate-600">Max children</Label>
-                                                <Input type="number" min="0" max="10" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseInt(e.target.value) || 0)} />
-                                            </div>
-                                        )} />
-                                        <form.Field name="maxOccupancy" children={(field) => (
-                                            <div className="flex flex-col gap-1.5">
-                                                <Label className="text-[12px] font-medium text-slate-600">Max occupancy <span className="text-red-500">*</span></Label>
-                                                <Input type="number" min="1" max="30" className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseInt(e.target.value) || 1)} />
-                                                <p className="text-[11px] text-slate-400">Total cap including children</p>
-                                            </div>
-                                        )} />
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ── BEDS ── */}
-                            {activeTab === 'Beds' && (
-                                <div className="flex flex-col gap-5">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                        <span className="h-px flex-1 bg-slate-100" />Bed Configuration<span className="h-px flex-1 bg-slate-100" />
-                                    </p>
-                                    <form.Field name="beds" children={(field) => (
-                                        <div className="flex flex-col gap-3">
-                                            {/* Column headers */}
-                                            <div className="grid grid-cols-[1fr_80px_36px] gap-2 px-1">
-                                                <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide">Bed type</span>
-                                                <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide">Qty</span>
-                                                <span />
-                                            </div>
-                                            {/* Bed rows */}
-                                            {field.state.value.map((_, i) => (
-                                                <div key={i} className="grid grid-cols-[1fr_80px_36px] gap-2 items-center">
-                                                    <form.Field name={`beds[${i}].bedType`} children={(subField) => (
+                    {/* ── BEDS ── */}
+                    {activeTab === 'Beds' && (
+                        <div className="flex flex-col gap-5">
+                            <SectionHeader>Bed Configuration</SectionHeader>
+                            <form.AppField name="beds">
+                                {(field) => (
+                                    <div className="flex flex-col gap-3">
+                                        <div className="grid grid-cols-[1fr_80px_36px] gap-2 px-1">
+                                            <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide">Bed type</span>
+                                            <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide">Qty</span>
+                                            <span />
+                                        </div>
+                                        {field.state.value.map((_, i) => (
+                                            <div key={i} className="grid grid-cols-[1fr_80px_36px] gap-2 items-center">
+                                                <form.AppField name={`beds[${i}].bedType`}>
+                                                    {(subField) => (
                                                         <Select value={subField.state.value} onValueChange={subField.handleChange}>
                                                             <SelectTrigger className="h-9 rounded-lg border-slate-200 text-[13px] bg-white">
                                                                 <SelectValue />
@@ -460,256 +570,274 @@ function PropertyUnitComponent() {
                                                                 {BED_TYPES.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
                                                             </SelectContent>
                                                         </Select>
-                                                    )} />
-                                                    <form.Field name={`beds[${i}].quantity`} children={(subField) => (
-                                                        <Input type="number" min="1" max="10" className="h-9 rounded-lg border-slate-200 text-[13px] text-center" value={subField.state.value} onChange={(e) => subField.handleChange(parseInt(e.target.value) || 1)} />
-                                                    )} />
+                                                    )}
+                                                </form.AppField>
+                                                <form.AppField name={`beds[${i}].quantity`}>
+                                                    {(subField) => (
+                                                        <Input type="number" min="1" max="10" className="h-9 rounded-lg border-slate-200 text-[13px] text-center" value={subField.state.value} onChange={(e) => subField.handleChange(parseInt(e.target.value) || 1)} onBlur={subField.handleBlur} />
+                                                    )}
+                                                </form.AppField>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => field.removeValue(i)}
+                                                    className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all"
+                                                >
+                                                    <Trash2 className="size-3.5" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        <button
+                                            type="button"
+                                            onClick={() => field.pushValue({ id: newId('bed'), bedType: 'King', quantity: 1 })}
+                                            className="flex items-center gap-1.5 text-[12.5px] text-slate-500 hover:text-[#243E8B] border border-dashed border-slate-300 hover:border-[#243E8B]/40 rounded-lg px-3 py-2 w-fit transition-all"
+                                        >
+                                            <Plus className="size-3.5" />
+                                            Add bed type
+                                        </button>
+                                    </div>
+                                )}
+                            </form.AppField>
+                        </div>
+                    )}
+
+                    {/* ── AMENITIES ── */}
+                    {activeTab === 'Amenities' && (
+                        <div className="flex flex-col gap-5">
+                            <SectionHeader>Room Amenities</SectionHeader>
+                            <form.AppField name="amenities">
+                                {(field) => (
+                                    <div className="flex flex-wrap gap-2">
+                                        {ROOM_AMENITIES.map((amenity) => {
+                                            const isOn = field.state.value.includes(amenity)
+                                            return (
+                                                <button
+                                                    key={amenity}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const cur = field.state.value
+                                                        field.handleChange(isOn ? cur.filter(a => a !== amenity) : [...cur, amenity])
+                                                    }}
+                                                    className={cn(
+                                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] transition-all',
+                                                        isOn
+                                                            ? 'border-[#243E8B] bg-[#EEF3FF] text-[#243E8B] font-semibold'
+                                                            : 'border-slate-200 text-slate-500 hover:border-slate-300 bg-white'
+                                                    )}
+                                                >
+                                                    {isOn && <CheckCircle2 className="size-3.5" />}
+                                                    {amenity}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </form.AppField>
+                        </div>
+                    )}
+
+                    {/* ── UNITS ── */}
+                    {activeTab === 'Units' && (
+                        <div className="flex flex-col gap-5">
+                            <SectionHeader>Physical Units</SectionHeader>
+                            <form.AppField name="units">
+                                {(field) => (
+                                    <div className="flex flex-col gap-4">
+                                        <div className="flex flex-wrap gap-2 min-h-[36px]">
+                                            {field.state.value.map((unit, i) => (
+                                                <div key={i} className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200 rounded-full text-[12.5px] font-semibold text-slate-700">
+                                                    <span>{unit.roomNumber}</span>
+                                                    <span className="text-slate-400 text-[11px]">· F{unit.floor}</span>
                                                     <button
                                                         type="button"
                                                         onClick={() => field.removeValue(i)}
-                                                        className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all"
+                                                        className="text-slate-400 hover:text-red-500 transition-colors"
                                                     >
-                                                        <Trash2 className="size-3.5" />
+                                                        <X className="size-3" />
                                                     </button>
                                                 </div>
                                             ))}
-                                            {/* Add bed button */}
-                                            <button
-                                                type="button"
-                                                onClick={() => field.pushValue({ bedType: 'King', quantity: 1 })}
-                                                className="flex items-center gap-1.5 text-[12.5px] text-slate-500 hover:text-[#243E8B] border border-dashed border-slate-300 hover:border-[#243E8B]/40 rounded-lg px-3 py-2 w-fit transition-all"
-                                            >
-                                                <Plus className="size-3.5" />
-                                                Add bed type
-                                            </button>
+                                            {field.state.value.length === 0 && (
+                                                <p className="text-[12px] text-slate-400 italic">No units added yet</p>
+                                            )}
                                         </div>
-                                    )} />
-                                </div>
-                            )}
 
-                            {/* ── AMENITIES ── */}
-                            {activeTab === 'Amenities' && (
-                                <div className="flex flex-col gap-5">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                        <span className="h-px flex-1 bg-slate-100" />Room Amenities<span className="h-px flex-1 bg-slate-100" />
-                                    </p>
-                                    <form.Field name="amenities" children={(field) => (
+                                        <div>
+                                            <Label className="text-[12px] font-medium text-slate-600 mb-1.5 block">Add single unit</Label>
+                                            <div className="grid grid-cols-[1fr_80px_auto] gap-2 max-w-sm">
+                                                <Input
+                                                    placeholder="e.g. 104"
+                                                    value={unitInput}
+                                                    onChange={(e) => setUnitInput(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' && unitInput.trim()) {
+                                                            e.preventDefault()
+                                                            field.pushValue({ id: newId('unit'), roomNumber: unitInput.trim(), floor: unitFloor || '1' })
+                                                            setUnitInput('')
+                                                        }
+                                                    }}
+                                                    className="h-9 rounded-lg border-slate-200 text-[13px]"
+                                                />
+                                                <Input
+                                                    placeholder="Floor"
+                                                    value={unitFloor}
+                                                    onChange={(e) => setUnitFloor(e.target.value)}
+                                                    className="h-9 rounded-lg border-slate-200 text-[13px]"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    onClick={() => { if (unitInput.trim()) { field.pushValue({ id: newId('unit'), roomNumber: unitInput.trim(), floor: unitFloor || '1' }); setUnitInput('') } }}
+                                                    className="h-9 px-4 bg-[#243E8B] hover:bg-[#1D3270] text-white rounded-lg text-[13px] font-medium"
+                                                >
+                                                    Add unit
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t border-slate-100 pt-4">
+                                            <p className="text-[12px] font-semibold text-slate-600 mb-3">Bulk generate</p>
+                                            <div className="grid grid-cols-[1fr_1fr_80px_auto] gap-2 max-w-md items-end">
+                                                <div className="flex flex-col gap-1.5">
+                                                    <Label className="text-[11px] text-slate-500">Count</Label>
+                                                    <Input type="number" min="1" max="200" value={genCount} onChange={(e) => setGenCount(parseInt(e.target.value) || 10)} className="h-9 rounded-lg border-slate-200 text-[13px]" />
+                                                </div>
+                                                <div className="flex flex-col gap-1.5">
+                                                    <Label className="text-[11px] text-slate-500">Start number</Label>
+                                                    <Input type="number" value={genStart} onChange={(e) => setGenStart(parseInt(e.target.value) || 201)} className="h-9 rounded-lg border-slate-200 text-[13px]" />
+                                                </div>
+                                                <div className="flex flex-col gap-1.5">
+                                                    <Label className="text-[11px] text-slate-500">Floor</Label>
+                                                    <Input value={genFloor} onChange={(e) => setGenFloor(e.target.value)} className="h-9 rounded-lg border-slate-200 text-[13px]" />
+                                                </div>
+                                                <Button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const newUnits = Array.from({ length: Math.min(genCount, 200) }, (_, i) => ({
+                                                            id: newId('unit'),
+                                                            roomNumber: String(genStart + i),
+                                                            floor: genFloor || '2',
+                                                        }))
+                                                        newUnits.forEach(u => field.pushValue(u))
+                                                    }}
+                                                    className="h-9 px-4 bg-[#243E8B] hover:bg-[#1D3270] text-white rounded-lg text-[13px] font-medium"
+                                                >
+                                                    Generate
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </form.AppField>
+                        </div>
+                    )}
+
+                    {/* ── OTA ── */}
+                    {activeTab === 'OTA' && (
+                        <div className="flex flex-col gap-5">
+                            <div className="flex items-start gap-3 p-3.5 bg-[#EEF3FF] rounded-xl border border-[#243E8B]/15">
+                                <Info className="size-4 text-[#243E8B] mt-0.5 shrink-0" />
+                                <p className="text-[12px] text-slate-600 leading-relaxed">
+                                    These attributes are required by Airbnb, Booking.com, Expedia, and Vrbo during channel sync. Incomplete data may lower OTA listing quality scores.
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+                                    <span className="h-px flex-1 bg-slate-100" />Room Attributes<span className="h-px flex-1 bg-slate-100" />
+                                </p>
+                                <div className="rounded-xl border border-slate-100 overflow-hidden divide-y divide-slate-100">
+                                    {([
+                                        { name: 'smokingRoom' as const, label: 'Smoking room', sub: 'Room permits smoking' },
+                                        { name: 'accessibleRoom' as const, label: 'Accessible room', sub: 'Wheelchair / mobility accessible' },
+                                        { name: 'privateBathroom' as const, label: 'Private bathroom', sub: 'Ensuite or attached bathroom' },
+                                        { name: 'sharedBathroom' as const, label: 'Shared bathroom', sub: 'Bathroom shared with other guests' },
+                                    ] as const).map(attr => (
+                                        <form.AppField key={attr.name} name={attr.name}>
+                                            {(f) => (
+                                                <div className="flex items-center justify-between px-4 py-3 bg-white hover:bg-slate-50/60 transition-colors">
+                                                    <div>
+                                                        <p className="text-[13px] font-medium text-slate-800">{attr.label}</p>
+                                                        <p className="text-[11px] text-slate-400">{attr.sub}</p>
+                                                    </div>
+                                                    <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
+                                                </div>
+                                            )}
+                                        </form.AppField>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+                                    <span className="h-px flex-1 bg-slate-100" />View Type<span className="h-px flex-1 bg-slate-100" />
+                                </p>
+                                <form.AppField name="viewType">
+                                    {(field) => (
                                         <div className="flex flex-wrap gap-2">
-                                            {ROOM_AMENITIES.map((amenity) => {
-                                                const isOn = field.state.value.includes(amenity)
+                                            {VIEW_TYPES.map(view => {
+                                                const isOn = field.state.value === view
                                                 return (
                                                     <button
-                                                        key={amenity}
+                                                        key={view}
                                                         type="button"
                                                         onClick={() => {
-                                                            const cur = field.state.value
-                                                            field.handleChange(isOn ? cur.filter(a => a !== amenity) : [...cur, amenity])
+                                                            field.handleChange(isOn ? '' : view)
                                                         }}
-                                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] transition-all ${isOn ? 'border-[#243E8B] bg-[#EEF3FF] text-[#243E8B] font-semibold' : 'border-slate-200 text-slate-500 hover:border-slate-300 bg-white'}`}
+                                                        className={cn(
+                                                            'px-3 py-1.5 rounded-full border text-[12.5px] transition-all',
+                                                            isOn
+                                                                ? 'border-[#243E8B] bg-[#EEF3FF] text-[#243E8B] font-semibold'
+                                                                : 'border-slate-200 text-slate-500 hover:border-slate-300 bg-white'
+                                                        )}
                                                     >
-                                                        {isOn && <CheckCircle2 className="size-3.5" />}
-                                                        {amenity}
+                                                        {view}
                                                     </button>
                                                 )
                                             })}
                                         </div>
-                                    )} />
+                                    )}
+                                </form.AppField>
+                            </div>
+
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+                                    <span className="h-px flex-1 bg-slate-100" />Room Photos<span className="h-px flex-1 bg-slate-100" />
+                                </p>
+                                <div className="flex flex-col gap-3">
+                                    <form.AppField name="thumbnail">
+                                        {(field) => <field.FormInput label="Thumbnail URL" type="url" placeholder="https://..." />}
+                                    </form.AppField>
+                                    <form.AppField name="gallery">
+                                        {(field) => (
+                                            <div className="flex flex-col gap-1.5">
+                                                <Label className="text-[12px] font-medium text-slate-600">Gallery URLs (comma separated)</Label>
+                                                <Input type="text" placeholder="https://a..., https://b..." className="h-9 rounded-lg border-slate-200 text-[13px]" value={field.state.value.join(', ')} onChange={(e) => field.handleChange(e.target.value.split(',').map(s => s.trim()).filter(Boolean))} onBlur={field.handleBlur} />
+                                            </div>
+                                        )}
+                                    </form.AppField>
                                 </div>
-                            )}
-
-                            {/* ── UNITS ── */}
-                            {activeTab === 'Units' && (
-                                <div className="flex flex-col gap-5">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                        <span className="h-px flex-1 bg-slate-100" />Physical Units<span className="h-px flex-1 bg-slate-100" />
-                                    </p>
-                                    <form.Field name="units" children={(field) => (
-                                        <div className="flex flex-col gap-4">
-                                            {/* Unit pills */}
-                                            <div className="flex flex-wrap gap-2 min-h-[36px]">
-                                                {field.state.value.map((unit, i) => (
-                                                    <div key={i} className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200 rounded-full text-[12.5px] font-semibold text-slate-700">
-                                                        {unit}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => field.removeValue(i)}
-                                                            className="text-slate-400 hover:text-red-500 transition-colors"
-                                                        >
-                                                            <X className="size-3" />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                                {field.state.value.length === 0 && (
-                                                    <p className="text-[12px] text-slate-400 italic">No units added yet</p>
-                                                )}
-                                            </div>
-
-                                            {/* Add single unit */}
-                                            <div>
-                                                <Label className="text-[12px] font-medium text-slate-600 mb-1.5 block">Room number</Label>
-                                                <div className="grid grid-cols-[1fr_auto] gap-2 max-w-xs">
-                                                    <Input
-                                                        placeholder="e.g. 104"
-                                                        value={unitInput}
-                                                        onChange={(e) => setUnitInput(e.target.value)}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === 'Enter' && unitInput.trim()) {
-                                                                e.preventDefault()
-                                                                field.pushValue(unitInput.trim())
-                                                                setUnitInput('')
-                                                            }
-                                                        }}
-                                                        className="h-9 rounded-lg border-slate-200 text-[13px]"
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        onClick={() => { if (unitInput.trim()) { field.pushValue(unitInput.trim()); setUnitInput('') } }}
-                                                        className="h-9 px-4 bg-[#243E8B] hover:bg-[#1D3270] text-white rounded-lg text-[13px] font-medium"
-                                                    >
-                                                        Add unit
-                                                    </Button>
-                                                </div>
-                                            </div>
-
-                                            {/* Bulk generate */}
-                                            <div className="border-t border-slate-100 pt-4">
-                                                <p className="text-[12px] font-semibold text-slate-600 mb-3">Bulk generate</p>
-                                                <div className="grid grid-cols-[1fr_1fr_auto] gap-2 max-w-sm items-end">
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <Label className="text-[11px] text-slate-500">Count</Label>
-                                                        <Input type="number" min="1" max="200" value={genCount} onChange={(e) => setGenCount(parseInt(e.target.value) || 10)} className="h-9 rounded-lg border-slate-200 text-[13px]" />
-                                                    </div>
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <Label className="text-[11px] text-slate-500">Start number</Label>
-                                                        <Input type="number" value={genStart} onChange={(e) => setGenStart(parseInt(e.target.value) || 201)} className="h-9 rounded-lg border-slate-200 text-[13px]" />
-                                                    </div>
-                                                    <Button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const newUnits = Array.from({ length: Math.min(genCount, 200) }, (_, i) => String(genStart + i))
-                                                            newUnits.forEach(u => field.pushValue(u))
-                                                        }}
-                                                        className="h-9 px-4 bg-[#243E8B] hover:bg-[#1D3270] text-white rounded-lg text-[13px] font-medium"
-                                                    >
-                                                        Generate
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )} />
-                                </div>
-                            )}
-
-                            {/* ── OTA ── */}
-                            {activeTab === 'OTA' && (
-                                <div className="flex flex-col gap-5">
-                                    {/* Info note */}
-                                    <div className="flex items-start gap-3 p-3.5 bg-[#EEF3FF] rounded-xl border border-[#243E8B]/15">
-                                        <Info className="size-4 text-[#243E8B] mt-0.5 shrink-0" />
-                                        <p className="text-[12px] text-slate-600 leading-relaxed">
-                                            These attributes are required by Airbnb, Booking.com, Expedia, and Vrbo during channel sync. Incomplete data may lower OTA listing quality scores.
-                                        </p>
-                                    </div>
-
-                                    {/* Room attributes */}
-                                    <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                                            <span className="h-px flex-1 bg-slate-100" />Room Attributes<span className="h-px flex-1 bg-slate-100" />
-                                        </p>
-                                        <div className="rounded-xl border border-slate-100 overflow-hidden divide-y divide-slate-100">
-                                            {([
-                                                { name: 'smokingRoom' as const, label: 'Smoking room', sub: 'Room permits smoking' },
-                                                { name: 'accessibleRoom' as const, label: 'Accessible room', sub: 'Wheelchair / mobility accessible' },
-                                                { name: 'privateBathroom' as const, label: 'Private bathroom', sub: 'Ensuite or attached bathroom' },
-                                                { name: 'sharedBathroom' as const, label: 'Shared bathroom', sub: 'Bathroom shared with other guests' },
-                                            ] as const).map(attr => (
-                                                <form.Field key={attr.name} name={attr.name} children={(f) => (
-                                                    <div className="flex items-center justify-between px-4 py-3 bg-white hover:bg-slate-50/60 transition-colors">
-                                                        <div>
-                                                            <p className="text-[13px] font-medium text-slate-800">{attr.label}</p>
-                                                            <p className="text-[11px] text-slate-400">{attr.sub}</p>
-                                                        </div>
-                                                        <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
-                                                    </div>
-                                                )} />
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* View type */}
-                                    <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                                            <span className="h-px flex-1 bg-slate-100" />View Type<span className="h-px flex-1 bg-slate-100" />
-                                        </p>
-                                        <form.Field name="viewType" children={(field) => (
-                                            <div className="flex flex-wrap gap-2">
-                                                {VIEW_TYPES.map(view => {
-                                                    const isOn = field.state.value.includes(view)
-                                                    return (
-                                                        <button
-                                                            key={view}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                const cur = field.state.value
-                                                                field.handleChange(isOn ? cur.filter(v => v !== view) : [...cur, view])
-                                                            }}
-                                                            className={`px-3 py-1.5 rounded-full border text-[12.5px] transition-all ${isOn ? 'border-[#243E8B] bg-[#EEF3FF] text-[#243E8B] font-semibold' : 'border-slate-200 text-slate-500 hover:border-slate-300 bg-white'}`}
-                                                        >
-                                                            {view}
-                                                        </button>
-                                                    )
-                                                })}
-                                            </div>
-                                        )} />
-                                    </div>
-
-                                    {/* Photos & floor plan */}
-                                    <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                                            <span className="h-px flex-1 bg-slate-100" />Room Photos & Floor Plan<span className="h-px flex-1 bg-slate-100" />
-                                        </p>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="border border-dashed border-slate-300 rounded-xl p-5 flex flex-col items-center gap-1.5 cursor-pointer hover:border-[#243E8B]/50 hover:bg-[#EEF3FF]/20 transition-all">
-                                                <div className="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center">
-                                                    <Plus className="size-4 text-slate-400" />
-                                                </div>
-                                                <p className="text-[12px] font-medium text-slate-600">Room photos</p>
-                                                <p className="text-[11px] text-slate-400">JPG, PNG, WEBP</p>
-                                            </div>
-                                            <div className="border border-dashed border-slate-300 rounded-xl p-5 flex flex-col items-center gap-1.5 cursor-pointer hover:border-[#243E8B]/50 hover:bg-[#EEF3FF]/20 transition-all">
-                                                <div className="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center">
-                                                    <Plus className="size-4 text-slate-400" />
-                                                </div>
-                                                <p className="text-[12px] font-medium text-slate-600">Floor plan</p>
-                                                <p className="text-[11px] text-slate-400">PDF, PNG</p>
-                                            </div>
-                                        </div>
-                                        <div className="mt-3 flex flex-col gap-1.5">
-                                            <Label className="text-[12px] font-medium text-slate-600">360 tour URL</Label>
-                                            <Input type="url" placeholder="https://..." className="h-9 rounded-lg border-slate-200 text-[13px]" />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                            </div>
                         </div>
+                    )}
+                </div>
 
-                        {/* Footer */}
-                        <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-slate-100 bg-slate-50/50 shrink-0">
-                            <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditingRoom(null) }} className="h-9 px-5 rounded-lg font-medium text-[13px]">
-                                Cancel
-                            </Button>
-                            <form.Subscribe
-                                selector={(state) => [state.canSubmit, state.isSubmitting]}
-                                children={([canSubmit, isSubmitting]) => (
-                                    <Button type="submit" disabled={!canSubmit} className="h-9 px-5 rounded-lg font-semibold bg-[#243E8B] hover:bg-[#1D3270] text-white text-[13px]">
-                                        {isSubmitting ? 'Saving...' : 'Save room type'}
-                                    </Button>
-                                )}
-                            />
-                        </div>
-                    </form>
-                </DialogContent>
-            </Dialog>
+                <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-slate-100 bg-slate-50/50 shrink-0">
+                    <Button type="button" variant="outline" onClick={onCancel} className="h-9 px-5 rounded-lg font-medium text-[13px]">
+                        Cancel
+                    </Button>
+                    <form.AppForm>
+                        <form.FormSubmit label={submitLabel} />
+                    </form.AppForm>
+                </div>
+            </form>
         </>
+    )
+}
+
+// ─── Small visual primitive local to the form ─────────────────────
+function SectionHeader({ children }: { children: React.ReactNode }) {
+    return (
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+            <span className="h-px flex-1 bg-slate-100" />{children}<span className="h-px flex-1 bg-slate-100" />
+        </p>
     )
 }

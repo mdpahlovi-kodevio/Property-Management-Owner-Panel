@@ -7,71 +7,67 @@ import {
     Plus, MapPin, Edit, Eye, CheckCircle2, XCircle,
     Building, ArrowRight, Wifi, ParkingCircle, Waves,
     Dumbbell, UtensilsCrossed, Car, Accessibility, Clock,
-    Building2, Key, BedDouble
+    Building2, Key, BedDouble, Star
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { useForm } from '@tanstack/react-form'
+import { useAppForm } from '@/components/form/form-context'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
 import { DataTableFooter } from '@/components/ui/data-table'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
-
-export type CreatePropertyForm = {
-    name: string
-    propertyType: string
-    description: string
-    email: string
-    phone: string
-    website?: string
-    country: string
-    state: string
-    city: string
-    postalCode: string
-    address1: string
-    address2?: string
-    latitude: number
-    longitude: number
-    timezone: string
-    checkInTime: string
-    checkOutTime: string
-    amenities: string[]
-    policies: {
-        smokingAllowed: boolean
-        petsAllowed: boolean
-        childrenAllowed: boolean
-        partiesAllowed: boolean
-    }
-    minGuestAge?: number
-    securityDeposit?: number
-    houseRules?: string
-    logoUrl?: string
-    videoUrl?: string
-    images: File[]
-}
+import { PROPERTIES, type Property, getPropertyById, getPriceRange, formatPrice } from '@/lib/properties'
+import * as z from 'zod'
 
 export const Route = createFileRoute('/__main/property')({
     component: PropertyComponent,
 })
 
-const MOCK_PROPERTIES = [
-    { id: 'sea-view-villa', title: 'Sea View Villa', location: 'Coastal Avenue, Riviera', type: 'Villa', totalRooms: 12, roomTypes: 4, occupancy: 85, todayCheckIns: 2, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop1/800/600' },
-    { id: 'mountain-retreat', title: 'Mountain Retreat', location: 'Highland Park, Aspen', type: 'Chalet', totalRooms: 8, roomTypes: 3, occupancy: 60, todayCheckIns: 1, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop2/800/600' },
-    { id: 'urban-oasis-penthouse', title: 'Urban Oasis Penthouse', location: 'Downtown Metro District', type: 'Apartment', totalRooms: 1, roomTypes: 1, occupancy: 100, todayCheckIns: 0, status: 'Maintenance', imageUrl: 'https://picsum.photos/seed/prop3/800/600' },
-    { id: 'cozy-cottage', title: 'Cozy Cottage', location: 'Quiet Suburbia', type: 'Cottage', totalRooms: 2, roomTypes: 1, occupancy: 50, todayCheckIns: 1, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop4/800/600' },
-    { id: 'luxury-apartment', title: 'Luxury Apartment', location: 'City Center', type: 'Apartment', totalRooms: 24, roomTypes: 5, occupancy: 92, todayCheckIns: 4, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop5/800/600' },
-    { id: 'beachfront-house', title: 'Beachfront House', location: 'Sunny Beach', type: 'House', totalRooms: 5, roomTypes: 2, occupancy: 80, todayCheckIns: 2, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop6/800/600' },
-    { id: 'modern-loft', title: 'Modern Loft', location: 'Arts District', type: 'Loft', totalRooms: 15, roomTypes: 3, occupancy: 75, todayCheckIns: 3, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop7/800/600' },
-    { id: 'rustic-cabin', title: 'Rustic Cabin', location: 'Pine Grove', type: 'Cabin', totalRooms: 10, roomTypes: 2, occupancy: 40, todayCheckIns: 0, status: 'Maintenance', imageUrl: 'https://picsum.photos/seed/prop8/800/600' },
-    { id: 'riverside-estate', title: 'Riverside Estate', location: 'Valley Edge', type: 'Estate', totalRooms: 20, roomTypes: 6, occupancy: 65, todayCheckIns: 1, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop9/800/600' },
-    { id: 'skyview-condo', title: 'Skyview Condo', location: 'Uptown Core', type: 'Condo', totalRooms: 40, roomTypes: 4, occupancy: 88, todayCheckIns: 5, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop10/800/600' },
-    { id: 'desert-villa', title: 'Desert Villa', location: 'Canyon Ridge', type: 'Villa', totalRooms: 6, roomTypes: 2, occupancy: 33, todayCheckIns: 1, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop11/800/600' },
-    { id: 'historic-townhouse', title: 'Historic Townhouse', location: 'Old Town Square', type: 'Townhouse', totalRooms: 8, roomTypes: 3, occupancy: 100, todayCheckIns: 0, status: 'Maintenance', imageUrl: 'https://picsum.photos/seed/prop12/800/600' },
-]
+// ─── Map PROPERTIES → card shape used by the grid ──────────────────
+type PropertyCard = {
+    id: string
+    title: string
+    location: string
+    type: string
+    totalRooms: number
+    roomTypes: number
+    occupancy: number
+    todayCheckIns: number
+    status: 'Active' | 'Inactive' | 'Maintenance'
+    imageUrl: string
+    rating: number
+    reviewCount: number
+    currency: string
+    priceRangeLabel: string
+}
+
+const PROPERTY_CARDS: PropertyCard[] = PROPERTIES.map((p) => {
+    const totalRooms = p.roomTypes.reduce((sum, rt) => sum + rt.units.length, 0)
+    const range = getPriceRange(p)
+    const priceRangeLabel =
+        range.min === range.max
+            ? formatPrice(range.min, p.property.currency)
+            : `${formatPrice(range.min, p.property.currency)} – ${formatPrice(range.max, p.property.currency)}`
+
+    return {
+        id: p.property.id,
+        title: p.property.name,
+        location: [p.property.city, p.property.state, p.property.country].filter(Boolean).join(', '),
+        type: p.property.propertyType,
+        totalRooms,
+        roomTypes: p.roomTypes.length,
+        occupancy: Math.min(100, Math.max(0, Math.round(p.property.rating * 18))),
+        todayCheckIns: p.property.reviewCount % 5,
+        status: p.property.status === 'Draft' ? 'Maintenance' : p.property.status,
+        imageUrl: p.property.images.thumbnail,
+        rating: p.property.rating,
+        reviewCount: p.property.reviewCount,
+        currency: p.property.currency,
+        priceRangeLabel,
+    }
+})
 
 const PROP_AMENITIES = [
     { label: 'WiFi', icon: Wifi },
@@ -90,31 +86,133 @@ const PROP_AMENITIES = [
     { label: 'Business center', icon: null },
 ]
 
-const PROP_TABS = ['Basics', 'Location', 'Operations', 'Amenities', 'Policies', 'Media'] as const
+const PROP_TYPE_OPTIONS = [
+    { label: 'Hotel', value: 'hotel' },
+    { label: 'Apartment', value: 'apartment' },
+    { label: 'Villa', value: 'villa' },
+    { label: 'Resort', value: 'resort' },
+    { label: 'Guest House', value: 'guest-house' },
+    { label: 'Hostel', value: 'hostel' },
+    { label: 'Homestay', value: 'homestay' },
+    { label: 'Vacation Rental', value: 'vacation-rental' },
+    { label: 'Serviced Apartment', value: 'serviced-apartment' },
+    { label: 'Boutique Hotel', value: 'boutique-hotel' },
+] as const
+
+const STATUS_OPTIONS = [
+    { value: 'Active', label: 'Active' },
+    { value: 'Inactive', label: 'Inactive' },
+] as const
+
+const COUNTRY_OPTIONS = [
+    'Bangladesh', 'United States', 'United Kingdom', 'Indonesia',
+    'Thailand', 'France', 'Spain', 'Australia', 'Japan',
+].map(c => ({ value: c, label: c }))
+
+const TIMEZONE_OPTIONS = [
+    { label: 'Asia/Dhaka (UTC+6)', value: 'Asia/Dhaka (UTC+6)' },
+    { label: 'Asia/Bali (UTC+8)', value: 'Asia/Bali (UTC+8)' },
+    { label: 'America/New_York (UTC-5)', value: 'America/New_York (UTC-5)' },
+    { label: 'Europe/London (UTC+0)', value: 'Europe/London (UTC+0)' },
+    { label: 'Europe/Paris (UTC+1)', value: 'Europe/Paris (UTC+1)' },
+    { label: 'Asia/Bangkok (UTC+7)', value: 'Asia/Bangkok (UTC+7)' },
+]
+
+const PROP_TABS = ['Basics', 'Location', 'Amenities and Policies', 'Media'] as const
 type PropTab = typeof PROP_TABS[number]
 
-// ─── Shared primitives ─────────────────────────────────────────────
-function FormField({ label, required, hint, children, className }: {
-    label: string; required?: boolean; hint?: string; children: React.ReactNode; className?: string
-}) {
-    return (
-        <div className={cn('flex flex-col gap-1.5', className)}>
-            <Label className="text-[12.5px] font-semibold text-slate-700">
-                {label}{required && <span className="text-red-500 ml-0.5">*</span>}
-            </Label>
-            {children}
-            {hint && <p className="text-[11px] text-slate-400 leading-none">{hint}</p>}
-        </div>
-    )
+// ─── Zod schema for the create/edit form ──────────────────────────
+const propertyFormSchema = z.object({
+    name: z.string().min(1, 'Property name is required'),
+    propertyType: z.string().min(1, 'Property type is required'),
+    description: z.string().min(1, 'Description is required'),
+    status: z.enum(['Active', 'Inactive']),
+    country: z.string().min(1, 'Country is required'),
+    state: z.string(),
+    city: z.string().min(1, 'City is required'),
+    postalCode: z.string(),
+    address1: z.string().min(1, 'Address is required'),
+    address2: z.string(),
+    latitude: z.number(),
+    longitude: z.number(),
+    timezone: z.string().min(1, 'Timezone is required'),
+    checkInTime: z.string().min(1, 'Check-in time is required'),
+    checkOutTime: z.string().min(1, 'Check-out time is required'),
+    amenities: z.array(z.string()),
+    policies: z.object({
+        smokingAllowed: z.boolean(),
+        petsAllowed: z.boolean(),
+        childrenAllowed: z.boolean(),
+        partiesAllowed: z.boolean(),
+    }),
+    minGuestAge: z.number(),
+    securityDeposit: z.number(),
+    houseRules: z.string(),
+    thumbnail: z.string(),
+    gallery: z.array(z.string()),
+    rating: z.number(),
+    reviewCount: z.number(),
+    currency: z.string().min(1, 'Currency is required'),
+})
+
+type PropertyFormValues = z.infer<typeof propertyFormSchema>
+
+const FORM_DEFAULTS: PropertyFormValues = {
+    name: '',
+    propertyType: '',
+    description: '',
+    status: 'Active',
+    country: '',
+    state: '',
+    city: '',
+    postalCode: '',
+    address1: '',
+    address2: '',
+    latitude: 0,
+    longitude: 0,
+    timezone: '',
+    checkInTime: '',
+    checkOutTime: '',
+    amenities: [],
+    policies: { smokingAllowed: false, petsAllowed: false, childrenAllowed: false, partiesAllowed: false },
+    minGuestAge: 0,
+    securityDeposit: 0,
+    houseRules: '',
+    thumbnail: '',
+    gallery: [],
+    rating: 0,
+    reviewCount: 0,
+    currency: 'USD',
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-    return (
-        <div className="flex items-center gap-3 mb-4">
-            <span className="text-[10.5px] font-extrabold uppercase tracking-[0.12em] text-slate-400">{children}</span>
-            <div className="flex-1 h-px bg-slate-100" />
-        </div>
-    )
+function valuesFromProperty(p: Property): PropertyFormValues {
+    return {
+        name: p.property.name,
+        propertyType: p.property.propertyType,
+        description: p.property.description,
+        status: p.property.status === 'Inactive' ? 'Inactive' : 'Active',
+        country: p.property.country,
+        state: p.property.state,
+        city: p.property.city,
+        postalCode: p.property.postalCode,
+        address1: p.property.address1,
+        address2: p.property.address2 ?? '',
+        latitude: p.property.latitude,
+        longitude: p.property.longitude,
+        timezone: p.property.timezone,
+        checkInTime: p.property.checkInTime,
+        checkOutTime: p.property.checkOutTime,
+        amenities: [...p.property.amenities],
+        policies: { ...p.property.policies },
+        minGuestAge: p.property.policies.minimumGuestAge,
+        securityDeposit: p.property.policies.securityDeposit,
+        houseRules: p.property.policies.houseRules,
+        thumbnail: p.property.images.thumbnail,
+        gallery: [...p.property.images.gallery],
+        rating: p.property.rating,
+        reviewCount: p.property.reviewCount,
+        currency: p.property.currency,
+    }
 }
 
 // ─── Status badge ────────────────────────────────────────────────────
@@ -144,46 +242,45 @@ function PropertyComponent() {
     const [itemsPerPage, setItemsPerPage] = useState(4)
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<PropTab>('Basics')
-    const [editingProperty, setEditingProperty] = useState<typeof MOCK_PROPERTIES[0] | null>(null)
-    const [selectedProperty, setSelectedProperty] = useState<typeof MOCK_PROPERTIES[0] | null>(null)
+    const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null)
+    const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null)
 
-    const form = useForm({
-        defaultValues: {
-            name: '', propertyType: '', description: '',
-            email: '', phone: '', website: '',
-            country: '', state: '', city: '', postalCode: '',
-            address1: '', address2: '',
-            latitude: 0, longitude: 0, timezone: '',
-            checkInTime: '', checkOutTime: '',
-            amenities: [] as string[],
-            policies: { smokingAllowed: false, petsAllowed: false, childrenAllowed: false, partiesAllowed: false },
-            minGuestAge: undefined as number | undefined,
-            securityDeposit: undefined as number | undefined,
-            houseRules: '', logoUrl: '', videoUrl: '',
-            images: [] as File[],
-        } as CreatePropertyForm,
-        onSubmit: async ({ value }) => {
-            console.log('Submitted:', value)
-            toast.success('Property saved successfully!')
-            setIsAddOpen(false)
-            setEditingProperty(null)
-            form.reset()
-        },
-    })
+    const isEditMode = editingPropertyId !== null
+    const selectedProperty = selectedPropertyId ? getPropertyById(selectedPropertyId) ?? null : null
 
     const openAdd = () => {
-        setEditingProperty(null)
-        form.reset()
+        setEditingPropertyId(null)
         setActiveTab('Basics')
         setIsAddOpen(true)
     }
 
-    const openEdit = (property: typeof MOCK_PROPERTIES[0]) => {
-        setEditingProperty(property)
-        form.reset()
-        form.setFieldValue('name', property.title)
+    const openEdit = (property: PropertyCard) => {
+        if (!getPropertyById(property.id)) return
+        setEditingPropertyId(property.id)
         setActiveTab('Basics')
         setIsAddOpen(true)
+    }
+
+    const closeDialog = () => {
+        setIsAddOpen(false)
+        setEditingPropertyId(null)
+    }
+
+    const editingCard = editingPropertyId
+        ? PROPERTY_CARDS.find(p => p.id === editingPropertyId) ?? null
+        : null
+
+    const formDefaults: PropertyFormValues = editingCard
+        ? (() => {
+            const full = getPropertyById(editingCard.id)
+            return full ? valuesFromProperty(full) : FORM_DEFAULTS
+        })()
+        : FORM_DEFAULTS
+
+    const handleSave = (values: PropertyFormValues) => {
+        console.log('Submitted:', values)
+        toast.success(isEditMode ? 'Property updated successfully!' : 'Property created successfully!')
+        closeDialog()
     }
 
     return (
@@ -211,7 +308,7 @@ function PropertyComponent() {
             {/* ── Grid + pagination ── */}
             <div className="flex flex-col gap-8 mt-6">
                 {(() => {
-                    const filtered = MOCK_PROPERTIES.filter(p => {
+                    const filtered = PROPERTY_CARDS.filter(p => {
                         const q = searchQuery.toLowerCase()
                         return p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q) || p.type.toLowerCase().includes(q)
                     })
@@ -225,20 +322,16 @@ function PropertyComponent() {
                                         onClick={() => navigate({ to: '/property/$propertyId', params: { propertyId: property.id } })}
                                         className="group h-full flex flex-col bg-white rounded-[2rem] shadow-[0_8px_24px_-12px_rgba(0,0,0,0.06)] hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.12)] border border-slate-100/80 transition-all duration-[600ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-2 cursor-pointer overflow-hidden relative"
                                     >
-                                        {/* Hover Glow Effect */}
                                         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#EEF3FF]/0 group-hover:to-[#EEF3FF]/20 transition-colors duration-700 pointer-events-none" />
 
-                                        {/* Image Section */}
                                         <div className="relative w-full aspect-[16/9] overflow-hidden bg-slate-100 shrink-0 z-0">
                                             <img
                                                 src={property.imageUrl}
                                                 alt={property.title}
                                                 className="w-full h-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-105"
                                             />
-                                            {/* Subtle Inner Shadow for Image */}
                                             <div className="absolute inset-0 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)] rounded-none pointer-events-none" />
 
-                                            {/* Floating Occupancy Badge */}
                                             <div className="absolute top-4 right-4 z-10 transform transition-transform duration-500 group-hover:-translate-y-1">
                                                 <div className="bg-white/95 backdrop-blur-xl px-3.5 py-2 rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.08)] flex items-center gap-2 border border-white/60">
                                                     <div className={cn("size-2 rounded-full", property.occupancy > 80 ? "bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.5)]" : property.occupancy > 50 ? "bg-[#f59e0b] shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "bg-[#ef4444] shadow-[0_0_8px_rgba(239,68,68,0.5)]")} />
@@ -248,13 +341,10 @@ function PropertyComponent() {
                                                 </div>
                                             </div>
 
-                                            {/* Decorative bottom gradient on image */}
                                             <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
                                         </div>
 
-                                        {/* Details Section */}
                                         <div className="p-6 flex flex-col gap-5 grow relative z-10 bg-white">
-                                            {/* Header */}
                                             <div className="flex flex-col gap-3">
                                                 <div className="flex items-start justify-between gap-3">
                                                     <h3 className="text-[1.25rem] font-bold text-slate-900 tracking-tight leading-snug group-hover:text-[#243E8B] transition-colors duration-300">
@@ -265,7 +355,6 @@ function PropertyComponent() {
                                                     </div>
                                                 </div>
 
-                                                {/* Meta Info */}
                                                 <div className="flex flex-col gap-2 mt-1">
                                                     <div className="flex items-center gap-4 text-slate-500">
                                                         <div className="flex items-center gap-1.5">
@@ -292,7 +381,6 @@ function PropertyComponent() {
                                                 </div>
                                             </div>
 
-                                            {/* Actions */}
                                             <div className="grid grid-cols-2 gap-3 mt-auto">
                                                 <Button
                                                     onClick={(e) => { e.stopPropagation(); openEdit(property) }}
@@ -303,7 +391,7 @@ function PropertyComponent() {
                                                     Edit
                                                 </Button>
                                                 <Button
-                                                    onClick={(e) => { e.stopPropagation(); setSelectedProperty(property) }}
+                                                    onClick={(e) => { e.stopPropagation(); setSelectedPropertyId(property.id) }}
                                                     className="w-full gap-2 rounded-full bg-[#243E8B] text-white font-bold h-[44px] hover:bg-[#1D3270] shadow-[0_4px_12px_rgba(36,62,139,0.2)] hover:shadow-[0_8px_20px_rgba(36,62,139,0.3)] transition-all duration-300 hover:-translate-y-0.5 text-[14px]"
                                                 >
                                                     <Eye className="size-4" />
@@ -332,252 +420,314 @@ function PropertyComponent() {
             {/* ══════════════════════════════════════════════════
                 CREATE / EDIT PROPERTY DIALOG
             ══════════════════════════════════════════════════ */}
-            <Dialog open={isAddOpen} onOpenChange={(open) => { setIsAddOpen(open); if (!open) setEditingProperty(null) }}>
+            <Dialog open={isAddOpen} onOpenChange={(open) => { if (!open) closeDialog() }}>
                 <DialogContent className="w-[95vw] sm:max-w-[680px] flex flex-col p-0 rounded-2xl overflow-hidden max-h-[88vh] gap-0 bg-white shadow-2xl shadow-slate-900/15">
-
-                    {/* ── Dialog header ── */}
                     <DialogHeader className="flex-row items-center gap-3 px-6 py-4 border-b border-slate-100 shrink-0 space-y-0">
                         <div className="size-8 rounded-lg bg-[#243E8B]/10 flex items-center justify-center shrink-0">
                             <Building className="size-4 text-[#243E8B]" />
                         </div>
                         <div className="flex-1 min-w-0">
                             <DialogTitle className="text-[14.5px] font-bold text-slate-900 leading-none">
-                                {editingProperty ? 'Edit property' : 'Create property'}
+                                {isEditMode ? 'Edit property' : 'Create property'}
                             </DialogTitle>
                             <p className="text-[11.5px] text-slate-400 mt-0.5 leading-none">
-                                {editingProperty ? `Editing "${editingProperty.title}"` : 'Add a new property to your portfolio'}
+                                {isEditMode ? `Editing "${editingCard?.title ?? ''}"` : 'Add a new property to your portfolio'}
                             </p>
                         </div>
                         <span className="shrink-0 text-[10.5px] font-bold tracking-wide rounded-full px-2.5 py-0.5 bg-slate-100 text-slate-600 border border-slate-200">
-                            {editingProperty ? 'Edit' : 'New'}
+                            {isEditMode ? 'Edit' : 'New'}
                         </span>
                         <DialogDescription className="sr-only">Property form</DialogDescription>
                     </DialogHeader>
 
-                    {/* ── Tab bar ── */}
-                    <div className="flex border-b border-slate-100 bg-slate-50/60 overflow-x-auto shrink-0">
-                        {PROP_TABS.map((tab) => (
-                            <button
-                                key={tab}
-                                type="button"
-                                onClick={() => setActiveTab(tab)}
-                                className={cn(
-                                    'flex-1 min-w-[70px] px-4 py-3 text-[12.5px] font-semibold whitespace-nowrap border-b-2 transition-all duration-200',
-                                    activeTab === tab
-                                        ? 'border-[#243E8B] text-[#243E8B] bg-white'
-                                        : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-white/60'
-                                )}
-                            >
-                                {tab}
-                            </button>
-                        ))}
-                    </div>
+                    <PropertyForm
+                        key={editingPropertyId ?? 'add'}
+                        defaultValues={formDefaults}
+                        activeTab={activeTab}
+                        onActiveTabChange={setActiveTab}
+                        onSubmit={handleSave}
+                        onCancel={closeDialog}
+                        submitLabel={isEditMode ? 'Save changes' : 'Save property'}
+                    />
+                </DialogContent>
+            </Dialog>
 
-                    {/* ── Panel content ── */}
-                    <form
-                        onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); form.handleSubmit() }}
-                        className="flex flex-col flex-1 min-h-0"
+            {/* ══════════════════════════════════════════════════
+                VIEW PROPERTY DETAIL DIALOG
+            ══════════════════════════════════════════════════ */}
+            <Dialog open={!!selectedProperty} onOpenChange={(open) => !open && setSelectedPropertyId(null)}>
+                <DialogContent className="w-[95%] sm:max-w-xl max-h-[88vh] overflow-y-auto bg-white p-0 rounded-2xl gap-0 shadow-2xl shadow-slate-900/15">
+                    {selectedProperty && (
+                        <>
+                            <div className="relative h-52 w-full overflow-hidden rounded-t-2xl">
+                                <img src={selectedProperty.property.images.thumbnail} alt={selectedProperty.property.name} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+                                    <div className="bg-black/20 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 border border-white/20">
+                                        <div className="flex items-center gap-1 text-white text-[12.5px] font-bold tracking-tight">
+                                            <Star className="size-3 fill-amber-400 text-amber-400" />
+                                            {selectedProperty.property.rating.toFixed(1)}
+                                            <span className="font-medium text-white/70 ml-0.5">({selectedProperty.property.reviewCount} reviews)</span>
+                                        </div>
+                                    </div>
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border bg-white/95 text-slate-700 border-white/60">
+                                        {selectedProperty.property.status}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="p-5 flex flex-col gap-5">
+                                <div>
+                                    <DialogTitle className="text-[18px] font-bold text-slate-900">{selectedProperty.property.name}</DialogTitle>
+                                    <DialogDescription className="sr-only">Details for {selectedProperty.property.name}</DialogDescription>
+                                    <div className="flex flex-col gap-1.5 mt-2">
+                                        <div className="flex items-center gap-1.5 text-slate-500">
+                                            <MapPin className="size-3.5 text-slate-400 shrink-0" />
+                                            <span className="text-[12.5px] font-medium">{selectedProperty.property.address1}{selectedProperty.property.address2 ? `, ${selectedProperty.property.address2}` : ''}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-slate-500">
+                                            <Building className="size-3.5 text-slate-400 shrink-0" />
+                                            <span className="text-[12.5px] font-semibold text-slate-600">
+                                                {selectedProperty.property.propertyType} • {selectedProperty.roomTypes.reduce((s, rt) => s + rt.units.length, 0)} Units • {formatPrice(getPriceRange(selectedProperty).min, selectedProperty.property.currency)} – {formatPrice(getPriceRange(selectedProperty).max, selectedProperty.property.currency)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Separator />
+
+                                <div>
+                                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3">Amenities</p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {selectedProperty.property.amenities.slice(0, 6).map(a => (
+                                            <div key={a} className="flex items-center gap-2">
+                                                <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
+                                                <span className="text-[12.5px] text-slate-600 font-medium">{a}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="border border-slate-100 rounded-2xl p-4 flex gap-3 items-center bg-slate-50/50">
+                                        <div className="bg-[#EEF3FF] p-2.5 rounded-xl text-[#243E8B] shrink-0">
+                                            <ArrowRight className="size-4" />
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide block">Check-in</span>
+                                            <span className="text-[13px] font-bold text-slate-800">From {selectedProperty.property.checkInTime}</span>
+                                        </div>
+                                    </div>
+                                    <div className="border border-slate-100 rounded-2xl p-4 flex gap-3 items-center bg-slate-50/50">
+                                        <div className="bg-red-50 p-2.5 rounded-xl text-red-500 shrink-0">
+                                            <XCircle className="size-4" />
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide block">Check-out</span>
+                                            <span className="text-[13px] font-bold text-slate-800">Until {selectedProperty.property.checkOutTime}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Separator />
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                            const card = PROPERTY_CARDS.find(p => p.id === selectedProperty.property.id)
+                                            if (card) {
+                                                openEdit(card)
+                                                setSelectedPropertyId(null)
+                                            }
+                                        }}
+                                        className="rounded-xl h-10 font-semibold text-[13px] border-slate-200 hover:bg-slate-50 hover:text-[#243E8B] hover:border-[#243E8B]/30 gap-1.5 transition-all duration-300"
+                                    >
+                                        <Edit className="size-3.5" />
+                                        Edit Property
+                                    </Button>
+                                    <Button
+                                        onClick={() => navigate({ to: '/property/$propertyId', params: { propertyId: selectedProperty.property.id } })}
+                                        className="rounded-xl h-10 font-semibold text-[13px] bg-[#243E8B] hover:bg-[#1D3270] text-white shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300"
+                                    >
+                                        <BedDouble className="size-3.5" />
+                                        Manage Room Types
+                                    </Button>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
+        </>
+    )
+}
+
+// ─── PropertyForm sub-component (mirrors EmployeeForm pattern) ─────
+function PropertyForm({
+    defaultValues,
+    activeTab,
+    onActiveTabChange,
+    onSubmit,
+    onCancel,
+    submitLabel,
+}: {
+    defaultValues: PropertyFormValues
+    activeTab: PropTab
+    onActiveTabChange: (tab: PropTab) => void
+    onSubmit: (values: PropertyFormValues) => void
+    onCancel: () => void
+    submitLabel: string
+}) {
+    const form = useAppForm({
+        defaultValues,
+        validators: { onChange: propertyFormSchema },
+        onSubmit: async ({ value }) => onSubmit(value),
+    })
+
+    return (
+        <>
+            <div className="flex border-b border-slate-100 bg-slate-50/60 overflow-x-auto shrink-0">
+                {PROP_TABS.map((tab) => (
+                    <button
+                        key={tab}
+                        type="button"
+                        onClick={() => onActiveTabChange(tab)}
+                        className={cn(
+                            'flex-1 min-w-[70px] px-4 py-3 text-[12.5px] font-semibold whitespace-nowrap border-b-2 transition-all duration-200',
+                            activeTab === tab
+                                ? 'border-[#243E8B] text-[#243E8B] bg-white'
+                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-white/60'
+                        )}
                     >
-                        <div className="flex-1 overflow-y-auto min-h-0 px-6 py-5">
+                        {tab}
+                    </button>
+                ))}
+            </div>
 
-                            {/* ════════ BASICS ════════ */}
-                            {activeTab === 'Basics' && (
-                                <div className="flex flex-col gap-6">
-                                    <div>
-                                        <SectionLabel>Basic Information</SectionLabel>
-                                        <div className="flex flex-col gap-3">
-                                            <form.Field name="name" children={(field) => (
-                                                <FormField label="Property name" required>
-                                                    <Input
-                                                        placeholder="e.g. Seaside Villa Bali"
-                                                        className="h-9 rounded-xl border-slate-200 text-[13px] focus:border-[#243E8B]/50 focus:ring-[#243E8B]/10"
-                                                        value={field.state.value}
-                                                        onChange={(e) => field.handleChange(e.target.value)}
-                                                    />
-                                                </FormField>
-                                            )} />
+            <form
+                onSubmit={(e) => { e.preventDefault(); form.handleSubmit() }}
+                className="flex flex-col flex-1 min-h-0"
+            >
+                <div className="flex-1 overflow-y-auto min-h-0 px-6 py-5">
 
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <form.Field name="propertyType" children={(field) => (
-                                                    <FormField label="Property type" required>
-                                                        <Select value={field.state.value} onValueChange={field.handleChange}>
-                                                            <SelectTrigger className="h-9 rounded-xl border-slate-200 text-[13px] bg-white">
-                                                                <SelectValue placeholder="Select type" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {['Hotel', 'Apartment', 'Villa', 'Resort', 'Guest House', 'Hostel', 'Homestay', 'Vacation Rental', 'Serviced Apartment', 'Boutique Hotel'].map(t => (
-                                                                    <SelectItem key={t} value={t.toLowerCase().replace(/ /g, '-')}>{t}</SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </FormField>
-                                                )} />
-                                                <FormField label="Status" required>
-                                                    <Select defaultValue="active">
-                                                        <SelectTrigger className="h-9 rounded-xl border-slate-200 text-[13px] bg-white">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="active">Active</SelectItem>
-                                                            <SelectItem value="inactive">Inactive</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </FormField>
+                    {/* ════════ BASICS ════════ */}
+                    {activeTab === 'Basics' && (
+                        <div className="flex flex-col gap-6">
+                            <Section>
+                                <SectionLabel>Basic Information</SectionLabel>
+                                <div className="flex flex-col gap-3">
+                                    <form.AppField name="name">
+                                        {(field) => <field.FormInput label="Property name" placeholder="e.g. Seaside Villa Bali" />}
+                                    </form.AppField>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <form.AppField name="propertyType">
+                                            {(field) => <field.FormSelect label="Property type" placeholder="Select type" options={[...PROP_TYPE_OPTIONS]} />}
+                                        </form.AppField>
+                                        <form.AppField name="status">
+                                            {(field) => (
+                                                <field.FormRadio
+                                                    label="Status"
+                                                    options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                                                />
+                                            )}
+                                        </form.AppField>
+                                    </div>
+                                    <form.AppField name="description">
+                                        {(field) => <field.FormTextarea label="Description" placeholder="Describe your property for guests and OTA listings..." />}
+                                    </form.AppField>
+                                </div>
+                            </Section>
+
+                            <Section>
+                                <SectionLabel>Check-in / Check-out</SectionLabel>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <form.AppField name="checkInTime">
+                                        {(field) => (
+                                            <div className="flex flex-col gap-1.5">
+                                                <Label className="text-[12.5px] font-semibold text-slate-700">Check-in time</Label>
+                                                <Input type="time" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} onBlur={field.handleBlur} />
                                             </div>
-
-                                            <form.Field name="description" children={(field) => (
-                                                <FormField label="Description" required>
-                                                    <Textarea
-                                                        placeholder="Describe your property for guests and OTA listings..."
-                                                        className="min-h-[90px] rounded-xl border-slate-200 text-[13px] resize-none leading-relaxed"
-                                                        value={field.state.value}
-                                                        onChange={(e) => field.handleChange(e.target.value)}
-                                                    />
-                                                </FormField>
-                                            )} />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <SectionLabel>Contact Information</SectionLabel>
-                                        <div className="grid grid-cols-3 gap-3">
-                                            <form.Field name="email" children={(field) => (
-                                                <FormField label="Email" required>
-                                                    <Input type="email" placeholder="info@property.com" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </FormField>
-                                            )} />
-                                            <form.Field name="phone" children={(field) => (
-                                                <FormField label="Phone" required>
-                                                    <Input type="tel" placeholder="+1 234 567 8900" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </FormField>
-                                            )} />
-                                            <form.Field name="website" children={(field) => (
-                                                <FormField label="Website">
-                                                    <Input type="url" placeholder="https://..." className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </FormField>
-                                            )} />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ════════ LOCATION ════════ */}
-                            {activeTab === 'Location' && (
-                                <div className="flex flex-col gap-6">
-                                    <div>
-                                        <SectionLabel>Address</SectionLabel>
-                                        <div className="flex flex-col gap-3">
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <form.Field name="country" children={(field) => (
-                                                    <FormField label="Country" required>
-                                                        <Select value={field.state.value} onValueChange={field.handleChange}>
-                                                            <SelectTrigger className="h-9 rounded-xl border-slate-200 text-[13px] bg-white">
-                                                                <SelectValue placeholder="Select country" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {['Bangladesh', 'United States', 'United Kingdom', 'Indonesia', 'Thailand', 'France', 'Spain', 'Australia', 'Japan'].map(c => (
-                                                                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </FormField>
-                                                )} />
-                                                <form.Field name="state" children={(field) => (
-                                                    <FormField label="State / Province">
-                                                        <Input placeholder="e.g. Bali" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                    </FormField>
-                                                )} />
-                                                <form.Field name="city" children={(field) => (
-                                                    <FormField label="City" required>
-                                                        <Input placeholder="e.g. Seminyak" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                    </FormField>
-                                                )} />
-                                                <form.Field name="postalCode" children={(field) => (
-                                                    <FormField label="Postal code">
-                                                        <Input placeholder="80361" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                    </FormField>
-                                                )} />
+                                        )}
+                                    </form.AppField>
+                                    <form.AppField name="checkOutTime">
+                                        {(field) => (
+                                            <div className="flex flex-col gap-1.5">
+                                                <Label className="text-[12.5px] font-semibold text-slate-700">Check-out time</Label>
+                                                <Input type="time" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} onBlur={field.handleBlur} />
                                             </div>
-                                            <form.Field name="address1" children={(field) => (
-                                                <FormField label="Address line 1" required>
-                                                    <Input placeholder="Street address" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </FormField>
-                                            )} />
-                                            <form.Field name="address2" children={(field) => (
-                                                <FormField label="Address line 2">
-                                                    <Input placeholder="Apartment, suite, unit (optional)" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </FormField>
-                                            )} />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <SectionLabel>Coordinates</SectionLabel>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <form.Field name="latitude" children={(field) => (
-                                                <FormField label="Latitude" hint="Auto-fill from address recommended">
-                                                    <Input type="number" step="any" placeholder="-8.691195" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} />
-                                                </FormField>
-                                            )} />
-                                            <form.Field name="longitude" children={(field) => (
-                                                <FormField label="Longitude">
-                                                    <Input type="number" step="any" placeholder="115.167820" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} />
-                                                </FormField>
-                                            )} />
-                                        </div>
-                                    </div>
+                                        )}
+                                    </form.AppField>
+                                    <form.AppField name="timezone">
+                                        {(field) => <field.FormSelect label="Property timezone" placeholder="Select timezone" options={TIMEZONE_OPTIONS} />}
+                                    </form.AppField>
                                 </div>
-                            )}
+                            </Section>
+                        </div>
+                    )}
 
-                            {/* ════════ OPERATIONS ════════ */}
-                            {activeTab === 'Operations' && (
-                                <div className="flex flex-col gap-6">
-                                    <div>
-                                        <SectionLabel>Check-in / Check-out</SectionLabel>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <form.Field name="checkInTime" children={(field) => (
-                                                <FormField label="Check-in time" required>
-                                                    <Input type="time" defaultValue="14:00" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </FormField>
-                                            )} />
-                                            <form.Field name="checkOutTime" children={(field) => (
-                                                <FormField label="Check-out time" required>
-                                                    <Input type="time" defaultValue="11:00" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </FormField>
-                                            )} />
-                                        </div>
+                    {/* ════════ LOCATION ════════ */}
+                    {activeTab === 'Location' && (
+                        <div className="flex flex-col gap-6">
+                            <Section>
+                                <SectionLabel>Address</SectionLabel>
+                                <div className="flex flex-col gap-3">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <form.AppField name="country">
+                                            {(field) => <field.FormSelect label="Country" placeholder="Select country" options={COUNTRY_OPTIONS} />}
+                                        </form.AppField>
+                                        <form.AppField name="state">
+                                            {(field) => <field.FormInput label="State / Province" placeholder="e.g. Bali" />}
+                                        </form.AppField>
+                                        <form.AppField name="city">
+                                            {(field) => <field.FormInput label="City" placeholder="e.g. Seminyak" />}
+                                        </form.AppField>
+                                        <form.AppField name="postalCode">
+                                            {(field) => <field.FormInput label="Postal code" placeholder="80361" />}
+                                        </form.AppField>
                                     </div>
-
-                                    <div>
-                                        <SectionLabel>Timezone</SectionLabel>
-                                        <form.Field name="timezone" children={(field) => (
-                                            <FormField label="Property timezone" required className="max-w-xs">
-                                                <Select value={field.state.value} onValueChange={field.handleChange}>
-                                                    <SelectTrigger className="h-9 rounded-xl border-slate-200 text-[13px] bg-white">
-                                                        <SelectValue placeholder="Select timezone" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {[
-                                                            { label: 'Asia/Dhaka (UTC+6)', value: 'Asia/Dhaka' },
-                                                            { label: 'Asia/Bali (UTC+8)', value: 'Asia/Makassar' },
-                                                            { label: 'America/New_York (UTC-5)', value: 'America/New_York' },
-                                                            { label: 'Europe/London (UTC+0)', value: 'Europe/London' },
-                                                            { label: 'Europe/Paris (UTC+1)', value: 'Europe/Paris' },
-                                                            { label: 'Asia/Bangkok (UTC+7)', value: 'Asia/Bangkok' },
-                                                        ].map(tz => <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>)}
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormField>
-                                        )} />
-                                    </div>
+                                    <form.AppField name="address1">
+                                        {(field) => <field.FormInput label="Address line 1" placeholder="Street address" />}
+                                    </form.AppField>
+                                    <form.AppField name="address2">
+                                        {(field) => <field.FormInput label="Address line 2" placeholder="Apartment, suite, unit (optional)" />}
+                                    </form.AppField>
                                 </div>
-                            )}
+                            </Section>
 
-                            {/* ════════ AMENITIES ════════ */}
-                            {activeTab === 'Amenities' && (
-                                <div className="flex flex-col gap-4">
-                                    <SectionLabel>Property Amenities</SectionLabel>
-                                    <form.Field name="amenities" children={(field) => (
+                            <Section>
+                                <SectionLabel>Coordinates</SectionLabel>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <form.AppField name="latitude">
+                                        {(field) => (
+                                            <div className="flex flex-col gap-1.5">
+                                                <Label className="text-[12.5px] font-semibold text-slate-700">Latitude</Label>
+                                                <Input type="number" step="any" placeholder="-8.691195" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} onBlur={field.handleBlur} />
+                                                <p className="text-[11px] text-slate-400 leading-none">Auto-fill from address recommended</p>
+                                            </div>
+                                        )}
+                                    </form.AppField>
+                                    <form.AppField name="longitude">
+                                        {(field) => (
+                                            <div className="flex flex-col gap-1.5">
+                                                <Label className="text-[12.5px] font-semibold text-slate-700">Longitude</Label>
+                                                <Input type="number" step="any" placeholder="115.167820" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} onBlur={field.handleBlur} />
+                                            </div>
+                                        )}
+                                    </form.AppField>
+                                </div>
+                            </Section>
+                        </div>
+                    )}
+
+                    {/* ════════ AMENITIES & POLICIES ════════ */}
+                    {activeTab === 'Amenities and Policies' && (
+                        <div className="flex flex-col gap-8">
+                            <Section>
+                                <SectionLabel>Property Amenities</SectionLabel>
+                                <form.AppField name="amenities">
+                                    {(field) => (
                                         <div className="flex flex-wrap gap-2">
                                             {PROP_AMENITIES.map(({ label, icon: Icon }) => {
                                                 const isOn = field.state.value.includes(label)
@@ -602,23 +752,22 @@ function PropertyComponent() {
                                                 )
                                             })}
                                         </div>
-                                    )} />
-                                </div>
-                            )}
+                                    )}
+                                </form.AppField>
+                            </Section>
 
-                            {/* ════════ POLICIES ════════ */}
-                            {activeTab === 'Policies' && (
-                                <div className="flex flex-col gap-6">
-                                    <div>
-                                        <SectionLabel>Guest Policies</SectionLabel>
-                                        <div className="rounded-2xl border border-slate-100 overflow-hidden divide-y divide-slate-100">
-                                            {([
-                                                { name: 'policies.smokingAllowed' as const, label: 'Smoking allowed', sub: 'Guests may smoke on premises' },
-                                                { name: 'policies.petsAllowed' as const, label: 'Pets allowed', sub: 'Guests may bring animals' },
-                                                { name: 'policies.childrenAllowed' as const, label: 'Children allowed', sub: 'Under 18 permitted' },
-                                                { name: 'policies.partiesAllowed' as const, label: 'Parties / events allowed', sub: 'Guests may host gatherings' },
-                                            ] as const).map(policy => (
-                                                <form.Field key={policy.name} name={policy.name} children={(f) => (
+                            <div className="flex flex-col gap-6">
+                                <Section>
+                                    <SectionLabel>Guest Policies</SectionLabel>
+                                    <div className="rounded-2xl border border-slate-100 overflow-hidden divide-y divide-slate-100">
+                                        {([
+                                            { name: 'policies.smokingAllowed' as const, label: 'Smoking allowed', sub: 'Guests may smoke on premises' },
+                                            { name: 'policies.petsAllowed' as const, label: 'Pets allowed', sub: 'Guests may bring animals' },
+                                            { name: 'policies.childrenAllowed' as const, label: 'Children allowed', sub: 'Under 18 permitted' },
+                                            { name: 'policies.partiesAllowed' as const, label: 'Parties / events allowed', sub: 'Guests may host gatherings' },
+                                        ] as const).map(policy => (
+                                            <form.AppField key={policy.name} name={policy.name}>
+                                                {(f) => (
                                                     <div className="flex items-center justify-between px-4 py-3.5 bg-white hover:bg-slate-50/70 transition-colors">
                                                         <div>
                                                             <p className="text-[13px] font-semibold text-slate-800">{policy.label}</p>
@@ -626,213 +775,125 @@ function PropertyComponent() {
                                                         </div>
                                                         <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
                                                     </div>
-                                                )} />
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <SectionLabel>Fees &amp; Rules</SectionLabel>
-                                        <div className="flex flex-col gap-3">
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <form.Field name="minGuestAge" children={(field) => (
-                                                    <FormField label="Minimum guest age">
-                                                        <Input type="number" placeholder="18" min="0" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value ?? ''} onChange={(e) => field.handleChange(e.target.value ? parseInt(e.target.value) : undefined)} />
-                                                    </FormField>
-                                                )} />
-                                                <form.Field name="securityDeposit" children={(field) => (
-                                                    <FormField label="Security deposit">
-                                                        <Input type="number" placeholder="0.00" min="0" step="0.01" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value ?? ''} onChange={(e) => field.handleChange(e.target.value ? parseFloat(e.target.value) : undefined)} />
-                                                    </FormField>
-                                                )} />
-                                            </div>
-                                            <form.Field name="houseRules" children={(field) => (
-                                                <FormField label="House rules">
-                                                    <Textarea placeholder="e.g. No loud music after 10pm..." className="min-h-[90px] rounded-xl border-slate-200 text-[13px] resize-none leading-relaxed" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </FormField>
-                                            )} />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ════════ MEDIA ════════ */}
-                            {activeTab === 'Media' && (
-                                <div className="flex flex-col gap-6">
-                                    <div>
-                                        <SectionLabel>Property Photos</SectionLabel>
-                                        <div
-                                            className="border-2 border-dashed border-slate-200 rounded-2xl p-10 flex flex-col items-center gap-3 cursor-pointer hover:border-[#243E8B]/40 hover:bg-[#EEF3FF]/20 transition-all duration-300 group"
-                                            onClick={() => {/* file pick */ }}
-                                        >
-                                            <div className="size-12 rounded-2xl bg-slate-100 group-hover:bg-[#EEF3FF] flex items-center justify-center transition-colors duration-300">
-                                                <Plus className="size-5 text-slate-400 group-hover:text-[#243E8B] transition-colors duration-300" />
-                                            </div>
-                                            <div className="text-center">
-                                                <p className="text-[13px] font-semibold text-slate-700">Click to upload or drag &amp; drop</p>
-                                                <p className="text-[11.5px] text-slate-400 mt-0.5">JPG, PNG, WEBP · max 10MB each</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <SectionLabel>Media URLs</SectionLabel>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <form.Field name="logoUrl" children={(field) => (
-                                                <FormField label="Logo URL">
-                                                    <Input type="url" placeholder="https://..." className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </FormField>
-                                            )} />
-                                            <form.Field name="videoUrl" children={(field) => (
-                                                <FormField label="Video / virtual tour URL">
-                                                    <Input type="url" placeholder="https://youtube.com/..." className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value)} />
-                                                </FormField>
-                                            )} />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* ── Dialog footer ── matches card button style exactly ── */}
-                        <Separator />
-                        <div className="flex items-center justify-between px-6 py-4 shrink-0">
-                            {/* Tab navigation hints */}
-                            <div className="flex items-center gap-1">
-                                {PROP_TABS.map((tab) => (
-                                    <button
-                                        key={tab}
-                                        type="button"
-                                        onClick={() => setActiveTab(tab)}
-                                        className={cn(
-                                            'size-1.5 rounded-full transition-all duration-200',
-                                            activeTab === tab ? 'bg-[#243E8B] w-4' : 'bg-slate-200 hover:bg-slate-300'
-                                        )}
-                                    />
-                                ))}
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => { setIsAddOpen(false); setEditingProperty(null) }}
-                                    className="h-9 px-5 rounded-xl font-semibold text-[13px] border-slate-200"
-                                >
-                                    Cancel
-                                </Button>
-                                <form.Subscribe
-                                    selector={(state) => [state.canSubmit, state.isSubmitting]}
-                                    children={([canSubmit, isSubmitting]) => (
-                                        <Button
-                                            type="submit"
-                                            disabled={!canSubmit}
-                                            className="h-9 px-5 rounded-xl font-semibold bg-[#243E8B] hover:bg-[#1D3270] text-white text-[13px] shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300"
-                                        >
-                                            {isSubmitting ? 'Saving...' : 'Save property'}
-                                        </Button>
-                                    )}
-                                />
-                            </div>
-                        </div>
-                    </form>
-                </DialogContent>
-            </Dialog>
-
-            {/* ══════════════════════════════════════════════════
-                VIEW PROPERTY DETAIL DIALOG
-            ══════════════════════════════════════════════════ */}
-            <Dialog open={!!selectedProperty} onOpenChange={(open) => !open && setSelectedProperty(null)}>
-                <DialogContent className="w-[95%] sm:max-w-xl max-h-[88vh] overflow-y-auto bg-white p-0 rounded-2xl gap-0 shadow-2xl shadow-slate-900/15">
-                    {selectedProperty && (
-                        <>
-                            {/* Hero image */}
-                            <div className="relative h-52 w-full overflow-hidden rounded-t-2xl">
-                                <img src={selectedProperty.imageUrl} alt={selectedProperty.title} className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-                                    <div className="bg-black/20 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 border border-white/20">
-                                        <div className={cn("size-2 rounded-full animate-pulse", selectedProperty.occupancy > 80 ? "bg-emerald-400" : selectedProperty.occupancy > 50 ? "bg-amber-400" : "bg-red-400")} />
-                                        <span className="text-[12.5px] font-bold text-white tracking-tight">{selectedProperty.occupancy}% <span className="font-medium text-white/70 ml-0.5">Occupied</span></span>
-                                    </div>
-                                    <StatusBadge status={selectedProperty.status} />
-                                </div>
-                            </div>
-
-                            <div className="p-5 flex flex-col gap-5">
-                                {/* Title & meta */}
-                                <div>
-                                    <DialogTitle className="text-[18px] font-bold text-slate-900">{selectedProperty.title}</DialogTitle>
-                                    <DialogDescription className="sr-only">Details for {selectedProperty.title}</DialogDescription>
-                                    <div className="flex flex-col gap-1.5 mt-2">
-                                        <div className="flex items-center gap-1.5 text-slate-500">
-                                            <MapPin className="size-3.5 text-slate-400 shrink-0" />
-                                            <span className="text-[12.5px] font-medium">{selectedProperty.location}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 text-slate-500">
-                                            <Building className="size-3.5 text-slate-400 shrink-0" />
-                                            <span className="text-[12.5px] font-semibold text-slate-600">{selectedProperty.type} • {selectedProperty.totalRooms} Units</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <Separator />
-
-                                {/* Amenities sample */}
-                                <div>
-                                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3">Amenities</p>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {['Free WiFi', 'Air Conditioning', 'Pool', 'Parking'].map(a => (
-                                            <div key={a} className="flex items-center gap-2">
-                                                <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
-                                                <span className="text-[12.5px] text-slate-600 font-medium">{a}</span>
-                                            </div>
+                                                )}
+                                            </form.AppField>
                                         ))}
                                     </div>
-                                </div>
+                                </Section>
 
-                                {/* Check-in / Check-out */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="border border-slate-100 rounded-2xl p-4 flex gap-3 items-center bg-slate-50/50">
-                                        <div className="bg-[#EEF3FF] p-2.5 rounded-xl text-[#243E8B] shrink-0">
-                                            <ArrowRight className="size-4" />
+                                <Section>
+                                    <SectionLabel>Fees &amp; Rules</SectionLabel>
+                                    <div className="flex flex-col gap-3">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <form.AppField name="minGuestAge">
+                                                {(field) => (
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <Label className="text-[12.5px] font-semibold text-slate-700">Minimum guest age</Label>
+                                                        <Input type="number" placeholder="18" min="0" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value ? parseInt(e.target.value) : 0)} onBlur={field.handleBlur} />
+                                                    </div>
+                                                )}
+                                            </form.AppField>
+                                            <form.AppField name="securityDeposit">
+                                                {(field) => (
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <Label className="text-[12.5px] font-semibold text-slate-700">Security deposit</Label>
+                                                        <Input type="number" placeholder="0.00" min="0" step="0.01" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value ? parseFloat(e.target.value) : 0)} onBlur={field.handleBlur} />
+                                                    </div>
+                                                )}
+                                            </form.AppField>
                                         </div>
-                                        <div>
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide block">Check-in</span>
-                                            <span className="text-[13px] font-bold text-slate-800">After 3:00 PM</span>
-                                        </div>
+                                        <form.AppField name="houseRules">
+                                            {(field) => <field.FormTextarea label="House rules" placeholder="e.g. No loud music after 10pm..." />}
+                                        </form.AppField>
                                     </div>
-                                    <div className="border border-slate-100 rounded-2xl p-4 flex gap-3 items-center bg-slate-50/50">
-                                        <div className="bg-red-50 p-2.5 rounded-xl text-red-500 shrink-0">
-                                            <XCircle className="size-4" />
-                                        </div>
-                                        <div>
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide block">Check-out</span>
-                                            <span className="text-[13px] font-bold text-slate-800">Before 11:00 AM</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <Separator />
-
-                                {/* Actions — same style as card buttons */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => { openEdit(selectedProperty); setSelectedProperty(null) }}
-                                        className="rounded-xl h-10 font-semibold text-[13px] border-slate-200 hover:bg-slate-50 hover:text-[#243E8B] hover:border-[#243E8B]/30 gap-1.5 transition-all duration-300"
-                                    >
-                                        <Edit className="size-3.5" />
-                                        Edit Property
-                                    </Button>
-                                    <Button className="rounded-xl h-10 font-semibold text-[13px] bg-[#243E8B] hover:bg-[#1D3270] text-white shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300">
-                                        Manage Availability
-                                    </Button>
-                                </div>
+                                </Section>
                             </div>
-                        </>
+                        </div>
                     )}
-                </DialogContent>
-            </Dialog>
+
+                    {/* ════════ MEDIA ════════ */}
+                    {activeTab === 'Media' && (
+                        <div className="flex flex-col gap-6">
+                            <Section>
+                                <SectionLabel>Property Photos</SectionLabel>
+                                <div
+                                    className="border-2 border-dashed border-slate-200 rounded-2xl p-10 flex flex-col items-center gap-3 cursor-pointer hover:border-[#243E8B]/40 hover:bg-[#EEF3FF]/20 transition-all duration-300 group"
+                                    onClick={() => {/* file pick */ }}
+                                >
+                                    <div className="size-12 rounded-2xl bg-slate-100 group-hover:bg-[#EEF3FF] flex items-center justify-center transition-colors duration-300">
+                                        <Plus className="size-5 text-slate-400 group-hover:text-[#243E8B] transition-colors duration-300" />
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-[13px] font-semibold text-slate-700">Click to upload or drag &amp; drop</p>
+                                        <p className="text-[11.5px] text-slate-400 mt-0.5">JPG, PNG, WEBP · max 10MB each</p>
+                                    </div>
+                                </div>
+                            </Section>
+
+                            <Section>
+                                <SectionLabel>Media URLs</SectionLabel>
+                                <div className="flex flex-col gap-3">
+                                    <form.AppField name="thumbnail">
+                                        {(field) => <field.FormInput label="Thumbnail URL" type="url" placeholder="https://..." />}
+                                    </form.AppField>
+                                    <form.AppField name="gallery">
+                                        {(field) => (
+                                            <div className="flex flex-col gap-1.5">
+                                                <Label className="text-[12.5px] font-semibold text-slate-700">Gallery URLs (comma separated)</Label>
+                                                <Input type="text" placeholder="https://a..., https://b..." className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value.join(', ')} onChange={(e) => field.handleChange(e.target.value.split(',').map(s => s.trim()).filter(Boolean))} onBlur={field.handleBlur} />
+                                            </div>
+                                        )}
+                                    </form.AppField>
+                                </div>
+                            </Section>
+                        </div>
+                    )}
+                </div>
+
+                <Separator />
+                <div className="flex items-center justify-between px-6 py-4 shrink-0">
+                    <div className="flex items-center gap-1">
+                        {PROP_TABS.map((tab) => (
+                            <button
+                                key={tab}
+                                type="button"
+                                onClick={() => onActiveTabChange(tab)}
+                                className={cn(
+                                    'size-1.5 rounded-full transition-all duration-200',
+                                    activeTab === tab ? 'bg-[#243E8B] w-4' : 'bg-slate-200 hover:bg-slate-300'
+                                )}
+                            />
+                        ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onCancel}
+                            className="h-9 px-5 rounded-xl font-semibold text-[13px] border-slate-200"
+                        >
+                            Cancel
+                        </Button>
+                        <form.AppForm>
+                            <form.FormSubmit label={submitLabel} />
+                        </form.AppForm>
+                    </div>
+                </div>
+            </form>
         </>
+    )
+}
+
+// ─── Small visual primitives local to the form ─────────────────────
+function Section({ children }: { children: React.ReactNode }) {
+    return <div className="flex flex-col gap-3">{children}</div>
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+    return (
+        <div className="flex items-center gap-3 mb-4">
+            <span className="text-[10.5px] font-extrabold uppercase tracking-[0.12em] text-slate-400">{children}</span>
+            <div className="flex-1 h-px bg-slate-100" />
+        </div>
     )
 }
