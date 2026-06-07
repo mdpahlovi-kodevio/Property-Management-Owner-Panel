@@ -18,6 +18,10 @@ export type CreateRoomTypeForm = {
     name: string
     internalCode: string
     description: string
+    basePrice: number
+    weekendPrice: number
+    extraPersonFee: number
+    currency: string
     maxAdults: number
     maxChildren: number
     maxOccupancy: number
@@ -34,24 +38,24 @@ export type CreateRoomTypeForm = {
     images: File[]
 }
 
-export const Route = createFileRoute('/__main/rentals_/$propertyId')({
-    component: RoomsComponent,
+export const Route = createFileRoute('/__main/property/$propertyId')({
+    component: PropertyUnitComponent,
 })
 
-const MOCK_ROOMS = [
-    { id: 'master-suite-1', title: 'Master Suite 1', location: 'Floor 1, West Wing', details: '1 Bed • 1 Bath • 45m²', price: '$120', period: '/Night', status: 'Active', imageUrl: 'https://picsum.photos/seed/room1/800/600' },
-    { id: 'guest-bedroom-a', title: 'Guest Bedroom A', location: 'Floor 2, East Wing', details: '2 Beds • 1 Bath • 35m²', price: '$90', period: '/Night', status: 'Active', imageUrl: 'https://picsum.photos/seed/room2/800/600' },
-    { id: 'penthouse-room', title: 'Penthouse Room', location: 'Top Floor', details: '1 Bed • 1 Bath • 55m²', price: '$150', period: '/Night', status: 'Maintenance', imageUrl: 'https://picsum.photos/seed/room3/800/600' },
-    { id: 'standard-room', title: 'Standard Room', location: 'Floor 1, South Wing', details: '1 Bed • 1 Bath • 25m²', price: '$70', period: '/Night', status: 'Active', imageUrl: 'https://picsum.photos/seed/room4/800/600' },
+const MOCK_ROOM_TYPES = [
+    { id: 'master-suite-1', title: 'Master Suite', location: 'Floor 1', details: '1 Bed • 1 Bath • 45m²', basePrice: 120, totalUnits: 2, capacity: '2 Adults', status: 'Active', imageUrl: 'https://picsum.photos/seed/room1/800/600', units: ['101', '102'] },
+    { id: 'guest-bedroom-a', title: 'Guest Bedroom', location: 'Floor 2', details: '2 Beds • 1 Bath • 35m²', basePrice: 90, totalUnits: 4, capacity: '2 Adults, 1 Child', status: 'Active', imageUrl: 'https://picsum.photos/seed/room2/800/600', units: ['201', '202', '203', '204'] },
+    { id: 'penthouse-room', title: 'Penthouse', location: 'Top Floor', details: '1 Bed • 1 Bath • 55m²', basePrice: 150, totalUnits: 1, capacity: '2 Adults', status: 'Maintenance', imageUrl: 'https://picsum.photos/seed/room3/800/600', units: ['PH1'] },
+    { id: 'standard-room', title: 'Standard Room', location: 'Floor 1', details: '1 Bed • 1 Bath • 25m²', basePrice: 70, totalUnits: 8, capacity: '2 Adults', status: 'Active', imageUrl: 'https://picsum.photos/seed/room4/800/600', units: ['103', '104', '105', '106', '107', '108', '109', '110'] },
 ]
 
 const BED_TYPES = ['King', 'Queen', 'Double', 'Twin', 'Single', 'Bunk', 'Sofa Bed', 'Murphy Bed', 'Futon']
 const ROOM_AMENITIES = ['Air conditioning', 'TV', 'Mini bar', 'Coffee machine', 'Desk', 'Balcony', 'Kitchen', 'Microwave', 'Refrigerator', 'Safe', 'Hair dryer', 'Bathtub']
 const VIEW_TYPES = ['Ocean view', 'Garden view', 'Pool view', 'Mountain view', 'City view', 'Courtyard view']
-const ROOM_TABS = ['Basics', 'Occupancy', 'Beds', 'Amenities', 'Units', 'OTA'] as const
+const ROOM_TABS = ['Basics', 'Pricing', 'Occupancy', 'Beds', 'Amenities', 'Units', 'OTA'] as const
 type RoomTab = typeof ROOM_TABS[number]
 
-function RoomsComponent() {
+function PropertyUnitComponent() {
     const { propertyId } = Route.useParams()
     const [searchQuery, setSearchQuery] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
@@ -59,7 +63,7 @@ function RoomsComponent() {
 
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<RoomTab>('Basics')
-    const [editingRoom, setEditingRoom] = useState<typeof MOCK_ROOMS[0] | null>(null)
+    const [editingRoom, setEditingRoom] = useState<typeof MOCK_ROOM_TYPES[0] | null>(null)
 
     // Unit management state
     const [unitInput, setUnitInput] = useState('')
@@ -71,6 +75,10 @@ function RoomsComponent() {
             name: '',
             internalCode: '',
             description: '',
+            basePrice: 100,
+            weekendPrice: 120,
+            extraPersonFee: 20,
+            currency: 'USD',
             maxAdults: 2,
             maxChildren: 2,
             maxOccupancy: 4,
@@ -103,7 +111,7 @@ function RoomsComponent() {
         setIsAddOpen(true)
     }
 
-    const openEdit = (room: typeof MOCK_ROOMS[0]) => {
+    const openEdit = (room: typeof MOCK_ROOM_TYPES[0]) => {
         setEditingRoom(room)
         form.reset()
         form.setFieldValue('name', room.title)
@@ -116,7 +124,7 @@ function RoomsComponent() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex flex-col gap-2">
                     <Button variant="ghost" size="sm" asChild className="w-fit -ml-3 text-slate-500 hover:text-slate-900">
-                        <Link to="/rentals">
+                        <Link to="/property">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Properties
                         </Link>
@@ -142,7 +150,7 @@ function RoomsComponent() {
 
             <div className="flex flex-col gap-8 mt-6">
                 {(() => {
-                    const filteredRooms = MOCK_ROOMS.filter(room => {
+                    const filteredRooms = MOCK_ROOM_TYPES.filter(room => {
                         const query = searchQuery.toLowerCase()
                         return room.title.toLowerCase().includes(query) || room.location.toLowerCase().includes(query) || room.details.toLowerCase().includes(query)
                     })
@@ -162,9 +170,9 @@ function RoomsComponent() {
                                             <div className="absolute inset-0 bg-linear-to-t from-slate-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                             {/* Price tag */}
                                             <div className="absolute top-3 right-3 z-10">
-                                                <div className="bg-white/95 px-3 py-1.5 rounded-2xl shadow-sm border border-white/20 flex items-baseline gap-0.5">
-                                                    <span className="text-[15px] font-black text-slate-900">{room.price}</span>
-                                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{room.period}</span>
+                                                <div className="bg-white/95 px-3 py-1.5 rounded-2xl shadow-sm border border-white/20 flex flex-col items-end gap-0">
+                                                    <span className="text-[15px] font-black text-slate-900 leading-none">${room.basePrice}</span>
+                                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Base / Night</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -185,11 +193,11 @@ function RoomsComponent() {
                                                 </div>
                                                 <div className="flex flex-col gap-1.5">
                                                     <div className="flex items-center gap-2 text-slate-500">
-                                                        <MapPin className="size-3.5 shrink-0 text-slate-400" />
-                                                        <span className="text-[12.5px] font-medium leading-none truncate">{room.location}</span>
+                                                        <BedDouble className="size-3.5 shrink-0 text-slate-400" />
+                                                        <span className="text-[12.5px] font-medium leading-none truncate">{room.totalUnits} Units • {room.capacity}</span>
                                                     </div>
                                                     <div className="flex items-center gap-2 text-slate-500">
-                                                        <BedDouble className="size-3.5 shrink-0 text-slate-400" />
+                                                        <MapPin className="size-3.5 shrink-0 text-slate-400" />
                                                         <span className="text-[12.5px] font-semibold text-slate-600 tracking-wide leading-none truncate">{room.details}</span>
                                                     </div>
                                                 </div>
@@ -315,6 +323,64 @@ function RoomsComponent() {
                                             <div className="flex flex-col gap-1.5">
                                                 <Label className="text-[12px] font-medium text-slate-600">Description <span className="text-red-500">*</span></Label>
                                                 <Textarea placeholder="Describe the room type for OTA listings..." className="min-h-[80px] rounded-lg border-slate-200 text-[13px] resize-none" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
+                                            </div>
+                                        )} />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── PRICING ── */}
+                            {activeTab === 'Pricing' && (
+                                <div className="flex flex-col gap-5">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                        <span className="h-px flex-1 bg-slate-100" />Base Pricing Setup<span className="h-px flex-1 bg-slate-100" />
+                                    </p>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <form.Field name="basePrice" children={(field) => (
+                                            <div className="flex flex-col gap-1.5">
+                                                <Label className="text-[12px] font-medium text-slate-600">Base price / night <span className="text-red-500">*</span></Label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[13px]">$</span>
+                                                    <Input type="number" min="0" className="h-9 pl-7 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} />
+                                                </div>
+                                            </div>
+                                        )} />
+                                        <form.Field name="weekendPrice" children={(field) => (
+                                            <div className="flex flex-col gap-1.5">
+                                                <Label className="text-[12px] font-medium text-slate-600">Weekend price / night</Label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[13px]">$</span>
+                                                    <Input type="number" min="0" className="h-9 pl-7 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} />
+                                                </div>
+                                            </div>
+                                        )} />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <form.Field name="extraPersonFee" children={(field) => (
+                                            <div className="flex flex-col gap-1.5">
+                                                <Label className="text-[12px] font-medium text-slate-600">Extra person fee</Label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[13px]">$</span>
+                                                    <Input type="number" min="0" className="h-9 pl-7 rounded-lg border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} />
+                                                </div>
+                                                <p className="text-[11px] text-slate-400">Charged per person over base capacity</p>
+                                            </div>
+                                        )} />
+                                        <form.Field name="currency" children={(field) => (
+                                            <div className="flex flex-col gap-1.5">
+                                                <Label className="text-[12px] font-medium text-slate-600">Currency</Label>
+                                                <Select value={field.state.value} onValueChange={field.handleChange}>
+                                                    <SelectTrigger className="h-9 rounded-lg border-slate-200 text-[13px] bg-white">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="USD">USD ($)</SelectItem>
+                                                        <SelectItem value="EUR">EUR (€)</SelectItem>
+                                                        <SelectItem value="GBP">GBP (£)</SelectItem>
+                                                        <SelectItem value="AUD">AUD ($)</SelectItem>
+                                                        <SelectItem value="IDR">IDR (Rp)</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
                                             </div>
                                         )} />
                                     </div>

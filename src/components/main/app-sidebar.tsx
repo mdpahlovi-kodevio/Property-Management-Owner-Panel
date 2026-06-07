@@ -35,8 +35,8 @@ export const data = {
             icon: <MessageCircleMore />,
         },
         {
-            title: 'Rentals',
-            url: '/rentals',
+            title: 'Rental Properties',
+            url: '/property',
             icon: <House />,
         },
         {

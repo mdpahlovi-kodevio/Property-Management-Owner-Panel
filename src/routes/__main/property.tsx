@@ -53,23 +53,23 @@ export type CreatePropertyForm = {
     images: File[]
 }
 
-export const Route = createFileRoute('/__main/rentals')({
-    component: RentalsComponent,
+export const Route = createFileRoute('/__main/property')({
+    component: PropertyComponent,
 })
 
 const MOCK_PROPERTIES = [
-    { id: 'sea-view-villa', title: 'Sea View Villa', location: 'Coastal Avenue, Riviera', details: 'Villa • 4 Units', price: '$120', period: 'FROM', status: 'Active', imageUrl: 'https://picsum.photos/seed/prop1/800/600' },
-    { id: 'mountain-retreat', title: 'Mountain Retreat', location: 'Highland Park, Aspen', details: 'Chalet • 8 Units', price: '$90', period: 'FROM', status: 'Active', imageUrl: 'https://picsum.photos/seed/prop2/800/600' },
-    { id: 'urban-oasis-penthouse', title: 'Urban Oasis Penthouse', location: 'Downtown Metro District', details: 'Apartment • 1 Unit', price: '$150', period: 'FROM', status: 'Maintenance', imageUrl: 'https://picsum.photos/seed/prop3/800/600' },
-    { id: 'cozy-cottage', title: 'Cozy Cottage', location: 'Quiet Suburbia', details: 'Cottage • 2 Units', price: '$70', period: 'FROM', status: 'Active', imageUrl: 'https://picsum.photos/seed/prop4/800/600' },
-    { id: 'luxury-apartment', title: 'Luxury Apartment', location: 'City Center', details: 'Apartment • 12 Units', price: '$110', period: 'FROM', status: 'Active', imageUrl: 'https://picsum.photos/seed/prop5/800/600' },
-    { id: 'beachfront-house', title: 'Beachfront House', location: 'Sunny Beach', details: 'House • 1 Unit', price: '$200', period: 'FROM', status: 'Active', imageUrl: 'https://picsum.photos/seed/prop6/800/600' },
-    { id: 'modern-loft', title: 'Modern Loft', location: 'Arts District', details: 'Loft • 5 Units', price: '$95', period: 'FROM', status: 'Active', imageUrl: 'https://picsum.photos/seed/prop7/800/600' },
-    { id: 'rustic-cabin', title: 'Rustic Cabin', location: 'Pine Grove', details: 'Cabin • 3 Units', price: '$65', period: 'FROM', status: 'Maintenance', imageUrl: 'https://picsum.photos/seed/prop8/800/600' },
-    { id: 'riverside-estate', title: 'Riverside Estate', location: 'Valley Edge', details: 'Estate • 10 Units', price: '$180', period: 'FROM', status: 'Active', imageUrl: 'https://picsum.photos/seed/prop9/800/600' },
-    { id: 'skyview-condo', title: 'Skyview Condo', location: 'Uptown Core', details: 'Condo • 20 Units', price: '$135', period: 'FROM', status: 'Active', imageUrl: 'https://picsum.photos/seed/prop10/800/600' },
-    { id: 'desert-villa', title: 'Desert Villa', location: 'Canyon Ridge', details: 'Villa • 2 Units', price: '$145', period: 'FROM', status: 'Active', imageUrl: 'https://picsum.photos/seed/prop11/800/600' },
-    { id: 'historic-townhouse', title: 'Historic Townhouse', location: 'Old Town Square', details: 'Townhouse • 4 Units', price: '$115', period: 'FROM', status: 'Maintenance', imageUrl: 'https://picsum.photos/seed/prop12/800/600' },
+    { id: 'sea-view-villa', title: 'Sea View Villa', location: 'Coastal Avenue, Riviera', type: 'Villa', totalRooms: 12, roomTypes: 4, occupancy: 85, todayCheckIns: 2, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop1/800/600' },
+    { id: 'mountain-retreat', title: 'Mountain Retreat', location: 'Highland Park, Aspen', type: 'Chalet', totalRooms: 8, roomTypes: 3, occupancy: 60, todayCheckIns: 1, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop2/800/600' },
+    { id: 'urban-oasis-penthouse', title: 'Urban Oasis Penthouse', location: 'Downtown Metro District', type: 'Apartment', totalRooms: 1, roomTypes: 1, occupancy: 100, todayCheckIns: 0, status: 'Maintenance', imageUrl: 'https://picsum.photos/seed/prop3/800/600' },
+    { id: 'cozy-cottage', title: 'Cozy Cottage', location: 'Quiet Suburbia', type: 'Cottage', totalRooms: 2, roomTypes: 1, occupancy: 50, todayCheckIns: 1, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop4/800/600' },
+    { id: 'luxury-apartment', title: 'Luxury Apartment', location: 'City Center', type: 'Apartment', totalRooms: 24, roomTypes: 5, occupancy: 92, todayCheckIns: 4, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop5/800/600' },
+    { id: 'beachfront-house', title: 'Beachfront House', location: 'Sunny Beach', type: 'House', totalRooms: 5, roomTypes: 2, occupancy: 80, todayCheckIns: 2, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop6/800/600' },
+    { id: 'modern-loft', title: 'Modern Loft', location: 'Arts District', type: 'Loft', totalRooms: 15, roomTypes: 3, occupancy: 75, todayCheckIns: 3, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop7/800/600' },
+    { id: 'rustic-cabin', title: 'Rustic Cabin', location: 'Pine Grove', type: 'Cabin', totalRooms: 10, roomTypes: 2, occupancy: 40, todayCheckIns: 0, status: 'Maintenance', imageUrl: 'https://picsum.photos/seed/prop8/800/600' },
+    { id: 'riverside-estate', title: 'Riverside Estate', location: 'Valley Edge', type: 'Estate', totalRooms: 20, roomTypes: 6, occupancy: 65, todayCheckIns: 1, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop9/800/600' },
+    { id: 'skyview-condo', title: 'Skyview Condo', location: 'Uptown Core', type: 'Condo', totalRooms: 40, roomTypes: 4, occupancy: 88, todayCheckIns: 5, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop10/800/600' },
+    { id: 'desert-villa', title: 'Desert Villa', location: 'Canyon Ridge', type: 'Villa', totalRooms: 6, roomTypes: 2, occupancy: 33, todayCheckIns: 1, status: 'Active', imageUrl: 'https://picsum.photos/seed/prop11/800/600' },
+    { id: 'historic-townhouse', title: 'Historic Townhouse', location: 'Old Town Square', type: 'Townhouse', totalRooms: 8, roomTypes: 3, occupancy: 100, todayCheckIns: 0, status: 'Maintenance', imageUrl: 'https://picsum.photos/seed/prop12/800/600' },
 ]
 
 const PROP_AMENITIES = [
@@ -136,7 +136,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 // ─── Component ───────────────────────────────────────────────────────
-function RentalsComponent() {
+function PropertyComponent() {
     const navigate = useNavigate()
     const [searchQuery, setSearchQuery] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
@@ -189,7 +189,7 @@ function RentalsComponent() {
         <>
             {/* ── Page header ── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <PageHeader title="Rentals" description="Manage your Rentals" />
+                <PageHeader title="Rental Properties" description="Manage your Rental Properties" />
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                     <SearchInput
                         placeholder="Search properties..."
@@ -212,7 +212,7 @@ function RentalsComponent() {
                 {(() => {
                     const filtered = MOCK_PROPERTIES.filter(p => {
                         const q = searchQuery.toLowerCase()
-                        return p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q) || p.details.toLowerCase().includes(q)
+                        return p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q) || p.type.toLowerCase().includes(q)
                     })
                     const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                     return (
@@ -221,62 +221,80 @@ function RentalsComponent() {
                                 {paginated.map((property) => (
                                     <div
                                         key={property.id}
-                                        onClick={() => navigate({ to: '/rentals/$propertyId', params: { propertyId: property.id } })}
-                                        className="group h-full bg-white border border-slate-200/60 rounded-3xl overflow-hidden shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-500 ease-out hover:-translate-y-1.5 flex flex-col relative cursor-pointer"
+                                        onClick={() => navigate({ to: '/property/$propertyId', params: { propertyId: property.id } })}
+                                        className="group h-full bg-white border border-slate-200/60 rounded-[24px] overflow-hidden shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-500 ease-out hover:-translate-y-1 flex flex-col relative cursor-pointer"
                                     >
                                         {/* Image */}
-                                        <div className="relative w-full aspect-video shrink-0 overflow-hidden bg-slate-100">
+                                        <div className="relative w-full aspect-[4/3] sm:aspect-[1.4] shrink-0 overflow-hidden bg-slate-100">
                                             <img
                                                 src={property.imageUrl}
                                                 alt={property.title}
-                                                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                                                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                                             />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                            {/* Price badge */}
-                                            <div className="absolute top-3 right-3 z-10">
-                                                <div className="bg-white/95 backdrop-blur-sm px-2.5 py-1.5 rounded-xl shadow-sm border border-white/30 flex items-baseline gap-1">
-                                                    <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wide">{property.period}</span>
-                                                    <span className="text-[15px] font-black text-slate-900">{property.price}</span>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                            {/* Occupancy badge */}
+                                            <div className="absolute top-4 right-4 z-10">
+                                                <div className="bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 border border-white/50">
+                                                    <div className={cn("size-2 rounded-full animate-pulse", property.occupancy > 80 ? "bg-emerald-500" : property.occupancy > 50 ? "bg-amber-500" : "bg-red-500")} />
+                                                    <span className="text-[12.5px] font-bold text-slate-700 tracking-tight">{property.occupancy}% <span className="font-medium text-slate-400 ml-0.5">Occupied</span></span>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Details */}
-                                        <div className="p-4 flex flex-col gap-3 grow">
-                                            <div className="flex flex-col gap-2">
+                                        <div className="p-5 flex flex-col gap-4 grow">
+                                            <div className="flex flex-col gap-3">
                                                 <div className="flex items-start justify-between gap-2">
-                                                    <h3 className="text-[0.95rem] font-bold text-slate-900 tracking-tight group-hover:text-[#243E8B] transition-colors duration-300 leading-tight">
+                                                    <h3 className="text-[1.15rem] font-bold text-slate-900 tracking-tight group-hover:text-[#243E8B] transition-colors duration-300 leading-tight">
                                                         {property.title}
                                                     </h3>
                                                     <StatusBadge status={property.status} />
                                                 </div>
-                                                <div className="flex flex-col gap-1.5">
-                                                    <div className="flex items-center gap-1.5 text-slate-500">
-                                                        <MapPin className="size-3.5 shrink-0 text-slate-400" />
-                                                        <span className="text-[12px] font-medium leading-none truncate">{property.location}</span>
+                                                <div className="flex flex-col gap-3 mt-1">
+                                                    <div className="flex items-center gap-2.5 text-slate-500">
+                                                        <MapPin className="size-[15px] shrink-0 text-slate-400" />
+                                                        <span className="text-[13.5px] font-medium leading-none truncate text-slate-600">{property.location}</span>
                                                     </div>
-                                                    <div className="flex items-center gap-1.5 text-slate-500">
-                                                        <Building className="size-3.5 shrink-0 text-slate-400" />
-                                                        <span className="text-[12px] font-semibold text-slate-600 leading-none truncate">{property.details}</span>
+
+                                                    {/* PMS Metrics */}
+                                                    <div className="grid grid-cols-2 gap-2.5 mt-0.5">
+                                                        <div className="flex flex-col gap-1.5 p-3 bg-slate-50 rounded-2xl border border-slate-100/60">
+                                                            <div className="flex items-center gap-1.5 text-slate-400">
+                                                                <Building className="size-[13px]" />
+                                                                <span className="text-[10.5px] font-extrabold uppercase tracking-wider">Units</span>
+                                                            </div>
+                                                            <span className="text-[15px] font-bold text-slate-700 leading-none">
+                                                                {property.totalRooms} <span className="text-[12.5px] font-semibold text-slate-400">({property.roomTypes} types)</span>
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex flex-col gap-1.5 p-3 bg-[#EEF3FF]/50 rounded-2xl border border-[#EEF3FF]">
+                                                            <div className="flex items-center gap-1.5 text-[#243E8B]/60">
+                                                                <ArrowRight className="size-[13px]" />
+                                                                <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-[#243E8B]/80">Arrivals</span>
+                                                            </div>
+                                                            <span className="text-[15px] font-bold text-[#243E8B] leading-none">
+                                                                {property.todayCheckIns} <span className="text-[12.5px] font-semibold text-[#243E8B]/60">today</span>
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            {/* Action buttons — match dialog footer style */}
-                                            <div className="grid grid-cols-2 gap-2 mt-auto pt-1">
+                                            {/* Action buttons */}
+                                            <div className="grid grid-cols-2 gap-3 mt-auto pt-2">
                                                 <Button
                                                     onClick={(e) => { e.stopPropagation(); openEdit(property) }}
                                                     variant="outline"
-                                                    className="w-full gap-1.5 rounded-xl border-slate-200 text-slate-600 font-semibold h-9 hover:bg-slate-50 hover:text-[#243E8B] hover:border-[#243E8B]/30 transition-all duration-300 group/btn text-[13px]"
+                                                    className="w-full gap-2 rounded-[16px] border-slate-200 text-slate-600 font-semibold h-[42px] hover:bg-slate-50 hover:text-[#243E8B] hover:border-[#243E8B]/30 transition-all duration-300 group/btn text-[14px]"
                                                 >
-                                                    <Edit className="size-3.5 group-hover/btn:-rotate-12 transition-transform duration-300" />
+                                                    <Edit className="size-[15px] group-hover/btn:-rotate-12 transition-transform duration-300" />
                                                     Edit
                                                 </Button>
                                                 <Button
                                                     onClick={(e) => { e.stopPropagation(); setSelectedProperty(property) }}
-                                                    className="w-full gap-1.5 rounded-xl bg-[#243E8B] text-white font-semibold h-9 hover:bg-[#1D3270] shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300 group/btn text-[13px]"
+                                                    className="w-full gap-2 rounded-[16px] bg-[#243E8B] text-white font-semibold h-[42px] hover:bg-[#1D3270] shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300 group/btn text-[14px]"
                                                 >
-                                                    <Eye className="size-3.5 group-hover/btn:scale-110 transition-transform duration-300" />
+                                                    <Eye className="size-[15px] group-hover/btn:scale-110 transition-transform duration-300" />
                                                     View
                                                 </Button>
                                             </div>
@@ -633,7 +651,7 @@ function RentalsComponent() {
                                         <SectionLabel>Property Photos</SectionLabel>
                                         <div
                                             className="border-2 border-dashed border-slate-200 rounded-2xl p-10 flex flex-col items-center gap-3 cursor-pointer hover:border-[#243E8B]/40 hover:bg-[#EEF3FF]/20 transition-all duration-300 group"
-                                            onClick={() => {/* file pick */}}
+                                            onClick={() => {/* file pick */ }}
                                         >
                                             <div className="size-12 rounded-2xl bg-slate-100 group-hover:bg-[#EEF3FF] flex items-center justify-center transition-colors duration-300">
                                                 <Plus className="size-5 text-slate-400 group-hover:text-[#243E8B] transition-colors duration-300" />
@@ -720,9 +738,9 @@ function RentalsComponent() {
                                 <img src={selectedProperty.imageUrl} alt={selectedProperty.title} className="w-full h-full object-cover" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                                 <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-                                    <div>
-                                        <p className="text-[10.5px] font-bold text-white/70 uppercase tracking-widest mb-0.5">{selectedProperty.period}</p>
-                                        <p className="text-2xl font-black text-white leading-none">{selectedProperty.price}</p>
+                                    <div className="bg-black/20 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 border border-white/20">
+                                        <div className={cn("size-2 rounded-full animate-pulse", selectedProperty.occupancy > 80 ? "bg-emerald-400" : selectedProperty.occupancy > 50 ? "bg-amber-400" : "bg-red-400")} />
+                                        <span className="text-[12.5px] font-bold text-white tracking-tight">{selectedProperty.occupancy}% <span className="font-medium text-white/70 ml-0.5">Occupied</span></span>
                                     </div>
                                     <StatusBadge status={selectedProperty.status} />
                                 </div>
@@ -740,7 +758,7 @@ function RentalsComponent() {
                                         </div>
                                         <div className="flex items-center gap-1.5 text-slate-500">
                                             <Building className="size-3.5 text-slate-400 shrink-0" />
-                                            <span className="text-[12.5px] font-semibold text-slate-600">{selectedProperty.details}</span>
+                                            <span className="text-[12.5px] font-semibold text-slate-600">{selectedProperty.type} • {selectedProperty.totalRooms} Units</span>
                                         </div>
                                     </div>
                                 </div>
