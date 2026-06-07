@@ -26,7 +26,7 @@ const reservationSchema = z.object({
     checkOut: z.string().min(1, 'Check out date is required'),
     paymentMethod: z.string(),
     image: z.string().optional(),
-    status: z.enum(['Pending', 'Confirmed']),
+    status: z.enum(['Confirmed', 'Cancelled']),
 })
 
 type Reservation = {
@@ -159,7 +159,11 @@ function RouteComponent() {
     }, [reservations, searchQuery])
 
     const handleToggleStatus = (id: number) => {
-        setReservations((prev) => prev.map((r) => (r.id === id ? { ...r, status: r.status === 'Confirmed' ? 'Cancelled' : 'Confirmed' } : r)))
+        setReservations((prev) => prev.map((r) => {
+            if (r.id !== id) return r;
+            const nextStatus = r.status === 'Pending' ? 'Confirmed' : r.status === 'Confirmed' ? 'Cancelled' : 'Pending';
+            return { ...r, status: nextStatus };
+        }))
     }
 
     const handleDeleteReservation = (id: number) => {
@@ -188,7 +192,9 @@ function RouteComponent() {
                 key: 'status',
                 header: 'Status',
                 render: (r) =>
-                    r.status === 'Confirmed' ? (
+                    r.status === 'Pending' ? (
+                        <span className="text-xs font-semibold text-yellow-600 bg-yellow-500/10 px-2.5 py-1 rounded-full">Pending</span>
+                    ) : r.status === 'Confirmed' ? (
                         <span className="text-xs font-semibold text-green-600 bg-green-500/10 px-2.5 py-1 rounded-full">Confirmed</span>
                     ) : (
                         <span className="text-xs font-semibold text-red-600 bg-red-500/10 px-2.5 py-1 rounded-full">Cancelled</span>
@@ -211,7 +217,7 @@ function RouteComponent() {
                             <StatusConfirm
                                 name={r.userEmail}
                                 currentStatus={r.status}
-                                newStatus={r.status === 'Confirmed' ? 'Cancelled' : 'Confirmed'}
+                                newStatus={r.status === 'Pending' ? 'Confirmed' : r.status === 'Confirmed' ? 'Cancelled' : 'Pending'}
                                 onConfirm={() => handleToggleStatus(r.id)}
                             >
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
@@ -321,9 +327,12 @@ function ReservationForm({
         >
             <form.AppField name="userEmail">
                 {(field) => (
-                    <field.FormSelect
+                    <field.FormSearchableSelect
                         label="Guest Email"
-                        placeholder="Select Guest"
+                        placeholder="Select guest email..."
+                        searchPlaceholder="Search by name or email..."
+                        allowAddNew
+                        addNewLabel="Add new guest"
                         options={[
                             { value: 'jane.cooper@example.com', label: 'Jane Cooper (jane.cooper@example.com)' },
                             { value: 'wade.warren@example.com', label: 'Wade Warren (wade.warren@example.com)' },
@@ -422,14 +431,29 @@ function ReservationForm({
 
             <form.AppField name="status">
                 {(field) => (
-                    <field.FormRadio
-                        label="Status"
-                        options={[
-                            { value: 'Pending', label: 'Pending' },
-                            { value: 'Confirmed', label: 'Confirmed' },
-
-                        ]}
-                    />
+                    <div className="space-y-1.5">
+                        <Label>Status</Label>
+                        <div className="flex gap-4">
+                            <label className="flex items-center gap-2 text-sm cursor-pointer">
+                                <input
+                                    type="radio"
+                                    checked={field.state.value === 'Confirmed'}
+                                    onChange={() => field.handleChange('Confirmed')}
+                                    className="h-4 w-4 accent-primary"
+                                />
+                                Confirmed
+                            </label>
+                            <label className="flex items-center gap-2 text-sm cursor-pointer">
+                                <input
+                                    type="radio"
+                                    checked={field.state.value === 'Cancelled'}
+                                    onChange={() => field.handleChange('Cancelled')}
+                                    className="h-4 w-4 accent-primary"
+                                />
+                                Cancelled
+                            </label>
+                        </div>
+                    </div>
                 )}
             </form.AppField>
 
