@@ -244,7 +244,6 @@ function PropertyComponent() {
     const [activeTab, setActiveTab] = useState<PropTab>('Basics')
     const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null)
     const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null)
-
     const isEditMode = editingPropertyId !== null
     const selectedProperty = selectedPropertyId ? getPropertyById(selectedPropertyId) ?? null : null
 
