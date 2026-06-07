@@ -360,10 +360,17 @@ function PropertyUnitComponent() {
                                                 </Button>
                                                 <Button
                                                     variant="default"
-                                                    className="w-full gap-2 rounded-full bg-[#243E8B] text-white font-bold h-[44px] hover:bg-[#1D3270] shadow-[0_4px_12px_rgba(36,62,139,0.2)] hover:shadow-[0_8px_20px_rgba(36,62,139,0.3)] transition-all duration-300 hover:-translate-y-0.5 text-[14px]"
+                                                    className="w-full rounded-full bg-[#243E8B] text-white font-bold h-[44px] hover:bg-[#1D3270] shadow-[0_4px_12px_rgba(36,62,139,0.2)] hover:shadow-[0_8px_20px_rgba(36,62,139,0.3)] transition-all duration-300 hover:-translate-y-0.5 text-[14px]"
+                                                    asChild
                                                 >
-                                                    <Eye className="size-4" />
-                                                    View
+                                                    <Link
+                                                        to="/property/$propertyId/room/$roomTypeId"
+                                                        params={{ propertyId: room.propertyId, roomTypeId: room.id }}
+                                                        className="flex items-center justify-center gap-2"
+                                                    >
+                                                        <Eye className="size-4" />
+                                                        View
+                                                    </Link>
                                                 </Button>
                                             </div>
                                         </div>

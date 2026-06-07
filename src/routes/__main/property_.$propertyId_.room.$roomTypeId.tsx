@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { ArrowLeft, BedDouble, Bath, Maximize2, Users, Cigarette, Baby, Shield, CheckCircle2, LayoutDashboard, Calendar, Settings, FileText, Activity, Key, Copy, CreditCard, Plus } from 'lucide-react'
+import { ArrowLeft, BedDouble, Bath, Maximize2, Users, Cigarette, Baby, Shield, CheckCircle2, LayoutDashboard, Calendar, Settings, Activity, Key, CreditCard, Plus } from 'lucide-react'
 import { getPropertyById, formatPrice } from '@/lib/properties'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -11,7 +11,8 @@ import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/__main/property_/$propertyId_/room/$roomTypeId')({
     loader: async ({ params }) => {
-        const property = getPropertyById(params.propertyId)
+        const propId = (params as any).propertyId_ || (params as any).propertyId
+        const property = getPropertyById(propId)
         if (!property) throw notFound()
         const roomType = property.roomTypes.find((rt) => rt.id === params.roomTypeId)
         if (!roomType) throw notFound()
@@ -100,16 +101,6 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                         description={`Manage configuration, pricing, and units for ${rt.internalCode}`}
                         className="pb-0"
                     />
-                    <div className="flex items-center gap-3">
-                        <Button variant="outline" className="gap-2 bg-white">
-                            <Settings className="size-4" />
-                            Settings
-                        </Button>
-                        <Button className="gap-2 bg-[#243E8B] hover:bg-[#1D3270]">
-                            <LayoutDashboard className="size-4" />
-                            Edit Room Type
-                        </Button>
-                    </div>
                 </div>
             </div>
 
