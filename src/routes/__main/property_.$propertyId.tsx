@@ -15,7 +15,6 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import {
     Accessibility,
     ArrowLeft,
-    BedDouble,
     Car,
     Clock,
     Dumbbell,
@@ -53,6 +52,12 @@ type RoomTypeCard = {
     imageUrl: string
     units: string[]
     propertyId: string
+    viewType: string
+    bedsCount: number
+    bathsCount: number
+    maxGuests: number
+    roomSizeLabel: string
+    privateBathroom: boolean
 }
 
 function buildRoomTypeCards(property: Property | undefined): RoomTypeCard[] {
@@ -76,6 +81,12 @@ function buildRoomTypeCards(property: Property | undefined): RoomTypeCard[] {
             imageUrl: rt.images.thumbnail,
             units: rt.units.map((u) => u.roomNumber),
             propertyId: rt.propertyId,
+            viewType: rt.viewType,
+            bedsCount,
+            bathsCount: rt.privateBathroom ? 1 : 0,
+            maxGuests: rt.maxOccupancy,
+            roomSizeLabel: `${rt.roomSize} ${rt.roomSizeUnit}`,
+            privateBathroom: rt.privateBathroom,
         }
     })
 }
@@ -299,70 +310,101 @@ function PropertyUnitComponent() {
                                 {paginatedRooms.map((room) => (
                                     <div
                                         key={room.id}
-                                        className="group h-full flex flex-col bg-white rounded-[2rem] shadow-[0_8px_24px_-12px_rgba(0,0,0,0.06)] hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.12)] border border-slate-100/80 transition-all duration-[600ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-2 overflow-hidden relative"
+                                        className="group h-full flex flex-col bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_6px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.1),0_12px_28px_rgba(0,0,0,0.08)] border border-border transition-all duration-300 ease-out hover:-translate-y-1 overflow-hidden"
                                     >
-                                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#EEF3FF]/0 group-hover:to-[#EEF3FF]/20 transition-colors duration-700 pointer-events-none" />
-
-                                        <div className="relative w-full aspect-[16/9] overflow-hidden bg-slate-100 shrink-0 z-0">
+                                        {/* Image */}
+                                        <div className="relative w-full overflow-hidden bg-muted shrink-0" style={{ paddingTop: '66%' }}>
                                             <img
                                                 src={room.imageUrl}
                                                 alt={room.title}
-                                                className="w-full h-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-105"
+                                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
                                             />
-                                            <div className="absolute inset-0 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)] rounded-none pointer-events-none" />
 
-                                            <div className="absolute top-4 left-4 z-10 transform transition-transform duration-500 group-hover:-translate-y-1">
-                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest backdrop-blur-md shadow-sm transition-colors border ${room.status === 'Active' ? 'bg-[#10b981]/90 text-white border-white/20' : 'bg-[#f59e0b]/90 text-white border-white/20'}`}>
-                                                    <span className={`relative inline-flex rounded-full size-1.5 bg-white`} />
+                                            {/* View type badge (top-left, Guest-Panel style) */}
+                                            {room.viewType && (
+                                                <span className="absolute top-3 left-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[0.7rem] font-bold uppercase tracking-wide shadow-sm">
+                                                    {room.viewType}
+                                                </span>
+                                            )}
+
+                                            {/* Status badge (top-right) — admin affordance */}
+                                            <div className="absolute top-3 right-3">
+                                                <span className={cn(
+                                                    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border backdrop-blur-md',
+                                                    room.status === 'Active'
+                                                        ? 'bg-emerald-500/90 text-white border-white/20'
+                                                        : 'bg-amber-500/90 text-white border-white/20'
+                                                )}>
+                                                    <span className="relative inline-flex rounded-full size-1.5 bg-white" />
                                                     {room.status}
                                                 </span>
                                             </div>
-
-                                            <div className="absolute bottom-4 right-4 z-10 transform transition-transform duration-500 group-hover:-translate-y-1">
-                                                <div className="bg-white/95 backdrop-blur-xl px-4 py-2 rounded-2xl shadow-[0_8px_20px_rgba(0,0,0,0.12)] border border-white/60 flex flex-col items-end">
-                                                    <span className="text-[18px] font-black text-slate-900 leading-none tracking-tight">
-                                                        {room.currency === 'USD' ? '$' : room.currency === 'EUR' ? '€' : room.currency === 'GBP' ? '£' : ''}{room.basePrice}
-                                                    </span>
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">/ Night</span>
-                                                </div>
-                                            </div>
-
-                                            <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                                         </div>
 
-                                        <div className="p-6 flex flex-col gap-5 grow relative z-10 bg-white">
-                                            <div className="flex flex-col gap-3">
-                                                <h3 className="text-[1.25rem] font-bold text-slate-900 tracking-tight leading-snug group-hover:text-[#243E8B] transition-colors duration-300">
+                                        {/* Body */}
+                                        <div className="p-4 flex flex-col gap-2 grow bg-card">
+                                            {/* Title row with viewType chip (mirrors property card rating) */}
+                                            <div className="flex justify-between items-center gap-3">
+                                                <h3 className="text-[1.05rem] font-semibold text-foreground leading-snug line-clamp-1 m-0 group-hover:text-primary transition-colors duration-300">
                                                     {room.title}
                                                 </h3>
-
-                                                <div className="flex items-center gap-4 text-slate-500">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <BedDouble className="size-[15px] text-slate-400" />
-                                                        <span className="text-[13.5px] font-medium tracking-wide truncate max-w-[140px]">{room.totalUnits} Units</span>
-                                                    </div>
-                                                    <div className="h-3 w-px bg-slate-200" />
-                                                    <div className="flex items-center gap-1.5">
-                                                        <MapPin className="size-[15px] text-slate-400" />
-                                                        <span className="text-[13.5px] font-medium tracking-wide truncate max-w-[120px]">{room.details}</span>
-                                                    </div>
-                                                </div>
+                                                {room.viewType && (
+                                                    <span className="inline-flex items-center gap-1 text-[0.7rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent text-foreground whitespace-nowrap shrink-0">
+                                                        {room.viewType}
+                                                    </span>
+                                                )}
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-3 mt-auto pt-3">
+                                            {/* Subtitle: floor / beds chip */}
+                                            <div className="flex justify-between items-center gap-2 text-muted-foreground text-[0.875rem]">
+                                                <span className="inline-flex items-center gap-1">
+                                                    <MapPin className="size-3.5" />
+                                                    {room.location}
+                                                </span>
+                                                {room.bedsCount > 0 && (
+                                                    <span className="text-[0.75rem] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground">
+                                                        🛏 {room.bedsCount} bed{room.bedsCount === 1 ? '' : 's'}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Meta: guests / baths / size (border-t) */}
+                                            <div className="flex justify-between items-center gap-2 flex-wrap border-t border-border pt-2 text-[0.875rem] text-muted-foreground">
+                                                <span className="inline-flex items-center gap-1">👥 {room.maxGuests} Guest{room.maxGuests === 1 ? '' : 's'}</span>
+                                                <span className="inline-flex items-center gap-1">🚿 {room.privateBathroom ? 'Private' : 'Shared'}</span>
+                                                <span className="inline-flex items-center gap-1">📐 {room.roomSizeLabel}</span>
+                                            </div>
+
+                                            {/* Admin info chips (border-y py-2 — matches property card style) */}
+                                            <div className="flex justify-between items-center gap-1.5 flex-wrap border-y border-border py-2">
+                                                <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                                                    {room.totalUnits} unit{room.totalUnits === 1 ? '' : 's'}
+                                                </span>
+                                                <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                                                    {room.units.length > 0 ? `${room.units.length} room#` : 'No rooms'}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex justify-between items-center gap-1.5 flex-wrap">
+                                                <span className="text-[0.7rem] text-muted-foreground">
+                                                    {room.capacity}
+                                                </span>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-2">
                                                 <Button
                                                     onClick={() => openEdit(room)}
                                                     variant="outline"
-                                                    className="w-full gap-2 rounded-full border-slate-200 text-slate-600 font-bold h-[44px] hover:bg-slate-50 hover:text-[#243E8B] hover:border-[#243E8B]/30 transition-all duration-300 text-[14px]"
+
                                                 >
-                                                    <Edit className="size-4" />
+                                                    <Edit className="size-3.5" />
                                                     Edit
                                                 </Button>
                                                 <Button
                                                     variant="default"
-                                                    className="w-full gap-2 rounded-full bg-[#243E8B] text-white font-bold h-[44px] hover:bg-[#1D3270] shadow-[0_4px_12px_rgba(36,62,139,0.2)] hover:shadow-[0_8px_20px_rgba(36,62,139,0.3)] transition-all duration-300 hover:-translate-y-0.5 text-[14px]"
+
                                                 >
-                                                    <Eye className="size-4" />
+                                                    <Eye className="size-3.5" />
                                                     View
                                                 </Button>
                                             </div>
@@ -716,13 +758,6 @@ function RoomTypeForm({
                 {/* ════════ PRESENTATION ════════ */}
                 {activeTab === 'Presentation' && (
                     <div className="flex flex-col gap-6">
-                        <div className="flex items-start gap-3 p-3.5 bg-[#EEF3FF] rounded-xl border border-[#243E8B]/15">
-                            <Info className="size-4 text-[#243E8B] mt-0.5 shrink-0" />
-                            <p className="text-[12px] text-slate-600 leading-relaxed">
-                                Amenities, attributes, view type, and photos are required by Airbnb, Booking.com, Expedia, and Vrbo during channel sync. Incomplete data may lower OTA listing quality scores.
-                            </p>
-                        </div>
-
                         <Section>
                             <SectionLabel>Room Amenities</SectionLabel>
                             <form.AppField name="amenities">

@@ -4,16 +4,14 @@ import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { SearchInput } from '@/components/ui/search-input'
 import {
-    Plus, MapPin, Edit, Eye, CheckCircle2, XCircle,
-    Building, ArrowRight, Wifi, ParkingCircle, Waves,
+    Plus, MapPin, Edit, Eye,
+    Wifi, ParkingCircle, Waves,
     Dumbbell, UtensilsCrossed, Car, Accessibility, Clock,
-    Building2, Key, BedDouble, Star
+    Star
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useAppForm } from '@/components/form/form-context'
 import { toast } from 'sonner'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { DataTableFooter } from '@/components/ui/data-table'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
@@ -41,10 +39,23 @@ type PropertyCard = {
     reviewCount: number
     currency: string
     priceRangeLabel: string
+    totalBeds: number
+    totalBaths: number
+    maxGuests: number
+    viewType: string
+    city: string
+    country: string
 }
 
 const PROPERTY_CARDS: PropertyCard[] = PROPERTIES.map((p) => {
     const totalRooms = p.roomTypes.reduce((sum, rt) => sum + rt.units.length, 0)
+    const totalBeds = p.roomTypes.reduce(
+        (sum, rt) => sum + rt.beds.reduce((s, b) => s + b.quantity, 0),
+        0
+    )
+    const totalBaths = p.roomTypes.filter((rt) => rt.privateBathroom).length
+    const maxGuests = Math.max(...p.roomTypes.map((rt) => rt.maxOccupancy))
+    const viewType = p.roomTypes[0]?.viewType ?? ''
     const range = getPriceRange(p)
     const priceRangeLabel =
         range.min === range.max
@@ -66,6 +77,12 @@ const PROPERTY_CARDS: PropertyCard[] = PROPERTIES.map((p) => {
         reviewCount: p.property.reviewCount,
         currency: p.property.currency,
         priceRangeLabel,
+        totalBeds,
+        totalBaths,
+        maxGuests,
+        viewType,
+        city: p.property.city,
+        country: p.property.country,
     }
 })
 
@@ -243,9 +260,7 @@ function PropertyComponent() {
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<PropTab>('Basics')
     const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null)
-    const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null)
     const isEditMode = editingPropertyId !== null
-    const selectedProperty = selectedPropertyId ? getPropertyById(selectedPropertyId) ?? null : null
 
     const openAdd = () => {
         setEditingPropertyId(null)
@@ -319,81 +334,98 @@ function PropertyComponent() {
                                     <div
                                         key={property.id}
                                         onClick={() => navigate({ to: '/property/$propertyId', params: { propertyId: property.id } })}
-                                        className="group h-full flex flex-col bg-white rounded-[2rem] shadow-[0_8px_24px_-12px_rgba(0,0,0,0.06)] hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.12)] border border-slate-100/80 transition-all duration-[600ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-2 cursor-pointer overflow-hidden relative"
+                                        className="group h-full flex flex-col bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_6px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.1),0_12px_28px_rgba(0,0,0,0.08)] border border-border transition-all duration-300 ease-out hover:-translate-y-1 cursor-pointer overflow-hidden"
                                     >
-                                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#EEF3FF]/0 group-hover:to-[#EEF3FF]/20 transition-colors duration-700 pointer-events-none" />
-
-                                        <div className="relative w-full aspect-[16/9] overflow-hidden bg-slate-100 shrink-0 z-0">
+                                        {/* Image */}
+                                        <div className="relative w-full overflow-hidden bg-muted shrink-0" style={{ paddingTop: '66%' }}>
                                             <img
                                                 src={property.imageUrl}
                                                 alt={property.title}
-                                                className="w-full h-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-105"
+                                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
                                             />
-                                            <div className="absolute inset-0 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)] rounded-none pointer-events-none" />
 
-                                            <div className="absolute top-4 right-4 z-10 transform transition-transform duration-500 group-hover:-translate-y-1">
-                                                <div className="bg-white/95 backdrop-blur-xl px-3.5 py-2 rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.08)] flex items-center gap-2 border border-white/60">
-                                                    <div className={cn("size-2 rounded-full", property.occupancy > 80 ? "bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.5)]" : property.occupancy > 50 ? "bg-[#f59e0b] shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "bg-[#ef4444] shadow-[0_0_8px_rgba(239,68,68,0.5)]")} />
-                                                    <span className="text-[12.5px] font-black text-slate-800 tracking-tight leading-none">
-                                                        {property.occupancy}% <span className="font-semibold text-slate-400 ml-0.5">Occ</span>
-                                                    </span>
-                                                </div>
+                                            {/* Property type badge (top-left, Guest-Panel style) */}
+                                            <span className="absolute top-3 left-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[0.7rem] font-bold uppercase tracking-wide shadow-sm">
+                                                {property.type}
+                                            </span>
+
+                                            {/* Status badge (top-right) — admin affordance */}
+                                            <div className="absolute top-3 right-3">
+                                                <StatusBadge status={property.status} />
                                             </div>
-
-                                            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
                                         </div>
 
-                                        <div className="p-6 flex flex-col gap-5 grow relative z-10 bg-white">
-                                            <div className="flex flex-col gap-3">
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <h3 className="text-[1.25rem] font-bold text-slate-900 tracking-tight leading-snug group-hover:text-[#243E8B] transition-colors duration-300">
-                                                        {property.title}
-                                                    </h3>
-                                                    <div className="mt-0.5 shrink-0">
-                                                        <StatusBadge status={property.status} />
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex flex-col gap-2 mt-1">
-                                                    <div className="flex items-center gap-4 text-slate-500">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <MapPin className="size-[14px] text-slate-400" />
-                                                            <span className="text-[13px] font-medium tracking-wide truncate max-w-[140px]">{property.location}</span>
-                                                        </div>
-                                                        <div className="h-3 w-px bg-slate-200" />
-                                                        <div className="flex items-center gap-1.5">
-                                                            <Building2 className="size-[14px] text-slate-400" />
-                                                            <span className="text-[13px] font-medium tracking-wide truncate max-w-[100px]">{property.type}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-4 text-slate-500">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <Key className="size-[14px] text-slate-400" />
-                                                            <span className="text-[13px] font-medium tracking-wide truncate max-w-[140px]">{property.totalRooms} Units • {property.roomTypes} Types</span>
-                                                        </div>
-                                                        <div className="h-3 w-px bg-slate-200" />
-                                                        <div className="flex items-center gap-1.5">
-                                                            <ArrowRight className="size-[14px] text-slate-400" />
-                                                            <span className="text-[13px] font-medium tracking-wide truncate max-w-[100px]">{property.todayCheckIns} Arrivals</span>
-                                                        </div>
-                                                    </div>
+                                        {/* Body */}
+                                        <div className="p-4 flex flex-col gap-2 grow bg-card">
+                                            {/* Title row with rating */}
+                                            <div className="flex justify-between items-center gap-3">
+                                                <h3 className="text-[1.05rem] font-semibold text-foreground leading-snug line-clamp-1 m-0 group-hover:text-primary transition-colors duration-300">
+                                                    {property.title}
+                                                </h3>
+                                                <div
+                                                    className="inline-flex items-center gap-1 bg-accent text-foreground px-2 py-0.5 rounded-full text-[0.75rem] font-semibold whitespace-nowrap shrink-0"
+                                                    aria-label={`Rated ${property.rating} out of 5 from ${property.reviewCount} reviews`}
+                                                >
+                                                    <Star className="size-3 fill-amber-400 text-amber-400" />
+                                                    {property.rating.toFixed(1)}
+                                                    <span className="text-muted-foreground font-normal ml-0.5">({property.reviewCount})</span>
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-3 mt-auto">
+                                            {/* Location + view type */}
+                                            <div className="flex justify-between items-center gap-2 flex-wrap">
+                                                <p className="text-muted-foreground m-0 text-[0.875rem] flex items-center gap-1">
+                                                    <MapPin className="size-3.5" />
+                                                    {property.city}, {property.country}
+                                                </p>
+                                                {property.viewType && (
+                                                    <span className="text-[0.75rem] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground">
+                                                        {property.viewType}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Meta: beds / baths / guests */}
+                                            <div className="flex justify-between items-center gap-2 flex-wrap border-t pt-2 text-sm text-muted-foreground">
+                                                <span className="inline-flex items-center gap-1">🛏 {property.totalBeds} Beds</span>
+                                                <span className="inline-flex items-center gap-1">🚿 {property.totalBaths} Baths</span>
+                                                <span className="inline-flex items-center gap-1">👥 {property.maxGuests} Guests</span>
+                                            </div>
+
+                                            {/* Admin info chips (secondary info) */}
+                                            <div className="flex justify-between items-center gap-1.5 flex-wrap border-y border-border py-2">
+                                                <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                                                    <span className={cn("size-1.5 rounded-full",
+                                                        property.occupancy > 80 ? "bg-emerald-500"
+                                                            : property.occupancy > 50 ? "bg-amber-500"
+                                                                : "bg-rose-500"
+                                                    )} />
+                                                    {property.occupancy}% Occ
+                                                </span>
+                                                <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                                                    {property.totalRooms} Units
+                                                </span>
+                                                <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                                                    {property.todayCheckIns} Arrivals
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 mt-1">
                                                 <Button
                                                     onClick={(e) => { e.stopPropagation(); openEdit(property) }}
                                                     variant="outline"
-                                                    className="w-full gap-2 rounded-full border-slate-200 text-slate-600 font-bold h-[44px] hover:bg-slate-50 hover:text-[#243E8B] hover:border-[#243E8B]/30 transition-all duration-300 text-[14px]"
+
                                                 >
-                                                    <Edit className="size-4" />
+                                                    <Edit className="size-3.5" />
                                                     Edit
                                                 </Button>
                                                 <Button
-                                                    onClick={(e) => { e.stopPropagation(); setSelectedPropertyId(property.id) }}
-                                                    className="w-full gap-2 rounded-full bg-[#243E8B] text-white font-bold h-[44px] hover:bg-[#1D3270] shadow-[0_4px_12px_rgba(36,62,139,0.2)] hover:shadow-[0_8px_20px_rgba(36,62,139,0.3)] transition-all duration-300 hover:-translate-y-0.5 text-[14px]"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        navigate({ to: '/property/$propertyId', params: { propertyId: property.id } })
+                                                    }}
+
                                                 >
-                                                    <Eye className="size-4" />
+                                                    <Eye className="size-3.5" />
                                                     View
                                                 </Button>
                                             </div>
