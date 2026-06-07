@@ -390,7 +390,8 @@ function PropertyComponent() {
                                                     Edit
                                                 </Button>
                                                 <Button
-                                                    onClick={(e) => { e.stopPropagation(); setSelectedPropertyId(property.id) }}
+                                                    // onClick={(e) => { e.stopPropagation(); setSelectedPropertyId(property.id) }}
+                                                    onClick={() => navigate({ to: '/property/$propertyId', params: { propertyId: property.id } })}
                                                     className="w-full gap-2 rounded-full bg-[#243E8B] text-white font-bold h-[44px] hover:bg-[#1D3270] shadow-[0_4px_12px_rgba(36,62,139,0.2)] hover:shadow-[0_8px_20px_rgba(36,62,139,0.3)] transition-all duration-300 hover:-translate-y-0.5 text-[14px]"
                                                 >
                                                     <Eye className="size-4" />
@@ -448,114 +449,6 @@ function PropertyComponent() {
                         onCancel={closeDialog}
                         submitLabel={isEditMode ? 'Save changes' : 'Save property'}
                     />
-                </DialogContent>
-            </Dialog>
-
-            {/* ══════════════════════════════════════════════════
-                VIEW PROPERTY DETAIL DIALOG
-            ══════════════════════════════════════════════════ */}
-            <Dialog open={!!selectedProperty} onOpenChange={(open) => !open && setSelectedPropertyId(null)}>
-                <DialogContent className="w-[95%] sm:max-w-xl max-h-[88vh] overflow-y-auto bg-white p-0 rounded-2xl gap-0 shadow-2xl shadow-slate-900/15">
-                    {selectedProperty && (
-                        <>
-                            <div className="relative h-52 w-full overflow-hidden rounded-t-2xl">
-                                <img src={selectedProperty.property.images.thumbnail} alt={selectedProperty.property.name} className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-                                    <div className="bg-black/20 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 border border-white/20">
-                                        <div className="flex items-center gap-1 text-white text-[12.5px] font-bold tracking-tight">
-                                            <Star className="size-3 fill-amber-400 text-amber-400" />
-                                            {selectedProperty.property.rating.toFixed(1)}
-                                            <span className="font-medium text-white/70 ml-0.5">({selectedProperty.property.reviewCount} reviews)</span>
-                                        </div>
-                                    </div>
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border bg-white/95 text-slate-700 border-white/60">
-                                        {selectedProperty.property.status}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="p-5 flex flex-col gap-5">
-                                <div>
-                                    <DialogTitle className="text-[18px] font-bold text-slate-900">{selectedProperty.property.name}</DialogTitle>
-                                    <DialogDescription className="sr-only">Details for {selectedProperty.property.name}</DialogDescription>
-                                    <div className="flex flex-col gap-1.5 mt-2">
-                                        <div className="flex items-center gap-1.5 text-slate-500">
-                                            <MapPin className="size-3.5 text-slate-400 shrink-0" />
-                                            <span className="text-[12.5px] font-medium">{selectedProperty.property.address1}{selectedProperty.property.address2 ? `, ${selectedProperty.property.address2}` : ''}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 text-slate-500">
-                                            <Building className="size-3.5 text-slate-400 shrink-0" />
-                                            <span className="text-[12.5px] font-semibold text-slate-600">
-                                                {selectedProperty.property.propertyType} • {selectedProperty.roomTypes.reduce((s, rt) => s + rt.units.length, 0)} Units • {formatPrice(getPriceRange(selectedProperty).min, selectedProperty.property.currency)} – {formatPrice(getPriceRange(selectedProperty).max, selectedProperty.property.currency)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <Separator />
-
-                                <div>
-                                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3">Amenities</p>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {selectedProperty.property.amenities.slice(0, 6).map(a => (
-                                            <div key={a} className="flex items-center gap-2">
-                                                <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
-                                                <span className="text-[12.5px] text-slate-600 font-medium">{a}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="border border-slate-100 rounded-2xl p-4 flex gap-3 items-center bg-slate-50/50">
-                                        <div className="bg-[#EEF3FF] p-2.5 rounded-xl text-[#243E8B] shrink-0">
-                                            <ArrowRight className="size-4" />
-                                        </div>
-                                        <div>
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide block">Check-in</span>
-                                            <span className="text-[13px] font-bold text-slate-800">From {selectedProperty.property.checkInTime}</span>
-                                        </div>
-                                    </div>
-                                    <div className="border border-slate-100 rounded-2xl p-4 flex gap-3 items-center bg-slate-50/50">
-                                        <div className="bg-red-50 p-2.5 rounded-xl text-red-500 shrink-0">
-                                            <XCircle className="size-4" />
-                                        </div>
-                                        <div>
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide block">Check-out</span>
-                                            <span className="text-[13px] font-bold text-slate-800">Until {selectedProperty.property.checkOutTime}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <Separator />
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => {
-                                            const card = PROPERTY_CARDS.find(p => p.id === selectedProperty.property.id)
-                                            if (card) {
-                                                openEdit(card)
-                                                setSelectedPropertyId(null)
-                                            }
-                                        }}
-                                        className="rounded-xl h-10 font-semibold text-[13px] border-slate-200 hover:bg-slate-50 hover:text-[#243E8B] hover:border-[#243E8B]/30 gap-1.5 transition-all duration-300"
-                                    >
-                                        <Edit className="size-3.5" />
-                                        Edit Property
-                                    </Button>
-                                    <Button
-                                        onClick={() => navigate({ to: '/property/$propertyId', params: { propertyId: selectedProperty.property.id } })}
-                                        className="rounded-xl h-10 font-semibold text-[13px] bg-[#243E8B] hover:bg-[#1D3270] text-white shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300"
-                                    >
-                                        <BedDouble className="size-3.5" />
-                                        Manage Room Types
-                                    </Button>
-                                </div>
-                            </div>
-                        </>
-                    )}
                 </DialogContent>
             </Dialog>
         </>

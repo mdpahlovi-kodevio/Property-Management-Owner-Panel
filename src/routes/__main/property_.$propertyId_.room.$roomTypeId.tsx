@@ -1,9 +1,12 @@
 import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { ArrowLeft, BedDouble, Bath, Maximize2, Users, Star, Cigarette, PawPrint, Baby, Music, Shield, Clock, MapPin, CheckCircle2, Eye } from 'lucide-react'
+import { ArrowLeft, BedDouble, Bath, Maximize2, Users, Cigarette, Baby, Shield, CheckCircle2, LayoutDashboard, Calendar, Settings, FileText, Activity, Key, Copy, CreditCard, Plus } from 'lucide-react'
 import { getPropertyById, formatPrice } from '@/lib/properties'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { PageHeader } from '@/components/ui/page-header'
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
+
 import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/__main/property_/$propertyId_/room/$roomTypeId')({
@@ -33,18 +36,18 @@ export const Route = createFileRoute('/__main/property_/$propertyId_/room/$roomT
             </Link>
         </div>
     ),
-    component: RoomViewComponent,
+    component: RoomAdminDashboardComponent,
 })
 
-function RoomViewComponent() {
+function RoomAdminDashboardComponent() {
     const { property, roomType } = Route.useLoaderData()
-    return <RoomTypeDetails property={property} roomType={roomType} />
+    return <RoomTypeAdminDetails property={property} roomType={roomType} />
 }
 
 type Property = NonNullable<ReturnType<typeof getPropertyById>>
 type RoomType = Property['roomTypes'][number]
 
-function RoomTypeDetails({ property, roomType: rt }: { property: Property; roomType: RoomType }) {
+function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; roomType: RoomType }) {
     const p = property.property
     const currency = p.currency
     const navigate = useNavigate()
@@ -57,404 +60,277 @@ function RoomTypeDetails({ property, roomType: rt }: { property: Property; roomT
         ? Array.from(new Set(rt.units.map((u) => u.floor))).join(', ')
         : '—'
 
-    const currencySymbol = currency === 'USD' ? '$'
-        : currency === 'EUR' ? '€'
-            : currency === 'GBP' ? '£'
-                : currency
+    // Simulate some admin metrics
+    const simulatedOccupancy = Math.floor(Math.random() * 40) + 40 // 40-80%
+    const simulatedRevenue = rt.basePrice * simulatedOccupancy * 30 / 100 * (Math.random() * 0.5 + 0.8)
 
     return (
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-8">
+            {/* ── Top Navigation & Header ── */}
+            <div>
+                <nav className="mb-4 flex items-center gap-2 text-sm text-slate-500 flex-wrap font-medium">
+                    <Link to="/property" className="hover:text-slate-900 transition-colors">
+                        Properties
+                    </Link>
+                    <span>/</span>
+                    <Link
+                        to="/property/$propertyId"
+                        params={{ propertyId: p.id }}
+                        className="hover:text-slate-900 transition-colors"
+                    >
+                        {p.name}
+                    </Link>
+                    <span>/</span>
+                    <span className="text-slate-900">{rt.name}</span>
+                </nav>
 
-            {/* ── Breadcrumb ── */}
-            <nav className="mb-6 flex items-center gap-2 text-sm text-slate-400 flex-wrap">
-                <Link to="/property" className="hover:text-slate-700 transition-colors">
-                    Properties
-                </Link>
-                <span>/</span>
-                <Link
-                    to="/property/$propertyId"
-                    params={{ propertyId: p.id }}
-                    className="hover:text-slate-700 transition-colors"
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="-ml-3 mb-2 text-slate-500 hover:text-slate-900 w-fit"
+                    onClick={() => navigate({ to: '/property/$propertyId', params: { propertyId: p.id } })}
                 >
-                    {p.name}
-                </Link>
-                <span>/</span>
-                <span className="text-slate-700 font-medium">{rt.name}</span>
-            </nav>
+                    <ArrowLeft className="mr-2 size-4" />
+                    Back to Room Types
+                </Button>
 
-            {/* ── Back Button ── */}
-            <Button
-                variant="ghost"
-                size="sm"
-                className="-ml-3 mb-4 text-slate-500 hover:text-slate-900 w-fit"
-                onClick={() => navigate({ to: '/property/$propertyId', params: { propertyId: p.id } })}
-            >
-                <ArrowLeft className="mr-2 size-4" />
-                Back to {p.name} rooms
-            </Button>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
+                    <PageHeader
+                        title={rt.name}
+                        description={`Manage configuration, pricing, and units for ${rt.internalCode}`}
+                        className="pb-0"
+                    />
+                    <div className="flex items-center gap-3">
+                        <Button variant="outline" className="gap-2 bg-white">
+                            <Settings className="size-4" />
+                            Settings
+                        </Button>
+                        <Button className="gap-2 bg-[#243E8B] hover:bg-[#1D3270]">
+                            <LayoutDashboard className="size-4" />
+                            Edit Room Type
+                        </Button>
+                    </div>
+                </div>
+            </div>
 
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-12">
+            {/* ── Key Metrics ── */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <MetricCard
+                    title="Base Price"
+                    value={formatPrice(rt.basePrice, currency)}
+                    subtitle="Per night rate"
+                    icon={<CreditCard className="size-4 text-[#243E8B]" />}
+                />
+                <MetricCard
+                    title="Total Units"
+                    value={rt.units.length.toString()}
+                    subtitle={`Across floor(s) ${floors}`}
+                    icon={<Key className="size-4 text-[#243E8B]" />}
+                />
+                <MetricCard
+                    title="Avg. Occupancy"
+                    value={`${simulatedOccupancy}%`}
+                    subtitle="Last 30 days"
+                    icon={<Activity className="size-4 text-[#243E8B]" />}
+                    trend="+5.2%"
+                />
+                <MetricCard
+                    title="Est. Revenue"
+                    value={formatPrice(simulatedRevenue, currency)}
+                    subtitle="Last 30 days"
+                    icon={<Calendar className="size-4 text-[#243E8B]" />}
+                    trend="+12.1%"
+                />
+            </div>
 
-                {/* ── Left column: gallery + content ── */}
-                <div className="space-y-8 lg:col-span-2">
-
-                    {/* Gallery */}
-                    <section>
-                        <div className="relative aspect-video overflow-hidden rounded-2xl bg-slate-100 shadow-[0_8px_40px_-8px_rgba(0,0,0,0.15)]">
-                            <img
-                                src={allImages[activeImage]}
-                                alt={rt.name}
-                                className="h-full w-full object-cover transition-opacity duration-300"
-                            />
-
-                            {/* Status badge */}
-                            <div className="absolute top-4 left-4 flex gap-2">
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/90 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-white backdrop-blur-md border border-white/20 shadow-sm">
-                                    <span className="relative inline-flex rounded-full size-1.5 bg-white" />
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                {/* ── Left Column: Configuration & Setup ── */}
+                <div className="xl:col-span-2 space-y-8">
+                    {/* Gallery & Quick Info */}
+                    <Card className="overflow-hidden border-slate-200 shadow-sm">
+                        <div className="flex flex-col md:flex-row">
+                            <div className="md:w-1/3 bg-slate-100 relative min-h-[250px]">
+                                <img
+                                    src={allImages[activeImage]}
+                                    alt={rt.name}
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                />
+                                <Badge className="absolute top-3 left-3 bg-emerald-500 hover:bg-emerald-600">
                                     Active
-                                </span>
-                                {rt.viewType && (
-                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white backdrop-blur-md border border-white/10">
-                                        <Eye className="size-2.5" />
-                                        {rt.viewType}
-                                    </span>
+                                </Badge>
+                                {allImages.length > 1 && (
+                                    <div className="absolute bottom-3 left-3 right-3 flex gap-2 overflow-x-auto snap-x scrollbar-hide py-1">
+                                        {allImages.map((src, i) => (
+                                            <button
+                                                key={i}
+                                                type="button"
+                                                onClick={() => setActiveImage(i)}
+                                                className={cn(
+                                                    'h-12 w-12 shrink-0 overflow-hidden rounded-md border-2 transition-all shadow-sm snap-start',
+                                                    i === activeImage ? 'border-white' : 'border-transparent opacity-70 hover:opacity-100'
+                                                )}
+                                            >
+                                                <img src={src} alt="" className="h-full w-full object-cover" />
+                                            </button>
+                                        ))}
+                                    </div>
                                 )}
                             </div>
-
-                            {/* Price pill */}
-                            <div className="absolute bottom-4 right-4">
-                                <div className="bg-white/95 backdrop-blur-xl px-4 py-2 rounded-2xl shadow-[0_8px_20px_rgba(0,0,0,0.12)] border border-white/60 flex flex-col items-end">
-                                    <span className="text-[22px] font-black text-slate-900 leading-none tracking-tight">
-                                        {currencySymbol}{rt.basePrice.toLocaleString()}
-                                    </span>
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">/ Night</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Thumbnails */}
-                        {allImages.length > 1 && (
-                            <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-6">
-                                {allImages.map((src, i) => (
-                                    <button
-                                        key={i}
-                                        type="button"
-                                        onClick={() => setActiveImage(i)}
-                                        className={cn(
-                                            'aspect-square overflow-hidden rounded-xl border-2 transition-all duration-200 bg-slate-100',
-                                            i === activeImage
-                                                ? 'border-[#243E8B] shadow-[0_0_0_3px_rgba(36,62,139,0.15)]'
-                                                : 'border-transparent hover:border-slate-300'
-                                        )}
-                                        aria-label={`Show image ${i + 1}`}
-                                    >
-                                        <img src={src} alt="" className="h-full w-full object-cover" />
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </section>
-
-                    {/* Header */}
-                    <header>
-                        <div className="flex flex-wrap items-start justify-between gap-4">
-                            <div>
+                            <div className="md:w-2/3 p-6 flex flex-col justify-center">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <Badge variant="secondary" className="text-[11px] font-bold uppercase tracking-wider rounded-full px-3">
+                                    <Badge variant="outline" className="text-xs font-mono font-bold text-slate-500 bg-slate-50">
                                         {rt.internalCode}
                                     </Badge>
+                                    <Badge variant="secondary" className="text-xs">
+                                        {rt.viewType || 'Standard View'}
+                                    </Badge>
                                 </div>
-                                <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{rt.name}</h1>
-                                <p className="mt-2 flex items-center gap-1.5 text-sm text-slate-500">
-                                    <MapPin className="size-3.5 text-slate-400" />
-                                    Floor {floors} · {p.name}
+                                <h3 className="text-xl font-bold text-slate-900 mb-2">{rt.name}</h3>
+                                <p className="text-slate-500 text-sm leading-relaxed mb-6">
+                                    {rt.description}
                                 </p>
-                            </div>
-                            <div className="flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200/60 px-3 py-1.5 text-sm font-semibold text-amber-700">
-                                <Star className="size-3.5 fill-amber-400 text-amber-400" />
-                                {p.rating.toFixed(1)}
-                                <span className="font-normal text-amber-600/70">({p.reviewCount} reviews)</span>
-                            </div>
-                        </div>
-                    </header>
-
-                    {/* Quick stats */}
-                    <section>
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                            <StatCard
-                                icon={<Users className="size-5 text-[#243E8B]" />}
-                                label="Max guests"
-                                value={`${rt.maxOccupancy} guests`}
-                                sub={`${rt.maxAdults} adults${rt.maxChildren > 0 ? `, ${rt.maxChildren} children` : ''}`}
-                            />
-                            <StatCard
-                                icon={<BedDouble className="size-5 text-[#243E8B]" />}
-                                label="Beds"
-                                value={`${bedsCount} bed${bedsCount === 1 ? '' : 's'}`}
-                                sub={rt.beds.map((b) => `${b.quantity} ${b.bedType}`).join(', ')}
-                            />
-                            <StatCard
-                                icon={<Maximize2 className="size-5 text-[#243E8B]" />}
-                                label="Room size"
-                                value={`${rt.roomSize} ${rt.roomSizeUnit}`}
-                                sub={rt.viewType || 'Interior view'}
-                            />
-                            <StatCard
-                                icon={<Bath className="size-5 text-[#243E8B]" />}
-                                label="Bathroom"
-                                value={rt.privateBathroom ? 'Private' : 'Shared'}
-                                sub={rt.privateBathroom ? 'En-suite' : 'Shared facility'}
-                            />
-                        </div>
-                    </section>
-
-                    {/* Description */}
-                    <section>
-                        <SectionHeading>About this room</SectionHeading>
-                        <p className="text-slate-600 leading-relaxed">{rt.description}</p>
-                    </section>
-
-                    {/* Bed configuration */}
-                    <section>
-                        <SectionHeading>Bed configuration</SectionHeading>
-                        <div className="flex flex-wrap gap-3">
-                            {rt.beds.map((bed, i) => (
-                                <div
-                                    key={i}
-                                    className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
-                                >
-                                    <BedDouble className="size-5 text-[#243E8B]" />
-                                    <div>
-                                        <div className="text-sm font-semibold text-slate-800">{bed.bedType}</div>
-                                        <div className="text-xs text-slate-400">Qty: {bed.quantity}</div>
-                                    </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                    <MiniStat icon={<Maximize2 />} label="Size" value={`${rt.roomSize} ${rt.roomSizeUnit}`} />
+                                    <MiniStat icon={<Users />} label="Capacity" value={`${rt.maxOccupancy} Max`} />
+                                    <MiniStat icon={<BedDouble />} label="Beds" value={`${bedsCount}`} />
+                                    <MiniStat icon={<Bath />} label="Bath" value={rt.privateBathroom ? 'Private' : 'Shared'} />
                                 </div>
-                            ))}
-                        </div>
-                    </section>
-
-                    {/* Amenities */}
-                    <section>
-                        <SectionHeading>Room amenities</SectionHeading>
-                        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                            {rt.amenities.map((amenity) => (
-                                <div
-                                    key={amenity}
-                                    className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
-                                >
-                                    <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
-                                    <span className="text-slate-700 font-medium">{amenity}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-
-                    {/* Room extras */}
-                    <section>
-                        <SectionHeading>Room features</SectionHeading>
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                            <FeaturePill
-                                active={!rt.smokingRoom}
-                                icon={<Cigarette className="size-4" />}
-                                label={rt.smokingRoom ? 'Smoking allowed' : 'Non-smoking'}
-                            />
-                            <FeaturePill
-                                active={rt.accessibleRoom}
-                                icon={<Shield className="size-4" />}
-                                label={rt.accessibleRoom ? 'Accessible room' : 'Standard access'}
-                            />
-                            <FeaturePill
-                                active={rt.privateBathroom}
-                                icon={<Bath className="size-4" />}
-                                label={rt.privateBathroom ? 'Private bathroom' : 'Shared bathroom'}
-                            />
-                        </div>
-                    </section>
-
-                    {/* Units */}
-                    {rt.units.length > 0 && (
-                        <section>
-                            <SectionHeading>Physical units ({rt.units.length})</SectionHeading>
-                            <div className="flex flex-wrap gap-2">
-                                {rt.units.map((unit) => (
-                                    <div
-                                        key={unit.id}
-                                        className="flex items-center gap-2 rounded-full bg-[#EEF3FF] border border-[#243E8B]/15 px-3.5 py-1.5"
-                                    >
-                                        <span className="text-[13px] font-bold text-[#243E8B]">{unit.roomNumber}</span>
-                                        <span className="text-[11px] text-slate-400">· Floor {unit.floor}</span>
-                                    </div>
-                                ))}
                             </div>
-                        </section>
-                    )}
+                        </div>
+                    </Card>
 
-                    {/* Property policies */}
-                    <section>
-                        <SectionHeading>House rules & policies</SectionHeading>
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <PolicyRow
-                                icon={<Clock className="size-4" />}
-                                label="Check-in / Check-out"
-                                value={`From ${p.checkInTime} · Until ${p.checkOutTime}`}
-                            />
-                            <PolicyRow
-                                icon={<Shield className="size-4" />}
-                                label="Security deposit"
-                                value={formatPrice(p.policies.securityDeposit, currency)}
-                            />
-                            <PolicyRow
-                                icon={<Cigarette className="size-4" />}
-                                label="Smoking"
-                                value={p.policies.smokingAllowed ? 'Allowed' : 'Not allowed'}
-                            />
-                            <PolicyRow
-                                icon={<PawPrint className="size-4" />}
-                                label="Pets"
-                                value={p.policies.petsAllowed ? 'Allowed' : 'Not allowed'}
-                            />
-                            <PolicyRow
-                                icon={<Baby className="size-4" />}
-                                label="Children"
-                                value={
-                                    p.policies.childrenAllowed
-                                        ? `Allowed (min age: ${p.policies.minimumGuestAge})`
-                                        : 'Not allowed'
-                                }
-                            />
-                            <PolicyRow
-                                icon={<Music className="size-4" />}
-                                label="Parties / events"
-                                value={p.policies.partiesAllowed ? 'Allowed' : 'Not allowed'}
-                            />
-                        </div>
-                        <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-4 text-sm leading-relaxed">
-                            <div className="mb-1 font-semibold text-slate-700">House rules</div>
-                            <p className="text-slate-500">{p.policies.houseRules}</p>
-                        </div>
-                    </section>
+                    {/* Features & Configuration */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <Card className="border-slate-200 shadow-sm">
+                            <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
+                                <CardTitle className="text-base font-bold flex items-center gap-2">
+                                    <CheckCircle2 className="size-4 text-[#243E8B]" />
+                                    Room Amenities
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-4">
+                                <div className="flex flex-wrap gap-2">
+                                    {rt.amenities.map(amenity => (
+                                        <Badge key={amenity} variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium px-3 py-1.5">
+                                            {amenity}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
 
-                    {/* Location map */}
-                    <section>
-                        <SectionHeading>Location</SectionHeading>
-                        <div className="relative aspect-video overflow-hidden rounded-2xl bg-slate-100 shadow-sm">
-                            <iframe
-                                title={`Map showing ${p.name}`}
-                                src={`https://maps.google.com/maps?q=${p.latitude},${p.longitude}&z=15&output=embed`}
-                                width="100%"
-                                height="100%"
-                                style={{ border: 0, position: 'absolute', inset: 0 }}
-                                loading="lazy"
-                                referrerPolicy="no-referrer-when-downgrade"
-                                allowFullScreen
-                            />
-                        </div>
-                        <p className="mt-3 text-sm text-slate-500">
-                            {p.address1}
-                            {p.address2 ? `, ${p.address2}` : ''}, {p.city}, {p.state} {p.postalCode},{' '}
-                            {p.country}
-                        </p>
-                    </section>
+                        <Card className="border-slate-200 shadow-sm">
+                            <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
+                                <CardTitle className="text-base font-bold flex items-center gap-2">
+                                    <BedDouble className="size-4 text-[#243E8B]" />
+                                    Bed Configuration
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-4">
+                                <div className="space-y-3">
+                                    {rt.beds.map((bed, i) => (
+                                        <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50">
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-white p-2 rounded-md shadow-sm border border-slate-100">
+                                                    <BedDouble className="size-4 text-[#243E8B]" />
+                                                </div>
+                                                <span className="font-semibold text-slate-700 text-sm">{bed.bedType}</span>
+                                            </div>
+                                            <Badge variant="outline" className="font-mono bg-white">
+                                                x{bed.quantity}
+                                            </Badge>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Operational Details */}
+                    <Card className="border-slate-200 shadow-sm">
+                        <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
+                            <CardTitle className="text-base font-bold flex items-center gap-2">
+                                <Shield className="size-4 text-[#243E8B]" />
+                                Policy Overrides & Features
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                <StatusToggle label="Smoking Allowed" active={rt.smokingRoom} icon={<Cigarette />} />
+                                <StatusToggle label="Accessible" active={rt.accessibleRoom} icon={<Shield />} />
+                                <StatusToggle label="Private Bath" active={rt.privateBathroom} icon={<Bath />} />
+                                <StatusToggle label="Extra Beds" active={rt.maxOccupancy > rt.maxAdults} icon={<Baby />} />
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
-                {/* ── Right column: sticky booking card ── */}
-                <aside className="lg:col-span-1">
-                    <div className="sticky top-6 flex flex-col gap-4">
-
-                        {/* Booking card */}
-                        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)]">
-                            <div className="mb-5">
-                                <div className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-slate-400">
-                                    Base price / night
-                                </div>
-                                <div className="mt-1.5 flex items-baseline gap-1">
-                                    <span className="text-3xl font-black text-slate-900 tracking-tight">
-                                        {formatPrice(rt.basePrice, currency)}
-                                    </span>
-                                    <span className="text-sm text-slate-400">/ night</span>
-                                </div>
+                {/* ── Right Column: Units Management ── */}
+                <div className="space-y-8">
+                    <Card className="border-slate-200 shadow-sm flex flex-col h-full">
+                        <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-base font-bold flex items-center gap-2">
+                                    <Key className="size-4 text-[#243E8B]" />
+                                    Physical Units
+                                </CardTitle>
+                                <Badge className="bg-[#243E8B] hover:bg-[#1D3270]">
+                                    {rt.units.length} Total
+                                </Badge>
                             </div>
+                        </CardHeader>
+                        <CardContent className="p-0 flex-1 overflow-hidden">
+                            {rt.units.length > 0 ? (
+                                <div className="divide-y divide-slate-100">
+                                    {rt.units.map((unit) => {
+                                        // Randomly assign statuses for the dashboard mock
+                                        const statuses = ['Clean', 'Occupied', 'Dirty', 'Maintenance']
+                                        const statusColors = {
+                                            'Clean': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                                            'Occupied': 'bg-blue-100 text-blue-700 border-blue-200',
+                                            'Dirty': 'bg-amber-100 text-amber-700 border-amber-200',
+                                            'Maintenance': 'bg-rose-100 text-rose-700 border-rose-200'
+                                        }
+                                        const randomStatus = statuses[Math.floor(Math.random() * statuses.length)] as keyof typeof statusColors
 
-                            <div className="flex flex-col gap-3">
-                                <div className="grid grid-cols-2 gap-2">
-                                    <BookingField label="Check-in" type="date" />
-                                    <BookingField label="Check-out" type="date" />
+                                        return (
+                                            <div key={unit.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="size-10 rounded-xl bg-[#EEF3FF] text-[#243E8B] flex items-center justify-center font-bold text-sm border border-[#243E8B]/10">
+                                                        {unit.roomNumber}
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm font-semibold text-slate-900">Room {unit.roomNumber}</div>
+                                                        <div className="text-xs text-slate-500">Floor {unit.floor}</div>
+                                                    </div>
+                                                </div>
+                                                <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", statusColors[randomStatus])}>
+                                                    {randomStatus}
+                                                </Badge>
+                                            </div>
+                                        )
+                                    })}
                                 </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <BookingField label="Guests" type="number" placeholder="2" min={1} max={rt.maxOccupancy} />
-                                    <BookingField label="Nights" type="number" placeholder="1" min={1} />
+                            ) : (
+                                <div className="p-8 text-center flex flex-col items-center justify-center h-full text-slate-500">
+                                    <Key className="size-12 text-slate-200 mb-3" />
+                                    <p className="font-medium text-slate-900">No units assigned</p>
+                                    <p className="text-sm mt-1 mb-4">Create physical rooms for this type.</p>
+                                    <Button size="sm" variant="outline" className="gap-2">
+                                        <Plus className="size-4" />
+                                        Add Unit
+                                    </Button>
                                 </div>
-                            </div>
-
-                            <button
-                                type="button"
-                                className="mt-4 w-full rounded-xl bg-[#243E8B] py-3 text-sm font-bold text-white hover:bg-[#1D3270] shadow-[0_4px_12px_rgba(36,62,139,0.25)] hover:shadow-[0_8px_20px_rgba(36,62,139,0.35)] transition-all duration-300 hover:-translate-y-0.5"
-                                onClick={() => console.log(`Reserve ${rt.name} at ${p.name}`)}
-                            >
-                                Reserve This Room
-                            </button>
-
-                            <p className="mt-3 text-center text-xs text-slate-400">
-                                You won't be charged yet
-                            </p>
-                        </div>
-
-                        {/* Room highlights */}
-                        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm">
-                            <div className="mb-3 font-bold text-slate-800">Room highlights</div>
-                            <ul className="flex flex-col gap-2 text-xs text-slate-500">
-                                <li className="flex items-center gap-2">
-                                    <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />
-                                    {rt.roomSize} {rt.roomSizeUnit} — {rt.viewType || 'Interior view'}
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />
-                                    {rt.maxOccupancy} max occupancy
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />
-                                    {rt.amenities.length} room amenities
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />
-                                    {rt.units.length} unit{rt.units.length === 1 ? '' : 's'} available
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />
-                                    {rt.privateBathroom ? 'Private bathroom' : 'Shared bathroom'}
-                                </li>
-                            </ul>
-                        </div>
-
-                        {/* Property card */}
-                        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-                            <div className="h-24 overflow-hidden">
-                                <img
-                                    src={p.images.thumbnail}
-                                    alt={p.name}
-                                    className="h-full w-full object-cover"
-                                />
-                            </div>
-                            <div className="p-4">
-                                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                                    {p.propertyType}
-                                </div>
-                                <div className="font-bold text-slate-800 text-sm">{p.name}</div>
-                                <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
-                                    <MapPin className="size-3 text-slate-400" />
-                                    {p.city}, {p.country}
-                                </div>
-                                <Link
-                                    to="/property/$propertyId"
-                                    params={{ propertyId: p.id }}
-                                    className="mt-3 flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-[#243E8B] transition-colors"
-                                >
-                                    View all room types
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-                </aside>
+                            )}
+                        </CardContent>
+                        <CardFooter className="p-4 border-t border-slate-100 bg-slate-50/50">
+                            <Button className="w-full gap-2 bg-white text-slate-700 border-slate-200 hover:bg-slate-100" variant="outline">
+                                <Plus className="size-4" />
+                                Manage Units
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </div>
             </div>
         </div>
     )
@@ -462,109 +338,64 @@ function RoomTypeDetails({ property, roomType: rt }: { property: Property; roomT
 
 // ─── Sub-components ─────────────────────────────────────────────────
 
-function SectionHeading({ children }: { children: React.ReactNode }) {
+function MetricCard({ title, value, subtitle, icon, trend }: { title: string, value: string, subtitle: string, icon: React.ReactNode, trend?: string }) {
+    const isPositive = trend?.startsWith('+')
     return (
-        <div className="flex items-center gap-3 mb-4">
-            <h2 className="text-lg font-bold text-slate-900">{children}</h2>
-            <div className="flex-1 h-px bg-slate-100" />
-        </div>
-    )
-}
-
-function StatCard({
-    icon,
-    label,
-    value,
-    sub,
-}: {
-    icon: React.ReactNode
-    label: string
-    value: string
-    sub: string
-}) {
-    return (
-        <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4">
-            <div className="flex items-center gap-2">
-                <div className="flex size-8 items-center justify-center rounded-xl bg-[#EEF3FF]">
-                    {icon}
+        <Card className="border-slate-200 shadow-sm">
+            <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider">{title}</h4>
+                    <div className="p-2 bg-[#EEF3FF] rounded-lg">
+                        {icon}
+                    </div>
                 </div>
-            </div>
-            <div>
-                <div className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">{label}</div>
-                <div className="mt-0.5 text-sm font-bold text-slate-800">{value}</div>
-                <div className="text-[11px] text-slate-400 truncate">{sub}</div>
-            </div>
-        </div>
+                <div className="flex items-end justify-between">
+                    <div>
+                        <div className="text-3xl font-black text-slate-900 tracking-tight">{value}</div>
+                        <div className="text-sm text-slate-400 font-medium mt-1">{subtitle}</div>
+                    </div>
+                    {trend && (
+                        <div className={cn("text-sm font-bold flex items-center gap-1", isPositive ? "text-emerald-600" : "text-rose-600")}>
+                            {trend}
+                        </div>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
     )
 }
 
-function PolicyRow({
-    icon,
-    label,
-    value,
-}: {
-    icon: React.ReactNode
-    label: string
-    value: string
-}) {
+function MiniStat({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
     return (
-        <div className="rounded-xl border border-slate-200 bg-white p-3.5">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                {icon}
+        <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-1.5 text-slate-400 text-xs uppercase font-bold tracking-wider">
+                <div className="[&>svg]:size-3.5">{icon}</div>
                 {label}
             </div>
-            <div className="mt-1.5 text-sm font-semibold text-slate-700">{value}</div>
+            <div className="text-sm font-bold text-slate-800">{value}</div>
         </div>
     )
 }
 
-function FeaturePill({
-    active,
-    icon,
-    label,
-}: {
-    active: boolean
-    icon: React.ReactNode
-    label: string
-}) {
+function StatusToggle({ label, active, icon }: { label: string, active: boolean, icon: React.ReactNode }) {
     return (
-        <div
-            className={cn(
-                'flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-[13px] font-medium transition-colors',
-                active
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                    : 'border-slate-200 bg-white text-slate-500'
-            )}
-        >
-            {icon}
-            {label}
+        <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-slate-500">
+                <div className="[&>svg]:size-4">{icon}</div>
+                <span className="text-xs font-bold uppercase tracking-wider">{label}</span>
+            </div>
+            <div>
+                {active ? (
+                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 transition-colors text-xs py-1">
+                        <CheckCircle2 className="size-3 mr-1" />
+                        Enabled
+                    </Badge>
+                ) : (
+                    <Badge variant="outline" className="bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 transition-colors text-xs py-1">
+                        Disabled
+                    </Badge>
+                )}
+            </div>
         </div>
-    )
-}
-
-function BookingField({
-    label,
-    type,
-    placeholder,
-    min,
-    max,
-}: {
-    label: string
-    type: 'date' | 'number'
-    placeholder?: string
-    min?: number
-    max?: number
-}) {
-    return (
-        <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-slate-500">{label}</span>
-            <input
-                type={type}
-                placeholder={placeholder}
-                min={min}
-                max={max}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-[#243E8B] focus:outline-none focus:bg-white transition-colors"
-            />
-        </label>
     )
 }
