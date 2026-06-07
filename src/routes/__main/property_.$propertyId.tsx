@@ -38,7 +38,7 @@ export type CreateRoomTypeForm = {
     images: File[]
 }
 
-export const Route = createFileRoute('/__main/property/$propertyId')({
+export const Route = createFileRoute('/__main/property_/$propertyId')({
     component: PropertyUnitComponent,
 })
 
@@ -162,61 +162,78 @@ function PropertyUnitComponent() {
                                 {paginatedRooms.map((room) => (
                                     <div
                                         key={room.id}
-                                        className="group h-full bg-white border border-slate-200/60 rounded-3xl overflow-hidden shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-500 ease-out hover:-translate-y-1.5 flex flex-col relative"
+                                        className="group h-full flex flex-col bg-white rounded-[2rem] shadow-[0_8px_24px_-12px_rgba(0,0,0,0.06)] hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.12)] border border-slate-100/80 transition-all duration-[600ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-2 overflow-hidden relative"
                                     >
-                                        {/* Image */}
-                                        <div className="relative w-full aspect-video shrink-0 overflow-hidden bg-slate-100">
-                                            <img src={room.imageUrl} alt={room.title} className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" />
-                                            <div className="absolute inset-0 bg-linear-to-t from-slate-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                            {/* Price tag */}
-                                            <div className="absolute top-3 right-3 z-10">
-                                                <div className="bg-white/95 px-3 py-1.5 rounded-2xl shadow-sm border border-white/20 flex flex-col items-end gap-0">
-                                                    <span className="text-[15px] font-black text-slate-900 leading-none">${room.basePrice}</span>
-                                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Base / Night</span>
+                                        {/* Hover Glow Effect */}
+                                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#EEF3FF]/0 group-hover:to-[#EEF3FF]/20 transition-colors duration-700 pointer-events-none" />
+
+                                        {/* Image Section */}
+                                        <div className="relative w-full aspect-[16/9] overflow-hidden bg-slate-100 shrink-0 z-0">
+                                            <img
+                                                src={room.imageUrl}
+                                                alt={room.title}
+                                                className="w-full h-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-105"
+                                            />
+                                            {/* Subtle Inner Shadow */}
+                                            <div className="absolute inset-0 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)] rounded-none pointer-events-none" />
+                                            
+                                            {/* Top Left Status Badge */}
+                                            <div className="absolute top-4 left-4 z-10 transform transition-transform duration-500 group-hover:-translate-y-1">
+                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest backdrop-blur-md shadow-sm transition-colors border ${room.status === 'Active' ? 'bg-[#10b981]/90 text-white border-white/20' : 'bg-[#f59e0b]/90 text-white border-white/20'}`}>
+                                                    <span className={`relative inline-flex rounded-full size-1.5 ${room.status === 'Active' ? 'bg-white' : 'bg-white'}`} />
+                                                    {room.status}
+                                                </span>
+                                            </div>
+
+                                            {/* Bottom Right Price Tag */}
+                                            <div className="absolute bottom-4 right-4 z-10 transform transition-transform duration-500 group-hover:-translate-y-1">
+                                                <div className="bg-white/95 backdrop-blur-xl px-4 py-2 rounded-2xl shadow-[0_8px_20px_rgba(0,0,0,0.12)] border border-white/60 flex flex-col items-end">
+                                                    <span className="text-[18px] font-black text-slate-900 leading-none tracking-tight">${room.basePrice}</span>
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">/ Night</span>
                                                 </div>
                                             </div>
+                                            
+                                            {/* Decorative bottom gradient */}
+                                            <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                                         </div>
-                                        {/* Details */}
-                                        <div className="p-4 flex flex-col gap-3 grow">
-                                            <div className="flex flex-col gap-2">
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <h3 className="text-[1rem] font-bold text-slate-900 tracking-tight group-hover:text-[#243E8B] transition-colors duration-300 leading-tight">
-                                                        {room.title}
-                                                    </h3>
-                                                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-widest flex items-center gap-1 border ${room.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : 'bg-amber-50 text-amber-700 border-amber-200/60'}`}>
-                                                        <span className="relative flex h-1.5 w-1.5">
-                                                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${room.status === 'Active' ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
-                                                            <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${room.status === 'Active' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
-                                                        </span>
-                                                        {room.status}
-                                                    </span>
-                                                </div>
-                                                <div className="flex flex-col gap-1.5">
-                                                    <div className="flex items-center gap-2 text-slate-500">
-                                                        <BedDouble className="size-3.5 shrink-0 text-slate-400" />
-                                                        <span className="text-[12.5px] font-medium leading-none truncate">{room.totalUnits} Units • {room.capacity}</span>
+
+                                        {/* Details Section */}
+                                        <div className="p-6 flex flex-col gap-5 grow relative z-10 bg-white">
+                                            {/* Header */}
+                                            <div className="flex flex-col gap-3">
+                                                <h3 className="text-[1.25rem] font-bold text-slate-900 tracking-tight leading-snug group-hover:text-[#243E8B] transition-colors duration-300">
+                                                    {room.title}
+                                                </h3>
+                                                
+                                                {/* Meta Info */}
+                                                <div className="flex items-center gap-4 text-slate-500">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <BedDouble className="size-[15px] text-slate-400" />
+                                                        <span className="text-[13.5px] font-medium tracking-wide truncate max-w-[140px]">{room.totalUnits} Units</span>
                                                     </div>
-                                                    <div className="flex items-center gap-2 text-slate-500">
-                                                        <MapPin className="size-3.5 shrink-0 text-slate-400" />
-                                                        <span className="text-[12.5px] font-semibold text-slate-600 tracking-wide leading-none truncate">{room.details}</span>
+                                                    <div className="h-3 w-px bg-slate-200" />
+                                                    <div className="flex items-center gap-1.5">
+                                                        <MapPin className="size-[15px] text-slate-400" />
+                                                        <span className="text-[13.5px] font-medium tracking-wide truncate max-w-[120px]">{room.details}</span>
                                                     </div>
                                                 </div>
                                             </div>
+
                                             {/* Actions */}
-                                            <div className="grid grid-cols-2 gap-2 mt-auto pt-1">
+                                            <div className="grid grid-cols-2 gap-3 mt-auto pt-3">
                                                 <Button
                                                     onClick={() => openEdit(room)}
                                                     variant="outline"
-                                                    className="w-full gap-1.5 rounded-xl border-slate-200 text-slate-600 font-semibold h-9 hover:bg-slate-50 hover:text-[#243E8B] hover:border-[#243E8B]/30 transition-all duration-300 group/btn text-[13px]"
+                                                    className="w-full gap-2 rounded-full border-slate-200 text-slate-600 font-bold h-[44px] hover:bg-slate-50 hover:text-[#243E8B] hover:border-[#243E8B]/30 transition-all duration-300 text-[14px]"
                                                 >
-                                                    <Edit className="size-3.5 group-hover/btn:-rotate-12 transition-transform duration-300" />
+                                                    <Edit className="size-4" />
                                                     Edit
                                                 </Button>
                                                 <Button
                                                     variant="default"
-                                                    className="w-full gap-1.5 rounded-xl bg-[#243E8B] text-white font-semibold h-9 hover:bg-[#1D3270] shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300 group/btn text-[13px]"
+                                                    className="w-full gap-2 rounded-full bg-[#243E8B] text-white font-bold h-[44px] hover:bg-[#1D3270] shadow-[0_4px_12px_rgba(36,62,139,0.2)] hover:shadow-[0_8px_20px_rgba(36,62,139,0.3)] transition-all duration-300 hover:-translate-y-0.5 text-[14px]"
                                                 >
-                                                    <Eye className="size-3.5 group-hover/btn:scale-110 transition-transform duration-300" />
+                                                    <Eye className="size-4" />
                                                     View
                                                 </Button>
                                             </div>

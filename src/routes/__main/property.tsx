@@ -6,7 +6,8 @@ import { SearchInput } from '@/components/ui/search-input'
 import {
     Plus, MapPin, Edit, Eye, CheckCircle2, XCircle,
     Building, ArrowRight, Wifi, ParkingCircle, Waves,
-    Dumbbell, UtensilsCrossed, Car, Accessibility, Clock
+    Dumbbell, UtensilsCrossed, Car, Accessibility, Clock,
+    Building2, Key, BedDouble
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useForm } from '@tanstack/react-form'
@@ -222,79 +223,90 @@ function PropertyComponent() {
                                     <div
                                         key={property.id}
                                         onClick={() => navigate({ to: '/property/$propertyId', params: { propertyId: property.id } })}
-                                        className="group h-full bg-white border border-slate-200/60 rounded-[24px] overflow-hidden shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-500 ease-out hover:-translate-y-1 flex flex-col relative cursor-pointer"
+                                        className="group h-full flex flex-col bg-white rounded-[2rem] shadow-[0_8px_24px_-12px_rgba(0,0,0,0.06)] hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.12)] border border-slate-100/80 transition-all duration-[600ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-2 cursor-pointer overflow-hidden relative"
                                     >
-                                        {/* Image */}
-                                        <div className="relative w-full aspect-[4/3] sm:aspect-[1.4] shrink-0 overflow-hidden bg-slate-100">
+                                        {/* Hover Glow Effect */}
+                                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#EEF3FF]/0 group-hover:to-[#EEF3FF]/20 transition-colors duration-700 pointer-events-none" />
+
+                                        {/* Image Section */}
+                                        <div className="relative w-full aspect-[16/9] overflow-hidden bg-slate-100 shrink-0 z-0">
                                             <img
                                                 src={property.imageUrl}
                                                 alt={property.title}
-                                                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                                                className="w-full h-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-105"
                                             />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                            {/* Occupancy badge */}
-                                            <div className="absolute top-4 right-4 z-10">
-                                                <div className="bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 border border-white/50">
-                                                    <div className={cn("size-2 rounded-full animate-pulse", property.occupancy > 80 ? "bg-emerald-500" : property.occupancy > 50 ? "bg-amber-500" : "bg-red-500")} />
-                                                    <span className="text-[12.5px] font-bold text-slate-700 tracking-tight">{property.occupancy}% <span className="font-medium text-slate-400 ml-0.5">Occupied</span></span>
+                                            {/* Subtle Inner Shadow for Image */}
+                                            <div className="absolute inset-0 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)] rounded-none pointer-events-none" />
+
+                                            {/* Floating Occupancy Badge */}
+                                            <div className="absolute top-4 right-4 z-10 transform transition-transform duration-500 group-hover:-translate-y-1">
+                                                <div className="bg-white/95 backdrop-blur-xl px-3.5 py-2 rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.08)] flex items-center gap-2 border border-white/60">
+                                                    <div className={cn("size-2 rounded-full", property.occupancy > 80 ? "bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.5)]" : property.occupancy > 50 ? "bg-[#f59e0b] shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "bg-[#ef4444] shadow-[0_0_8px_rgba(239,68,68,0.5)]")} />
+                                                    <span className="text-[12.5px] font-black text-slate-800 tracking-tight leading-none">
+                                                        {property.occupancy}% <span className="font-semibold text-slate-400 ml-0.5">Occ</span>
+                                                    </span>
                                                 </div>
                                             </div>
+
+                                            {/* Decorative bottom gradient on image */}
+                                            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
                                         </div>
 
-                                        {/* Details */}
-                                        <div className="p-5 flex flex-col gap-4 grow">
+                                        {/* Details Section */}
+                                        <div className="p-6 flex flex-col gap-5 grow relative z-10 bg-white">
+                                            {/* Header */}
                                             <div className="flex flex-col gap-3">
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <h3 className="text-[1.15rem] font-bold text-slate-900 tracking-tight group-hover:text-[#243E8B] transition-colors duration-300 leading-tight">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <h3 className="text-[1.25rem] font-bold text-slate-900 tracking-tight leading-snug group-hover:text-[#243E8B] transition-colors duration-300">
                                                         {property.title}
                                                     </h3>
-                                                    <StatusBadge status={property.status} />
-                                                </div>
-                                                <div className="flex flex-col gap-3 mt-1">
-                                                    <div className="flex items-center gap-2.5 text-slate-500">
-                                                        <MapPin className="size-[15px] shrink-0 text-slate-400" />
-                                                        <span className="text-[13.5px] font-medium leading-none truncate text-slate-600">{property.location}</span>
+                                                    <div className="mt-0.5 shrink-0">
+                                                        <StatusBadge status={property.status} />
                                                     </div>
+                                                </div>
 
-                                                    {/* PMS Metrics */}
-                                                    <div className="grid grid-cols-2 gap-2.5 mt-0.5">
-                                                        <div className="flex flex-col gap-1.5 p-3 bg-slate-50 rounded-2xl border border-slate-100/60">
-                                                            <div className="flex items-center gap-1.5 text-slate-400">
-                                                                <Building className="size-[13px]" />
-                                                                <span className="text-[10.5px] font-extrabold uppercase tracking-wider">Units</span>
-                                                            </div>
-                                                            <span className="text-[15px] font-bold text-slate-700 leading-none">
-                                                                {property.totalRooms} <span className="text-[12.5px] font-semibold text-slate-400">({property.roomTypes} types)</span>
-                                                            </span>
+                                                {/* Meta Info */}
+                                                <div className="flex flex-col gap-2 mt-1">
+                                                    <div className="flex items-center gap-4 text-slate-500">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <MapPin className="size-[14px] text-slate-400" />
+                                                            <span className="text-[13px] font-medium tracking-wide truncate max-w-[140px]">{property.location}</span>
                                                         </div>
-                                                        <div className="flex flex-col gap-1.5 p-3 bg-[#EEF3FF]/50 rounded-2xl border border-[#EEF3FF]">
-                                                            <div className="flex items-center gap-1.5 text-[#243E8B]/60">
-                                                                <ArrowRight className="size-[13px]" />
-                                                                <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-[#243E8B]/80">Arrivals</span>
-                                                            </div>
-                                                            <span className="text-[15px] font-bold text-[#243E8B] leading-none">
-                                                                {property.todayCheckIns} <span className="text-[12.5px] font-semibold text-[#243E8B]/60">today</span>
-                                                            </span>
+                                                        <div className="h-3 w-px bg-slate-200" />
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Building2 className="size-[14px] text-slate-400" />
+                                                            <span className="text-[13px] font-medium tracking-wide truncate max-w-[100px]">{property.type}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-4 text-slate-500">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Key className="size-[14px] text-slate-400" />
+                                                            <span className="text-[13px] font-medium tracking-wide truncate max-w-[140px]">{property.totalRooms} Units • {property.roomTypes} Types</span>
+                                                        </div>
+                                                        <div className="h-3 w-px bg-slate-200" />
+                                                        <div className="flex items-center gap-1.5">
+                                                            <ArrowRight className="size-[14px] text-slate-400" />
+                                                            <span className="text-[13px] font-medium tracking-wide truncate max-w-[100px]">{property.todayCheckIns} Arrivals</span>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            {/* Action buttons */}
-                                            <div className="grid grid-cols-2 gap-3 mt-auto pt-2">
+                                            {/* Actions */}
+                                            <div className="grid grid-cols-2 gap-3 mt-auto">
                                                 <Button
                                                     onClick={(e) => { e.stopPropagation(); openEdit(property) }}
                                                     variant="outline"
-                                                    className="w-full gap-2 rounded-[16px] border-slate-200 text-slate-600 font-semibold h-[42px] hover:bg-slate-50 hover:text-[#243E8B] hover:border-[#243E8B]/30 transition-all duration-300 group/btn text-[14px]"
+                                                    className="w-full gap-2 rounded-full border-slate-200 text-slate-600 font-bold h-[44px] hover:bg-slate-50 hover:text-[#243E8B] hover:border-[#243E8B]/30 transition-all duration-300 text-[14px]"
                                                 >
-                                                    <Edit className="size-[15px] group-hover/btn:-rotate-12 transition-transform duration-300" />
+                                                    <Edit className="size-4" />
                                                     Edit
                                                 </Button>
                                                 <Button
                                                     onClick={(e) => { e.stopPropagation(); setSelectedProperty(property) }}
-                                                    className="w-full gap-2 rounded-[16px] bg-[#243E8B] text-white font-semibold h-[42px] hover:bg-[#1D3270] shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300 group/btn text-[14px]"
+                                                    className="w-full gap-2 rounded-full bg-[#243E8B] text-white font-bold h-[44px] hover:bg-[#1D3270] shadow-[0_4px_12px_rgba(36,62,139,0.2)] hover:shadow-[0_8px_20px_rgba(36,62,139,0.3)] transition-all duration-300 hover:-translate-y-0.5 text-[14px]"
                                                 >
-                                                    <Eye className="size-[15px] group-hover/btn:scale-110 transition-transform duration-300" />
+                                                    <Eye className="size-4" />
                                                     View
                                                 </Button>
                                             </div>

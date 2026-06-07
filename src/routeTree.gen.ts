@@ -31,7 +31,7 @@ import { Route as _authForgotPasswordRouteImport } from './routes/__auth/forgot-
 import { Route as _mainSupportIndexRouteImport } from './routes/__main/support.index'
 import { Route as _mainSupportIdRouteImport } from './routes/__main/support.$id'
 import { Route as _mainReportsSourceRouteImport } from './routes/__main/reports_.$source'
-import { Route as _mainPropertyPropertyIdRouteImport } from './routes/__main/property.$propertyId'
+import { Route as _mainPropertyPropertyIdRouteImport } from './routes/__main/property_.$propertyId'
 
 const _mainRouteRoute = _mainRouteRouteImport.update({
   id: '/__main',
@@ -142,9 +142,9 @@ const _mainReportsSourceRoute = _mainReportsSourceRouteImport.update({
   getParentRoute: () => _mainRouteRoute,
 } as any)
 const _mainPropertyPropertyIdRoute = _mainPropertyPropertyIdRouteImport.update({
-  id: '/$propertyId',
-  path: '/$propertyId',
-  getParentRoute: () => _mainPropertyRoute,
+  id: '/property_/$propertyId',
+  path: '/property/$propertyId',
+  getParentRoute: () => _mainRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -158,7 +158,7 @@ export interface FileRoutesByFullPath {
   '/employees': typeof _mainEmployeesRoute
   '/inbox': typeof _mainInboxRoute
   '/payments': typeof _mainPaymentsRoute
-  '/property': typeof _mainPropertyRouteWithChildren
+  '/property': typeof _mainPropertyRoute
   '/reports': typeof _mainReportsRoute
   '/reservations': typeof _mainReservationsRoute
   '/reviews': typeof _mainReviewsRoute
@@ -181,7 +181,7 @@ export interface FileRoutesByTo {
   '/employees': typeof _mainEmployeesRoute
   '/inbox': typeof _mainInboxRoute
   '/payments': typeof _mainPaymentsRoute
-  '/property': typeof _mainPropertyRouteWithChildren
+  '/property': typeof _mainPropertyRoute
   '/reports': typeof _mainReportsRoute
   '/reservations': typeof _mainReservationsRoute
   '/reviews': typeof _mainReviewsRoute
@@ -206,7 +206,7 @@ export interface FileRoutesById {
   '/__main/employees': typeof _mainEmployeesRoute
   '/__main/inbox': typeof _mainInboxRoute
   '/__main/payments': typeof _mainPaymentsRoute
-  '/__main/property': typeof _mainPropertyRouteWithChildren
+  '/__main/property': typeof _mainPropertyRoute
   '/__main/reports': typeof _mainReportsRoute
   '/__main/reservations': typeof _mainReservationsRoute
   '/__main/reviews': typeof _mainReviewsRoute
@@ -214,7 +214,7 @@ export interface FileRoutesById {
   '/__main/settings': typeof _mainSettingsRoute
   '/__main/user-management': typeof _mainUserManagementRoute
   '/__main/': typeof _mainIndexRoute
-  '/__main/property/$propertyId': typeof _mainPropertyPropertyIdRoute
+  '/__main/property_/$propertyId': typeof _mainPropertyPropertyIdRoute
   '/__main/reports_/$source': typeof _mainReportsSourceRoute
   '/__main/support/$id': typeof _mainSupportIdRoute
   '/__main/support/': typeof _mainSupportIndexRoute
@@ -287,7 +287,7 @@ export interface FileRouteTypes {
     | '/__main/settings'
     | '/__main/user-management'
     | '/__main/'
-    | '/__main/property/$propertyId'
+    | '/__main/property_/$propertyId'
     | '/__main/reports_/$source'
     | '/__main/support/$id'
     | '/__main/support/'
@@ -454,12 +454,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof _mainReportsSourceRouteImport
       parentRoute: typeof _mainRouteRoute
     }
-    '/__main/property/$propertyId': {
-      id: '/__main/property/$propertyId'
-      path: '/$propertyId'
+    '/__main/property_/$propertyId': {
+      id: '/__main/property_/$propertyId'
+      path: '/property/$propertyId'
       fullPath: '/property/$propertyId'
       preLoaderRoute: typeof _mainPropertyPropertyIdRouteImport
-      parentRoute: typeof _mainPropertyRoute
+      parentRoute: typeof _mainRouteRoute
     }
   }
 }
@@ -482,25 +482,13 @@ const _authRouteRouteWithChildren = _authRouteRoute._addFileChildren(
   _authRouteRouteChildren,
 )
 
-interface _mainPropertyRouteChildren {
-  _mainPropertyPropertyIdRoute: typeof _mainPropertyPropertyIdRoute
-}
-
-const _mainPropertyRouteChildren: _mainPropertyRouteChildren = {
-  _mainPropertyPropertyIdRoute: _mainPropertyPropertyIdRoute,
-}
-
-const _mainPropertyRouteWithChildren = _mainPropertyRoute._addFileChildren(
-  _mainPropertyRouteChildren,
-)
-
 interface _mainRouteRouteChildren {
   _mainCalendarRoute: typeof _mainCalendarRoute
   _mainChannelManagerRoute: typeof _mainChannelManagerRoute
   _mainEmployeesRoute: typeof _mainEmployeesRoute
   _mainInboxRoute: typeof _mainInboxRoute
   _mainPaymentsRoute: typeof _mainPaymentsRoute
-  _mainPropertyRoute: typeof _mainPropertyRouteWithChildren
+  _mainPropertyRoute: typeof _mainPropertyRoute
   _mainReportsRoute: typeof _mainReportsRoute
   _mainReservationsRoute: typeof _mainReservationsRoute
   _mainReviewsRoute: typeof _mainReviewsRoute
@@ -508,6 +496,7 @@ interface _mainRouteRouteChildren {
   _mainSettingsRoute: typeof _mainSettingsRoute
   _mainUserManagementRoute: typeof _mainUserManagementRoute
   _mainIndexRoute: typeof _mainIndexRoute
+  _mainPropertyPropertyIdRoute: typeof _mainPropertyPropertyIdRoute
   _mainReportsSourceRoute: typeof _mainReportsSourceRoute
   _mainSupportIdRoute: typeof _mainSupportIdRoute
   _mainSupportIndexRoute: typeof _mainSupportIndexRoute
@@ -519,7 +508,7 @@ const _mainRouteRouteChildren: _mainRouteRouteChildren = {
   _mainEmployeesRoute: _mainEmployeesRoute,
   _mainInboxRoute: _mainInboxRoute,
   _mainPaymentsRoute: _mainPaymentsRoute,
-  _mainPropertyRoute: _mainPropertyRouteWithChildren,
+  _mainPropertyRoute: _mainPropertyRoute,
   _mainReportsRoute: _mainReportsRoute,
   _mainReservationsRoute: _mainReservationsRoute,
   _mainReviewsRoute: _mainReviewsRoute,
@@ -527,6 +516,7 @@ const _mainRouteRouteChildren: _mainRouteRouteChildren = {
   _mainSettingsRoute: _mainSettingsRoute,
   _mainUserManagementRoute: _mainUserManagementRoute,
   _mainIndexRoute: _mainIndexRoute,
+  _mainPropertyPropertyIdRoute: _mainPropertyPropertyIdRoute,
   _mainReportsSourceRoute: _mainReportsSourceRoute,
   _mainSupportIdRoute: _mainSupportIdRoute,
   _mainSupportIndexRoute: _mainSupportIndexRoute,
