@@ -856,11 +856,16 @@ function RoomTypeForm({
     )
 }
 
-// ─── Small visual primitive local to the form ─────────────────────
-function SectionHeader({ children }: { children: React.ReactNode }) {
+// ─── Small visual primitives local to the form ─────────────────────
+function Section({ children }: { children: React.ReactNode }) {
+    return <div className="flex flex-col gap-3">{children}</div>
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
     return (
-        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-            <span className="h-px flex-1 bg-slate-100" />{children}<span className="h-px flex-1 bg-slate-100" />
-        </p>
+        <div className="flex items-center gap-3 mb-4">
+            <span className="text-[10.5px] font-extrabold uppercase tracking-[0.12em] text-slate-400">{children}</span>
+            <div className="flex-1 h-px bg-slate-100" />
+        </div>
     )
 }
