@@ -58,7 +58,7 @@ function RouteComponent() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                <div className="flex items-center gap-3 w-full sm:w-auto  pb-1 sm:pb-0">
                     {(['daily', 'weekly', 'monthly', 'yearly'] as const).map((tab) => (
                         <Button
                             key={tab}
