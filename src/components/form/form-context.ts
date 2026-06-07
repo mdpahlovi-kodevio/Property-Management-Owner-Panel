@@ -4,6 +4,7 @@ import { FormImage } from './form-image'
 import { FormInput } from './form-input'
 import { FormModuleMap } from './form-module-map'
 import { FormRadio } from './form-radio'
+import { FormSearchableSelect } from './form-searchable-select'
 import { FormSelect } from './form-select'
 import { FormSubmit } from './form-submit'
 import { FormTextarea } from './form-textarea'
@@ -19,6 +20,7 @@ export const { useAppForm } = createFormHook({
         FormInput,
         FormModuleMap,
         FormRadio,
+        FormSearchableSelect,
         FormSelect,
         FormTextarea,
     },

@@ -328,9 +328,10 @@ function ReservationForm({
         >
             <form.AppField name="userEmail">
                 {(field) => (
-                    <field.FormSelect
+                    <field.FormSearchableSelect
                         label="Guest Email"
-                        placeholder="Select Guest"
+                        placeholder="Select guest email..."
+                        searchPlaceholder="Search by name or email..."
                         options={[
                             { value: 'jane.cooper@example.com', label: 'Jane Cooper (jane.cooper@example.com)' },
                             { value: 'wade.warren@example.com', label: 'Wade Warren (wade.warren@example.com)' },
