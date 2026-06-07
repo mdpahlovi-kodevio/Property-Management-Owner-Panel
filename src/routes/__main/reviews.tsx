@@ -8,11 +8,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { createFileRoute } from '@tanstack/react-router'
-import { CheckCircle2, Clock, Filter, MessageSquare, Star, Trash2 } from 'lucide-react'
+import { Filter, MessageSquare, Star, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/__main/reviews')({
@@ -27,8 +26,6 @@ type Review = {
   rating: number
   platform: 'Airbnb' | 'Booking.com' | 'Direct' | 'Expedia'
   text: string
-  status: 'Replied' | 'Pending'
-  replyText?: string
   avatarUrl: string
 }
 
@@ -41,7 +38,6 @@ const MOCK_REVIEWS: Review[] = [
     rating: 5,
     platform: 'Airbnb',
     text: 'Absolutely wonderful stay! The view from the balcony was breathtaking and the staff was incredibly accommodating. We loved the welcome basket and the seamless check-in process.',
-    status: 'Pending',
     avatarUrl: 'https://api.dicebear.com/7.x/notionists/svg?seed=Eleanor&backgroundColor=f1f5f9',
   },
   {
@@ -52,9 +48,6 @@ const MOCK_REVIEWS: Review[] = [
     rating: 4,
     platform: 'Booking.com',
     text: 'Great location and very clean. The Wi-Fi was a bit spotty in the evenings, but otherwise a fantastic experience. Would recommend to friends visiting the area.',
-    status: 'Replied',
-    replyText:
-      'Dear Guy, thank you for your kind words! We apologize for the Wi-Fi issues and are currently upgrading our routers to ensure a seamless connection for future guests. We hope to host you again!',
     avatarUrl: 'https://api.dicebear.com/7.x/notionists/svg?seed=Guy&backgroundColor=f1f5f9',
   },
   {
@@ -65,8 +58,6 @@ const MOCK_REVIEWS: Review[] = [
     rating: 5,
     platform: 'Direct',
     text: 'The best vacation rental we have ever booked. Everything was spotless, the kitchen was fully equipped, and the host responded within minutes to our queries.',
-    status: 'Replied',
-    replyText: 'Thank you Jenny! It was a pleasure hosting you. We always strive to provide a 5-star experience, and we hope to welcome you back to Coral Bay soon.',
     avatarUrl: 'https://api.dicebear.com/7.x/notionists/svg?seed=Jenny&backgroundColor=f1f5f9',
   },
   {
@@ -77,7 +68,6 @@ const MOCK_REVIEWS: Review[] = [
     rating: 3,
     platform: 'Expedia',
     text: 'The property was okay, but the air conditioning in the master bedroom was noisy. Also, the pool was smaller than it looked in the photos.',
-    status: 'Pending',
     avatarUrl: 'https://api.dicebear.com/7.x/notionists/svg?seed=Robert&backgroundColor=f1f5f9',
   },
   {
@@ -88,15 +78,13 @@ const MOCK_REVIEWS: Review[] = [
     rating: 5,
     platform: 'Airbnb',
     text: 'A hidden gem! Watching the sunset from the private deck is a memory I will cherish forever. Worth every penny.',
-    status: 'Replied',
-    replyText: 'Hi Esther, we are thrilled you enjoyed the sunsets as much as we do! Thank you for choosing our resort for your getaway.',
     avatarUrl: 'https://api.dicebear.com/7.x/notionists/svg?seed=Esther&backgroundColor=f1f5f9',
   },
 ]
 
 function RouteComponent() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterStatus, setFilterStatus] = useState<string>('All')
+  const [filterStatus] = useState<string>('All')
   const [filterPlatform, setFilterPlatform] = useState<string>('All')
   const [reviews, setReviews] = useState<Review[]>(MOCK_REVIEWS)
 
@@ -118,11 +106,10 @@ function RouteComponent() {
         review.guestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         review.property.toLowerCase().includes(searchQuery.toLowerCase()) ||
         review.text.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesStatus = filterStatus === 'All' || review.status === filterStatus
       const matchesPlatform = filterPlatform === 'All' || review.platform === filterPlatform
-      return matchesSearch && matchesStatus && matchesPlatform
+      return matchesSearch && matchesPlatform
     })
-  }, [searchQuery, reviews, filterStatus, filterPlatform])
+  }, [searchQuery, reviews, filterPlatform])
 
   return (
     <>
@@ -152,13 +139,6 @@ function RouteComponent() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-              <DropdownMenuRadioGroup value={filterStatus} onValueChange={setFilterStatus}>
-                <DropdownMenuRadioItem value="All">All Statuses</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="Pending">Pending</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="Replied">Replied</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-              <DropdownMenuSeparator />
               <DropdownMenuLabel>Filter by Platform</DropdownMenuLabel>
               <DropdownMenuRadioGroup value={filterPlatform} onValueChange={setFilterPlatform}>
                 <DropdownMenuRadioItem value="All">All Platforms</DropdownMenuRadioItem>
@@ -188,17 +168,7 @@ function RouteComponent() {
   )
 }
 
-function ReviewCard({ review, onReply, onDelete }: { review: Review, onReply: (id: string, text: string) => void, onDelete: (id: string) => void }) {
-  const [isReplying, setIsReplying] = useState(false)
-  const [replyText, setReplyText] = useState('')
-
-  const handleSubmitReply = () => {
-    if (replyText.trim()) {
-      onReply(review.id, replyText.trim())
-      setIsReplying(false)
-      setReplyText('')
-    }
-  }
+function ReviewCard({ review, onDelete }: { review: Review, onReply: (id: string, text: string) => void, onDelete: (id: string) => void }) {
 
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm p-6 flex flex-col gap-5 transition-all duration-200 hover:shadow-md">
@@ -236,18 +206,6 @@ function ReviewCard({ review, onReply, onDelete }: { review: Review, onReply: (i
                 />
               ))}
             </div>
-
-            <div className="flex items-center gap-2">
-              {review.status === 'Replied' ? (
-                <span className="flex items-center text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
-                  <CheckCircle2 className="w-3 h-3 mr-1" /> Replied
-                </span>
-              ) : (
-                <span className="flex items-center text-[11px] font-semibold text-orange-700 bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-full">
-                  <Clock className="w-3 h-3 mr-1" /> Pending
-                </span>
-              )}
-            </div>
           </div>
 
           <button
@@ -263,79 +221,6 @@ function ReviewCard({ review, onReply, onDelete }: { review: Review, onReply: (i
       <p className="text-foreground/90 leading-relaxed text-[15px]">
         "{review.text}"
       </p>
-
-      {/* Host Reply Box */}
-      {/* review.status === 'Replied' && review.replyText && (
-        <div className="bg-muted/30 rounded-xl p-4 border border-border/50">
-          <div className="flex items-center gap-2 mb-2">
-            <MessageSquare className="w-4 h-4 text-primary" />
-            <span className="font-semibold text-sm text-foreground">Host Reply</span>
-          </div>
-          <p className="text-[14px] text-muted-foreground leading-relaxed pl-6">{review.replyText}</p>
-        </div>
-      ) */}
-
-      {/* Action Area */}
-      {/* review.status === 'Pending' && !isReplying && (
-        <div className="flex gap-3 pt-1">
-          <Button
-            className="rounded-lg px-6 h-10 text-sm shadow-sm transition-all cursor-pointer"
-            onClick={() => setIsReplying(true)}
-          >
-            Write a Reply
-          </Button>
-          <Button variant="outline" className="rounded-lg h-10 text-sm transition-all cursor-pointer">
-            Use Template
-          </Button>
-        </div>
-      ) */}
-
-      {/* Reply Form */}
-      {/* review.status === 'Pending' && isReplying && (
-        <div className="flex flex-col gap-3 pt-1">
-          <div className="relative">
-            <Textarea
-              placeholder="Type your reply here..."
-              className="min-h-[100px] resize-none pr-10 bg-background"
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              autoFocus
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-2 right-2 h-6 w-6 rounded-full cursor-pointer hover:bg-muted"
-              onClick={() => {
-                setIsReplying(false)
-                setReplyText('')
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setIsReplying(false)
-                setReplyText('')
-              }}
-              className="cursor-pointer"
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleSubmitReply}
-              disabled={!replyText.trim()}
-              className="cursor-pointer"
-            >
-              Send Reply
-            </Button>
-          </div>
-        </div>
-      ) */}
     </div>
   )
 }
