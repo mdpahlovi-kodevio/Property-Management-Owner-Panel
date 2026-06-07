@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
-export const Route = createFileRoute('/__main/property_/$propertyId/room/$roomTypeId')({
+export const Route = createFileRoute('/__main/property_/$propertyId_/room/$roomTypeId')({
     loader: async ({ params }) => {
         const property = getPropertyById(params.propertyId)
         if (!property) throw notFound()
