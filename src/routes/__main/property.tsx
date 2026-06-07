@@ -4,16 +4,13 @@ import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { SearchInput } from '@/components/ui/search-input'
 import {
-    Plus, MapPin, Edit, Eye, CheckCircle2, XCircle,
-    Building, ArrowRight, Wifi, ParkingCircle, Waves,
+    Plus, MapPin, Edit, Eye, ArrowRight, Wifi, ParkingCircle, Waves,
     Dumbbell, UtensilsCrossed, Car, Accessibility, Clock,
-    Building2, Key, BedDouble, Star
+    Building2, Key
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useAppForm } from '@/components/form/form-context'
 import { toast } from 'sonner'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { DataTableFooter } from '@/components/ui/data-table'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
@@ -243,9 +240,9 @@ function PropertyComponent() {
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<PropTab>('Basics')
     const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null)
-    const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null)
+    // const [selectedPropertyId] = useState<string | null>(null)
     const isEditMode = editingPropertyId !== null
-    const selectedProperty = selectedPropertyId ? getPropertyById(selectedPropertyId) ?? null : null
+    // const selectedProperty = selectedPropertyId ? getPropertyById(selectedPropertyId) ?? null : null
 
     const openAdd = () => {
         setEditingPropertyId(null)
