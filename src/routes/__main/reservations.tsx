@@ -1,19 +1,18 @@
-import { useAppForm } from '@/components/form/form-context'
-import { Button } from '@/components/ui/button'
-import { DataTable } from '@/components/ui/data-table'
+import { useAppForm } from '@/components/form/form-context';
+import { Button } from '@/components/ui/button';
 import type { DataTableColumn } from '@/components/ui/data-table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Label } from '@/components/ui/label'
-import { PageHeader } from '@/components/ui/page-header'
-import { SearchInput } from '@/components/ui/search-input'
-import { StatusConfirm } from '@/components/ui/status-confirm'
-import { TrashConfirm } from '@/components/ui/trash-confirm'
-import { createFileRoute } from '@tanstack/react-router'
-import { Check, ChevronDown, Edit, Plus, Trash2, Users } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import * as z from 'zod'
-import { PROPERTIES, getPropertyById, formatPrice } from '@/lib/properties'
+import { DataTable } from '@/components/ui/data-table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { PageHeader } from '@/components/ui/page-header';
+import { SearchInput } from '@/components/ui/search-input';
+import { StatusConfirm } from '@/components/ui/status-confirm';
+import { TrashConfirm } from '@/components/ui/trash-confirm';
+import { PROPERTIES, formatPrice, getPropertyById } from '@/lib/properties';
+import { createFileRoute } from '@tanstack/react-router';
+import { Check, ChevronDown, Edit, Plus, Trash2, Users } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import * as z from 'zod';
 
 export const Route = createFileRoute('/__main/reservations')({
     component: RouteComponent,
@@ -27,7 +26,7 @@ const reservationSchema = z.object({
     checkOut: z.string().min(1, 'Check out date is required'),
     paymentMethod: z.string(),
     image: z.string().optional(),
-    status: z.enum(['Confirmed', 'Cancelled']),
+    status: z.enum(['Pending', 'Confirmed']),
 })
 
 type Reservation = {
@@ -40,7 +39,7 @@ type Reservation = {
     payment: string
     paymentMethod: string
     image?: string
-    status: 'Confirmed' | 'Cancelled'
+    status: 'Pending' | 'Confirmed' | 'Cancelled'
 }
 
 const INITIAL_RESERVATIONS: Reservation[] = [
@@ -261,8 +260,8 @@ function RouteComponent() {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle className="text-lg font-semibold">{isEditMode ? 'Edit Reservation' : 'Add Reservation'}</DialogTitle>
-                        <DialogDescription className="text-sm text-slate-500">
+                        <DialogTitle >{isEditMode ? 'Edit Reservation' : 'Add Reservation'}</DialogTitle>
+                        <DialogDescription >
                             {isEditMode
                                 ? `Modify reservation for ${editingReservation.userEmail || 'Guest'}.`
                                 : 'Enter reservation details to add a new booking.'}
@@ -281,7 +280,7 @@ function RouteComponent() {
                                     checkOut: editingReservation.checkOut,
                                     paymentMethod: editingReservation.paymentMethod,
                                     image: editingReservation.image,
-                                    status: editingReservation.status,
+                                    status: editingReservation.status as 'Pending' | 'Confirmed',
                                 }
                                 : { userEmail: '', property: '', unit: '', checkIn: '', checkOut: '', paymentMethod: 'Credit Card', image: '', status: 'Confirmed' }
                         }
@@ -423,29 +422,14 @@ function ReservationForm({
 
             <form.AppField name="status">
                 {(field) => (
-                    <div className="space-y-1.5">
-                        <Label>Status</Label>
-                        <div className="flex gap-4">
-                            <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                <input
-                                    type="radio"
-                                    checked={field.state.value === 'Confirmed'}
-                                    onChange={() => field.handleChange('Confirmed')}
-                                    className="h-4 w-4 accent-primary"
-                                />
-                                Confirmed
-                            </label>
-                            <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                <input
-                                    type="radio"
-                                    checked={field.state.value === 'Cancelled'}
-                                    onChange={() => field.handleChange('Cancelled')}
-                                    className="h-4 w-4 accent-primary"
-                                />
-                                Cancelled
-                            </label>
-                        </div>
-                    </div>
+                    <field.FormRadio
+                        label="Status"
+                        options={[
+                            { value: 'Pending', label: 'Pending' },
+                            { value: 'Confirmed', label: 'Confirmed' },
+
+                        ]}
+                    />
                 )}
             </form.AppField>
 

@@ -421,23 +421,14 @@ function PropertyComponent() {
                 CREATE / EDIT PROPERTY DIALOG
             ══════════════════════════════════════════════════ */}
             <Dialog open={isAddOpen} onOpenChange={(open) => { if (!open) closeDialog() }}>
-                <DialogContent className="w-[95vw] sm:max-w-[680px] flex flex-col p-0 rounded-2xl overflow-hidden max-h-[88vh] gap-0 bg-white shadow-2xl shadow-slate-900/15">
-                    <DialogHeader className="flex-row items-center gap-3 px-6 py-4 border-b border-slate-100 shrink-0 space-y-0">
-                        <div className="size-8 rounded-lg bg-[#243E8B]/10 flex items-center justify-center shrink-0">
-                            <Building className="size-4 text-[#243E8B]" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <DialogTitle className="text-[14.5px] font-bold text-slate-900 leading-none">
-                                {isEditMode ? 'Edit property' : 'Create property'}
-                            </DialogTitle>
-                            <p className="text-[11.5px] text-slate-400 mt-0.5 leading-none">
-                                {isEditMode ? `Editing "${editingCard?.title ?? ''}"` : 'Add a new property to your portfolio'}
-                            </p>
-                        </div>
-                        <span className="shrink-0 text-[10.5px] font-bold tracking-wide rounded-full px-2.5 py-0.5 bg-slate-100 text-slate-600 border border-slate-200">
-                            {isEditMode ? 'Edit' : 'New'}
-                        </span>
-                        <DialogDescription className="sr-only">Property form</DialogDescription>
+                <DialogContent className="sm:max-w-160">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {isEditMode ? 'Edit property' : 'Create property'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {isEditMode ? `Editing "${editingCard?.title ?? ''}"` : 'Add a new property to your portfolio'}
+                        </DialogDescription>
                     </DialogHeader>
 
                     <PropertyForm
@@ -452,113 +443,7 @@ function PropertyComponent() {
                 </DialogContent>
             </Dialog>
 
-            {/* ══════════════════════════════════════════════════
-                VIEW PROPERTY DETAIL DIALOG
-            ══════════════════════════════════════════════════ */}
-            <Dialog open={!!selectedProperty} onOpenChange={(open) => !open && setSelectedPropertyId(null)}>
-                <DialogContent className="w-[95%] sm:max-w-xl max-h-[88vh] overflow-y-auto bg-white p-0 rounded-2xl gap-0 shadow-2xl shadow-slate-900/15">
-                    {selectedProperty && (
-                        <>
-                            <div className="relative h-52 w-full overflow-hidden rounded-t-2xl">
-                                <img src={selectedProperty.property.images.thumbnail} alt={selectedProperty.property.name} className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-                                    <div className="bg-black/20 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 border border-white/20">
-                                        <div className="flex items-center gap-1 text-white text-[12.5px] font-bold tracking-tight">
-                                            <Star className="size-3 fill-amber-400 text-amber-400" />
-                                            {selectedProperty.property.rating.toFixed(1)}
-                                            <span className="font-medium text-white/70 ml-0.5">({selectedProperty.property.reviewCount} reviews)</span>
-                                        </div>
-                                    </div>
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border bg-white/95 text-slate-700 border-white/60">
-                                        {selectedProperty.property.status}
-                                    </span>
-                                </div>
-                            </div>
 
-                            <div className="p-5 flex flex-col gap-5">
-                                <div>
-                                    <DialogTitle className="text-[18px] font-bold text-slate-900">{selectedProperty.property.name}</DialogTitle>
-                                    <DialogDescription className="sr-only">Details for {selectedProperty.property.name}</DialogDescription>
-                                    <div className="flex flex-col gap-1.5 mt-2">
-                                        <div className="flex items-center gap-1.5 text-slate-500">
-                                            <MapPin className="size-3.5 text-slate-400 shrink-0" />
-                                            <span className="text-[12.5px] font-medium">{selectedProperty.property.address1}{selectedProperty.property.address2 ? `, ${selectedProperty.property.address2}` : ''}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 text-slate-500">
-                                            <Building className="size-3.5 text-slate-400 shrink-0" />
-                                            <span className="text-[12.5px] font-semibold text-slate-600">
-                                                {selectedProperty.property.propertyType} • {selectedProperty.roomTypes.reduce((s, rt) => s + rt.units.length, 0)} Units • {formatPrice(getPriceRange(selectedProperty).min, selectedProperty.property.currency)} – {formatPrice(getPriceRange(selectedProperty).max, selectedProperty.property.currency)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <Separator />
-
-                                <div>
-                                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3">Amenities</p>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {selectedProperty.property.amenities.slice(0, 6).map(a => (
-                                            <div key={a} className="flex items-center gap-2">
-                                                <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
-                                                <span className="text-[12.5px] text-slate-600 font-medium">{a}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="border border-slate-100 rounded-2xl p-4 flex gap-3 items-center bg-slate-50/50">
-                                        <div className="bg-[#EEF3FF] p-2.5 rounded-xl text-[#243E8B] shrink-0">
-                                            <ArrowRight className="size-4" />
-                                        </div>
-                                        <div>
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide block">Check-in</span>
-                                            <span className="text-[13px] font-bold text-slate-800">From {selectedProperty.property.checkInTime}</span>
-                                        </div>
-                                    </div>
-                                    <div className="border border-slate-100 rounded-2xl p-4 flex gap-3 items-center bg-slate-50/50">
-                                        <div className="bg-red-50 p-2.5 rounded-xl text-red-500 shrink-0">
-                                            <XCircle className="size-4" />
-                                        </div>
-                                        <div>
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide block">Check-out</span>
-                                            <span className="text-[13px] font-bold text-slate-800">Until {selectedProperty.property.checkOutTime}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <Separator />
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => {
-                                            const card = PROPERTY_CARDS.find(p => p.id === selectedProperty.property.id)
-                                            if (card) {
-                                                openEdit(card)
-                                                setSelectedPropertyId(null)
-                                            }
-                                        }}
-                                        className="rounded-xl h-10 font-semibold text-[13px] border-slate-200 hover:bg-slate-50 hover:text-[#243E8B] hover:border-[#243E8B]/30 gap-1.5 transition-all duration-300"
-                                    >
-                                        <Edit className="size-3.5" />
-                                        Edit Property
-                                    </Button>
-                                    <Button
-                                        onClick={() => navigate({ to: '/property/$propertyId', params: { propertyId: selectedProperty.property.id } })}
-                                        className="rounded-xl h-10 font-semibold text-[13px] bg-[#243E8B] hover:bg-[#1D3270] text-white shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300"
-                                    >
-                                        <BedDouble className="size-3.5" />
-                                        Manage Room Types
-                                    </Button>
-                                </div>
-                            </div>
-                        </>
-                    )}
-                </DialogContent>
-            </Dialog>
         </>
     )
 }
@@ -609,249 +494,203 @@ function PropertyForm({
                 onSubmit={(e) => { e.preventDefault(); form.handleSubmit() }}
                 className="flex flex-col flex-1 min-h-0"
             >
-                <div className="flex-1 overflow-y-auto min-h-0 px-6 py-5">
-
-                    {/* ════════ BASICS ════════ */}
-                    {activeTab === 'Basics' && (
-                        <div className="flex flex-col gap-6">
-                            <Section>
-                                <SectionLabel>Basic Information</SectionLabel>
-                                <div className="flex flex-col gap-3">
-                                    <form.AppField name="name">
-                                        {(field) => <field.FormInput label="Property name" placeholder="e.g. Seaside Villa Bali" />}
-                                    </form.AppField>
-
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <form.AppField name="propertyType">
-                                            {(field) => <field.FormSelect label="Property type" placeholder="Select type" options={[...PROP_TYPE_OPTIONS]} />}
-                                        </form.AppField>
-                                        <form.AppField name="status">
-                                            {(field) => (
-                                                <field.FormRadio
-                                                    label="Status"
-                                                    options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-                                                />
-                                            )}
-                                        </form.AppField>
-                                    </div>
-                                    <form.AppField name="description">
-                                        {(field) => <field.FormTextarea label="Description" placeholder="Describe your property for guests and OTA listings..." />}
-                                    </form.AppField>
-                                </div>
-                            </Section>
-
-                            <Section>
-                                <SectionLabel>Check-in / Check-out</SectionLabel>
-                                <div className="grid grid-cols-3 gap-4">
-                                    <form.AppField name="checkInTime">
-                                        {(field) => (
-                                            <div className="flex flex-col gap-1.5">
-                                                <Label className="text-[12.5px] font-semibold text-slate-700">Check-in time</Label>
-                                                <Input type="time" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} onBlur={field.handleBlur} />
-                                            </div>
-                                        )}
-                                    </form.AppField>
-                                    <form.AppField name="checkOutTime">
-                                        {(field) => (
-                                            <div className="flex flex-col gap-1.5">
-                                                <Label className="text-[12.5px] font-semibold text-slate-700">Check-out time</Label>
-                                                <Input type="time" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} onBlur={field.handleBlur} />
-                                            </div>
-                                        )}
-                                    </form.AppField>
-                                    <form.AppField name="timezone">
-                                        {(field) => <field.FormSelect label="Property timezone" placeholder="Select timezone" options={TIMEZONE_OPTIONS} />}
-                                    </form.AppField>
-                                </div>
-                            </Section>
-                        </div>
-                    )}
-
-                    {/* ════════ LOCATION ════════ */}
-                    {activeTab === 'Location' && (
-                        <div className="flex flex-col gap-6">
-                            <Section>
-                                <SectionLabel>Address</SectionLabel>
-                                <div className="flex flex-col gap-3">
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <form.AppField name="country">
-                                            {(field) => <field.FormSelect label="Country" placeholder="Select country" options={COUNTRY_OPTIONS} />}
-                                        </form.AppField>
-                                        <form.AppField name="state">
-                                            {(field) => <field.FormInput label="State / Province" placeholder="e.g. Bali" />}
-                                        </form.AppField>
-                                        <form.AppField name="city">
-                                            {(field) => <field.FormInput label="City" placeholder="e.g. Seminyak" />}
-                                        </form.AppField>
-                                        <form.AppField name="postalCode">
-                                            {(field) => <field.FormInput label="Postal code" placeholder="80361" />}
-                                        </form.AppField>
-                                    </div>
-                                    <form.AppField name="address1">
-                                        {(field) => <field.FormInput label="Address line 1" placeholder="Street address" />}
-                                    </form.AppField>
-                                    <form.AppField name="address2">
-                                        {(field) => <field.FormInput label="Address line 2" placeholder="Apartment, suite, unit (optional)" />}
-                                    </form.AppField>
-                                </div>
-                            </Section>
-
-                            <Section>
-                                <SectionLabel>Coordinates</SectionLabel>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <form.AppField name="latitude">
-                                        {(field) => (
-                                            <div className="flex flex-col gap-1.5">
-                                                <Label className="text-[12.5px] font-semibold text-slate-700">Latitude</Label>
-                                                <Input type="number" step="any" placeholder="-8.691195" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} onBlur={field.handleBlur} />
-                                                <p className="text-[11px] text-slate-400 leading-none">Auto-fill from address recommended</p>
-                                            </div>
-                                        )}
-                                    </form.AppField>
-                                    <form.AppField name="longitude">
-                                        {(field) => (
-                                            <div className="flex flex-col gap-1.5">
-                                                <Label className="text-[12.5px] font-semibold text-slate-700">Longitude</Label>
-                                                <Input type="number" step="any" placeholder="115.167820" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)} onBlur={field.handleBlur} />
-                                            </div>
-                                        )}
-                                    </form.AppField>
-                                </div>
-                            </Section>
-                        </div>
-                    )}
-
-                    {/* ════════ AMENITIES & POLICIES ════════ */}
-                    {activeTab === 'Amenities and Policies' && (
-                        <div className="flex flex-col gap-8">
-                            <Section>
-                                <SectionLabel>Property Amenities</SectionLabel>
-                                <form.AppField name="amenities">
+                {/* ════════ BASICS ════════ */}
+                {activeTab === 'Basics' && (
+                    <div className="flex flex-col gap-6">
+                        <Section>
+                            <SectionLabel>Basic Information</SectionLabel>
+                            <form.AppField name="name">
+                                {(field) => <field.FormInput label="Property name" placeholder="e.g. Seaside Villa Bali" />}
+                            </form.AppField>
+                            <div className="grid grid-cols-2 gap-3">
+                                <form.AppField name="propertyType">
+                                    {(field) => <field.FormSelect label="Property type" placeholder="Select type" options={[...PROP_TYPE_OPTIONS]} />}
+                                </form.AppField>
+                                <form.AppField name="status">
                                     {(field) => (
-                                        <div className="flex flex-wrap gap-2">
-                                            {PROP_AMENITIES.map(({ label, icon: Icon }) => {
-                                                const isOn = field.state.value.includes(label)
-                                                return (
-                                                    <button
-                                                        key={label}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const cur = field.state.value
-                                                            field.handleChange(isOn ? cur.filter(a => a !== label) : [...cur, label])
-                                                        }}
-                                                        className={cn(
-                                                            'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] font-medium transition-all duration-200',
-                                                            isOn
-                                                                ? 'border-[#243E8B] bg-[#243E8B] text-white shadow-sm shadow-[#243E8B]/20'
-                                                                : 'border-slate-200 text-slate-600 bg-white hover:border-slate-300 hover:bg-slate-50'
-                                                        )}
-                                                    >
-                                                        {Icon && <Icon className="size-3.5" />}
-                                                        {label}
-                                                    </button>
-                                                )
-                                            })}
-                                        </div>
+                                        <field.FormRadio
+                                            label="Status"
+                                            options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                                        />
                                     )}
                                 </form.AppField>
-                            </Section>
-
-                            <div className="flex flex-col gap-6">
-                                <Section>
-                                    <SectionLabel>Guest Policies</SectionLabel>
-                                    <div className="rounded-2xl border border-slate-100 overflow-hidden divide-y divide-slate-100">
-                                        {([
-                                            { name: 'policies.smokingAllowed' as const, label: 'Smoking allowed', sub: 'Guests may smoke on premises' },
-                                            { name: 'policies.petsAllowed' as const, label: 'Pets allowed', sub: 'Guests may bring animals' },
-                                            { name: 'policies.childrenAllowed' as const, label: 'Children allowed', sub: 'Under 18 permitted' },
-                                            { name: 'policies.partiesAllowed' as const, label: 'Parties / events allowed', sub: 'Guests may host gatherings' },
-                                        ] as const).map(policy => (
-                                            <form.AppField key={policy.name} name={policy.name}>
-                                                {(f) => (
-                                                    <div className="flex items-center justify-between px-4 py-3.5 bg-white hover:bg-slate-50/70 transition-colors">
-                                                        <div>
-                                                            <p className="text-[13px] font-semibold text-slate-800">{policy.label}</p>
-                                                            <p className="text-[11.5px] text-slate-400 mt-0.5">{policy.sub}</p>
-                                                        </div>
-                                                        <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
-                                                    </div>
-                                                )}
-                                            </form.AppField>
-                                        ))}
-                                    </div>
-                                </Section>
-
-                                <Section>
-                                    <SectionLabel>Fees &amp; Rules</SectionLabel>
-                                    <div className="flex flex-col gap-3">
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <form.AppField name="minGuestAge">
-                                                {(field) => (
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <Label className="text-[12.5px] font-semibold text-slate-700">Minimum guest age</Label>
-                                                        <Input type="number" placeholder="18" min="0" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value ? parseInt(e.target.value) : 0)} onBlur={field.handleBlur} />
-                                                    </div>
-                                                )}
-                                            </form.AppField>
-                                            <form.AppField name="securityDeposit">
-                                                {(field) => (
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <Label className="text-[12.5px] font-semibold text-slate-700">Security deposit</Label>
-                                                        <Input type="number" placeholder="0.00" min="0" step="0.01" className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value || ''} onChange={(e) => field.handleChange(e.target.value ? parseFloat(e.target.value) : 0)} onBlur={field.handleBlur} />
-                                                    </div>
-                                                )}
-                                            </form.AppField>
-                                        </div>
-                                        <form.AppField name="houseRules">
-                                            {(field) => <field.FormTextarea label="House rules" placeholder="e.g. No loud music after 10pm..." />}
-                                        </form.AppField>
-                                    </div>
-                                </Section>
                             </div>
-                        </div>
-                    )}
+                            <form.AppField name="description">
+                                {(field) => <field.FormTextarea label="Description" placeholder="Describe your property for guests and OTA listings..." />}
+                            </form.AppField>
+                        </Section>
 
-                    {/* ════════ MEDIA ════════ */}
-                    {activeTab === 'Media' && (
+                        <Section>
+                            <SectionLabel>Check-in / Check-out</SectionLabel>
+                            <div className="grid grid-cols-2 gap-3">
+                                <form.AppField name="checkInTime">
+                                    {(field) => (
+                                        <field.FormInput type='time' label="Check-in time" />
+                                    )}
+                                </form.AppField>
+                                <form.AppField name="checkOutTime">
+                                    {(field) => (
+                                        <field.FormInput type='time' label="Check-out time" />
+                                    )}
+                                </form.AppField>
+                            </div>
+                            <form.AppField name="timezone">
+                                {(field) => <field.FormSelect label="Property timezone" placeholder="Select timezone" options={TIMEZONE_OPTIONS} />}
+                            </form.AppField>
+
+                        </Section>
+                    </div>
+                )}
+
+                {/* ════════ LOCATION ════════ */}
+                {activeTab === 'Location' && (
+                    <div className="flex flex-col gap-6">
+                        <Section>
+                            <SectionLabel>Address</SectionLabel>
+                            <div className="grid grid-cols-2 gap-3">
+                                <form.AppField name="country">
+                                    {(field) => <field.FormSelect label="Country" placeholder="Select country" options={COUNTRY_OPTIONS} />}
+                                </form.AppField>
+                                <form.AppField name="state">
+                                    {(field) => <field.FormInput label="State / Province" placeholder="e.g. Bali" />}
+                                </form.AppField>
+                                <form.AppField name="city">
+                                    {(field) => <field.FormInput label="City" placeholder="e.g. Seminyak" />}
+                                </form.AppField>
+                                <form.AppField name="postalCode">
+                                    {(field) => <field.FormInput label="Postal code" placeholder="80361" />}
+                                </form.AppField>
+                            </div>
+                            <form.AppField name="address1">
+                                {(field) => <field.FormInput label="Address line 1" placeholder="Street address" />}
+                            </form.AppField>
+                            <form.AppField name="address2">
+                                {(field) => <field.FormInput label="Address line 2" placeholder="Apartment, suite, unit (optional)" />}
+                            </form.AppField>
+                        </Section>
+
+                        <Section>
+                            <SectionLabel>Coordinates</SectionLabel>
+                            <div className="grid grid-cols-2 gap-3">
+                                <form.AppField name="latitude">
+                                    {(field) => (
+                                        <field.FormInput type='number' label="Latitude" placeholder="-8.691195" />
+                                    )}
+                                </form.AppField>
+                                <form.AppField name="longitude">
+                                    {(field) => (
+                                        <field.FormInput type='number' label="Longitude" placeholder="115.167820" />
+                                    )}
+                                </form.AppField>
+                            </div>
+                        </Section>
+                    </div>
+                )}
+
+                {/* ════════ AMENITIES & POLICIES ════════ */}
+                {activeTab === 'Amenities and Policies' && (
+                    <div className="flex flex-col gap-8">
+                        <Section>
+                            <SectionLabel>Property Amenities</SectionLabel>
+                            <form.AppField name="amenities">
+                                {(field) => (
+                                    <div className="flex flex-wrap gap-2">
+                                        {PROP_AMENITIES.map(({ label, icon: Icon }) => {
+                                            const isOn = field.state.value.includes(label)
+                                            return (
+                                                <button
+                                                    key={label}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const cur = field.state.value
+                                                        field.handleChange(isOn ? cur.filter(a => a !== label) : [...cur, label])
+                                                    }}
+                                                    className={cn(
+                                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] font-medium transition-all duration-200',
+                                                        isOn
+                                                            ? 'border-[#243E8B] bg-[#243E8B] text-white shadow-sm shadow-[#243E8B]/20'
+                                                            : 'border-slate-200 text-slate-600 bg-white hover:border-slate-300 hover:bg-slate-50'
+                                                    )}
+                                                >
+                                                    {Icon && <Icon className="size-3.5" />}
+                                                    {label}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </form.AppField>
+                        </Section>
+
                         <div className="flex flex-col gap-6">
                             <Section>
-                                <SectionLabel>Property Photos</SectionLabel>
-                                <div
-                                    className="border-2 border-dashed border-slate-200 rounded-2xl p-10 flex flex-col items-center gap-3 cursor-pointer hover:border-[#243E8B]/40 hover:bg-[#EEF3FF]/20 transition-all duration-300 group"
-                                    onClick={() => {/* file pick */ }}
-                                >
-                                    <div className="size-12 rounded-2xl bg-slate-100 group-hover:bg-[#EEF3FF] flex items-center justify-center transition-colors duration-300">
-                                        <Plus className="size-5 text-slate-400 group-hover:text-[#243E8B] transition-colors duration-300" />
-                                    </div>
-                                    <div className="text-center">
-                                        <p className="text-[13px] font-semibold text-slate-700">Click to upload or drag &amp; drop</p>
-                                        <p className="text-[11.5px] text-slate-400 mt-0.5">JPG, PNG, WEBP · max 10MB each</p>
-                                    </div>
+                                <SectionLabel>Guest Policies</SectionLabel>
+                                <div className="rounded-2xl border border-slate-100 overflow-hidden divide-y divide-slate-100">
+                                    {([
+                                        { name: 'policies.smokingAllowed' as const, label: 'Smoking allowed', sub: 'Guests may smoke on premises' },
+                                        { name: 'policies.petsAllowed' as const, label: 'Pets allowed', sub: 'Guests may bring animals' },
+                                        { name: 'policies.partiesAllowed' as const, label: 'Parties / events allowed', sub: 'Guests may host gatherings' },
+                                    ] as const).map(policy => (
+                                        <form.AppField key={policy.name} name={policy.name}>
+                                            {(f) => (
+                                                <div className="flex items-center justify-between px-4 py-3.5 bg-white hover:bg-slate-50/70 transition-colors">
+                                                    <div>
+                                                        <p className="text-[13px] font-semibold text-slate-800">{policy.label}</p>
+                                                        <p className="text-[11.5px] text-slate-400 mt-0.5">{policy.sub}</p>
+                                                    </div>
+                                                    <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
+                                                </div>
+                                            )}
+                                        </form.AppField>
+                                    ))}
                                 </div>
                             </Section>
 
                             <Section>
-                                <SectionLabel>Media URLs</SectionLabel>
-                                <div className="flex flex-col gap-3">
-                                    <form.AppField name="thumbnail">
-                                        {(field) => <field.FormInput label="Thumbnail URL" type="url" placeholder="https://..." />}
-                                    </form.AppField>
-                                    <form.AppField name="gallery">
+                                <SectionLabel>Fees &amp; Rules</SectionLabel>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <form.AppField name="minGuestAge">
                                         {(field) => (
-                                            <div className="flex flex-col gap-1.5">
-                                                <Label className="text-[12.5px] font-semibold text-slate-700">Gallery URLs (comma separated)</Label>
-                                                <Input type="text" placeholder="https://a..., https://b..." className="h-9 rounded-xl border-slate-200 text-[13px]" value={field.state.value.join(', ')} onChange={(e) => field.handleChange(e.target.value.split(',').map(s => s.trim()).filter(Boolean))} onBlur={field.handleBlur} />
-                                            </div>
+                                            <field.FormInput type='number' label="Minimum guest age" placeholder="18" />
+                                        )}
+                                    </form.AppField>
+                                    <form.AppField name="securityDeposit">
+                                        {(field) => (
+                                            <field.FormInput type='number' label="Security deposit" placeholder="0.00" />
                                         )}
                                     </form.AppField>
                                 </div>
+                                <form.AppField name="houseRules">
+                                    {(field) => <field.FormTextarea label="House rules" placeholder="e.g. No loud music after 10pm..." />}
+                                </form.AppField>
                             </Section>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
-                <Separator />
-                <div className="flex items-center justify-between px-6 py-4 shrink-0">
+                {/* ════════ MEDIA ════════ */}
+                {activeTab === 'Media' && (
+                    <div className="flex flex-col gap-6">
+                        <Section>
+                            <SectionLabel>Property Photos</SectionLabel>
+                            <div
+                                className="border-2 border-dashed border-slate-200 rounded-2xl p-10 flex flex-col items-center gap-3 cursor-pointer hover:border-[#243E8B]/40 hover:bg-[#EEF3FF]/20 transition-all duration-300 group"
+                                onClick={() => {/* file pick */ }}
+                            >
+                                <div className="size-12 rounded-2xl bg-slate-100 group-hover:bg-[#EEF3FF] flex items-center justify-center transition-colors duration-300">
+                                    <Plus className="size-5 text-slate-400 group-hover:text-[#243E8B] transition-colors duration-300" />
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-[13px] font-semibold text-slate-700">Click to upload or drag &amp; drop</p>
+                                    <p className="text-[11.5px] text-slate-400 mt-0.5">JPG, PNG, WEBP · max 10MB each</p>
+                                </div>
+                            </div>
+                        </Section>
+                    </div>
+                )}
+
+                <Separator className='mt-5 mb-4' />
+                <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
                         {PROP_TABS.map((tab) => (
                             <button
@@ -891,9 +730,9 @@ function Section({ children }: { children: React.ReactNode }) {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
     return (
-        <div className="flex items-center gap-3 mb-4">
-            <span className="text-[10.5px] font-extrabold uppercase tracking-[0.12em] text-slate-400">{children}</span>
-            <div className="flex-1 h-px bg-slate-100" />
+        <div className="flex items-center gap-3">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">{children}</span>
+            <div className="flex-1 h-px bg-border" />
         </div>
     )
 }
