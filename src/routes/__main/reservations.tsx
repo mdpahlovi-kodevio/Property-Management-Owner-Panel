@@ -14,6 +14,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Check, ChevronDown, Edit, Plus, Trash2, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import * as z from 'zod';
+import { RESERVATIONS, createReservation, updateReservation, toggleReservationStatus, deleteReservation, type Reservation } from '@/lib/api/reservations';
 
 export const Route = createFileRoute('/__main/reservations')({
     component: RouteComponent,
@@ -30,72 +31,8 @@ const reservationSchema = z.object({
     status: z.enum(['Pending', 'Confirmed', 'Cancelled']),
 })
 
-type Reservation = {
-    id: number
-    userEmail: string
-    property: string
-    unit: string
-    checkIn: string
-    checkOut: string
-    payment: string
-    paymentMethod: string
-    image?: string
-    status: 'Pending' | 'Confirmed' | 'Cancelled'
-}
-
-const INITIAL_RESERVATIONS: Reservation[] = [
-    {
-        id: 1,
-        userEmail: 'jane.cooper@example.com',
-        image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Jane',
-        property: 'prop_001',
-        unit: 'unit_001_01_01',
-        checkIn: '2026-06-01',
-        checkOut: '2026-06-05',
-        payment: '$480.00 (Paid)',
-        paymentMethod: 'Credit Card',
-        status: 'Confirmed',
-    },
-    {
-        id: 2,
-        userEmail: 'wade.warren@example.com',
-        image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Wade',
-        property: 'prop_002',
-        unit: 'unit_002_01_01',
-        checkIn: '2026-06-10',
-        checkOut: '2026-06-12',
-        payment: '$220.00 (Pending)',
-        paymentMethod: 'PayPal',
-        status: 'Confirmed',
-    },
-    {
-        id: 3,
-        userEmail: 'dianne.russell@example.com',
-        image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Dianne',
-        property: 'prop_003',
-        unit: 'unit_003_01_01',
-        checkIn: '2026-07-02',
-        checkOut: '2026-07-06',
-        payment: '$640.00 (Paid)',
-        paymentMethod: 'Credit Card',
-        status: 'Cancelled',
-    },
-    {
-        id: 4,
-        userEmail: 'eleanor.pena@example.com',
-        image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Eleanor',
-        property: 'prop_004',
-        unit: 'unit_004_01_01',
-        checkIn: '2026-08-15',
-        checkOut: '2026-08-17',
-        payment: '$180.00 (Paid)',
-        paymentMethod: 'Cash',
-        status: 'Confirmed',
-    },
-]
-
 function RouteComponent() {
-    const [reservations, setReservations] = useState<Reservation[]>(INITIAL_RESERVATIONS)
+    const [reservations, setReservations] = useState<Reservation[]>(RESERVATIONS)
     const [searchQuery, setSearchQuery] = useState('')
     const [isOpen, setIsOpen] = useState(false)
     const [editingReservation, setEditingReservation] = useState<Reservation | null>(null)
@@ -133,16 +70,15 @@ function RouteComponent() {
         }
 
         if (isEditMode) {
-            setReservations((prev) => prev.map((r) => (r.id === editingReservation.id ? { ...r, ...values, payment } : r)))
+            updateReservation(editingReservation.id, { ...values, payment })
         } else {
-            const newRes: Reservation = {
-                id: Date.now(),
+            createReservation({
                 ...values,
                 payment,
                 image: values.userEmail ? `https://api.dicebear.com/7.x/notionists/svg?seed=${values.userEmail.replace(/[^a-zA-Z]/g, '')}` : undefined,
-            }
-            setReservations((prev) => [...prev, newRes])
+            })
         }
+        setReservations([...RESERVATIONS])
         closeDialog()
     }
 
@@ -160,15 +96,13 @@ function RouteComponent() {
     }, [reservations, searchQuery])
 
     const handleToggleStatus = (id: number) => {
-        setReservations((prev) => prev.map((r) => {
-            if (r.id !== id) return r;
-            const nextStatus = r.status === 'Pending' ? 'Confirmed' : r.status === 'Confirmed' ? 'Cancelled' : 'Pending';
-            return { ...r, status: nextStatus };
-        }))
+        toggleReservationStatus(id)
+        setReservations([...RESERVATIONS])
     }
 
     const handleDeleteReservation = (id: number) => {
-        setReservations((prev) => prev.filter((r) => r.id !== id))
+        deleteReservation(id)
+        setReservations([...RESERVATIONS])
     }
 
     const columns: DataTableColumn<Reservation>[] = useMemo(
@@ -331,7 +265,7 @@ function ReservationForm({
                     <field.FormSearchableSelect
                         label="Guest Email"
                         placeholder="Select guest email..."
-                        searchPlaceholder="Search by name or email..."
+                        searchPlaceholder="Search by name or email or phone number..."
                         allowAddNew
                         addNewLabel="Add new guest"
                         options={[
