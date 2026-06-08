@@ -14,7 +14,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Check, ChevronDown, Edit, Plus, Trash2, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import * as z from 'zod';
-import { RESERVATIONS, createReservation, updateReservation, toggleReservationStatus, deleteReservation, type Reservation } from '#/lib/reservations';
+import { RESERVATIONS, createReservation, updateReservation, toggleReservationStatus, deleteReservation, type Reservation } from '@/lib/reservations';
+import { USERS, createUser } from '@/lib/users';
 
 export const Route = createFileRoute('/__main/reservations')({
     component: RouteComponent,
@@ -268,12 +269,17 @@ function ReservationForm({
                         searchPlaceholder="Search by name or email or phone number..."
                         allowAddNew
                         addNewLabel="Add new guest"
-                        options={[
-                            { value: 'jane.cooper@example.com', label: 'Jane Cooper (jane.cooper@example.com)' },
-                            { value: 'wade.warren@example.com', label: 'Wade Warren (wade.warren@example.com)' },
-                            { value: 'dianne.russell@example.com', label: 'Dianne Russell (dianne.russell@example.com)' },
-                            { value: 'eleanor.pena@example.com', label: 'Eleanor Pena (eleanor.pena@example.com)' },
-                        ]}
+                        options={USERS.map((u) => ({ value: u.email, label: `${u.name} (${u.email})` }))}
+                        onAddNew={(guest) => {
+                            createUser({
+                                name: guest.name,
+                                email: guest.email,
+                                image: `https://api.dicebear.com/7.x/notionists/svg?seed=${guest.name.replace(' ', '')}`,
+                                phone: guest.phone,
+                                bookings: 0,
+                                status: 'Active',
+                            });
+                        }}
                     />
                 )}
             </form.AppField>

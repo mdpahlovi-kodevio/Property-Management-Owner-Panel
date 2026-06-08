@@ -10,6 +10,7 @@ type Option = { label: string; value: string }
 const newGuestSchema = z.object({
     name: z.string().min(1, 'Name is required.'),
     email: z.email('Enter a valid email address.').toLowerCase(),
+    phone: z.string().min(1, 'Phone is required.'),
 })
 
 type FormSearchableSelectProps = {
@@ -21,6 +22,7 @@ type FormSearchableSelectProps = {
     /** Allow adding a new guest inline */
     allowAddNew?: boolean
     addNewLabel?: string
+    onAddNew?: (guest: { name: string; email: string; phone: string }) => void
 }
 
 export function FormSearchableSelect({
@@ -31,6 +33,7 @@ export function FormSearchableSelect({
     disabled,
     allowAddNew = false,
     addNewLabel = 'Add new guest',
+    onAddNew,
 }: FormSearchableSelectProps) {
     const field = useFieldContext<string>()
     const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid
@@ -43,6 +46,7 @@ export function FormSearchableSelect({
     const [showAddNew, setShowAddNew] = useState(false)
     const [newName, setNewName] = useState('')
     const [newEmail, setNewEmail] = useState('')
+    const [newPhone, setNewPhone] = useState('')
     const [addError, setAddError] = useState('')
 
     const containerRef = useRef<HTMLDivElement>(null)
@@ -64,6 +68,7 @@ export function FormSearchableSelect({
                 setShowAddNew(false)
                 setNewName('')
                 setNewEmail('')
+                setNewPhone('')
                 setAddError('')
             }
         }
@@ -101,11 +106,15 @@ export function FormSearchableSelect({
     }
 
     const handleAddNewGuest = () => {
-        const result = newGuestSchema.safeParse({ name: newName, email: newEmail })
+        const result = newGuestSchema.safeParse({ name: newName, email: newEmail, phone: newPhone })
         if (!result.success) { setAddError(result.error.issues[0].message); return }
 
-        const { name, email } = result.data
+        const { name, email, phone } = result.data
         if (options.some((o) => o.value === email)) { setAddError('This guest already exists.'); return }
+
+        if (onAddNew) {
+            onAddNew({ name, email, phone })
+        }
 
         setOptions((prev) => [...prev, { value: email, label: `${name} (${email})` }])
         field.handleChange(email)
@@ -115,6 +124,7 @@ export function FormSearchableSelect({
         setShowAddNew(false)
         setNewName('')
         setNewEmail('')
+        setNewPhone('')
     }
 
     return (
@@ -239,7 +249,7 @@ export function FormSearchableSelect({
                                     </span>
                                     <button
                                         type="button"
-                                        onClick={() => { setShowAddNew(false); setNewName(''); setNewEmail(''); setAddError('') }}
+                                        onClick={() => { setShowAddNew(false); setNewName(''); setNewEmail(''); setNewPhone(''); setAddError('') }}
                                         className="text-muted-foreground hover:text-foreground rounded-md p-0.5 transition-colors"
                                     >
                                         <X className="h-4 w-4" />
@@ -279,6 +289,22 @@ export function FormSearchableSelect({
                                     />
                                 </div>
 
+                                {/* Phone field */}
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-muted-foreground">Phone Number</label>
+                                    <input
+                                        type="tel"
+                                        value={newPhone}
+                                        onChange={(e) => { setNewPhone(e.target.value); setAddError('') }}
+                                        placeholder="e.g. +1 416 XXX XXXX"
+                                        className={cn(
+                                            'flex h-8 w-full rounded-md border border-input bg-background px-3 text-sm outline-none',
+                                            'focus:ring-2 focus:ring-ring focus:ring-offset-1 transition-shadow placeholder:text-muted-foreground',
+                                        )}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNewGuest() } }}
+                                    />
+                                </div>
+
                                 {/* Error message */}
                                 {addError && (
                                     <p className="text-xs text-destructive font-medium">{addError}</p>
@@ -288,7 +314,7 @@ export function FormSearchableSelect({
                                 <div className="flex gap-2 pt-1">
                                     <button
                                         type="button"
-                                        onClick={() => { setShowAddNew(false); setNewName(''); setNewEmail(''); setAddError('') }}
+                                        onClick={() => { setShowAddNew(false); setNewName(''); setNewEmail(''); setNewPhone(''); setAddError('') }}
                                         className="flex-1 h-8 rounded-md border border-input text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                                     >
                                         Cancel
