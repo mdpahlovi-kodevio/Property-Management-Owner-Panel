@@ -103,11 +103,11 @@ export function NavUser({
                 <AlertDialogContent className="max-w-[400px]">
                     <AlertDialogHeader className="flex flex-col items-center text-center pb-4">
                         <AlertDialogTitle className="text-2xl font-bold tracking-tight mb-2">
-                            Are you sure you want to<br />logout?
+                            Are you sure you want to
+                            <br />
+                            sign out?
                         </AlertDialogTitle>
-                        <AlertDialogDescription className="hidden">
-                            Confirm if you want to sign out of your account.
-                        </AlertDialogDescription>
+                        <AlertDialogDescription className="hidden">Confirm if you want to sign out of your account.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex flex-row gap-3 sm:justify-center mt-2 w-full">
                         <AlertDialogCancel className="w-full sm:w-1/2 m-0 h-11 text-base border-[#24357B] text-[#24357B] hover:bg-[#24357B]/5">

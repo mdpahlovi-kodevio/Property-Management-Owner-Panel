@@ -1,35 +1,42 @@
-import { useAppForm } from '@/components/form/form-context';
-import { Button } from '@/components/ui/button';
-import type { DataTableColumn } from '@/components/ui/data-table';
-import { DataTable } from '@/components/ui/data-table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Label } from '@/components/ui/label';
-import { PageHeader } from '@/components/ui/page-header';
-import { SearchInput } from '@/components/ui/search-input';
-import { StatusConfirm } from '@/components/ui/status-confirm';
-import { TrashConfirm } from '@/components/ui/trash-confirm';
-import { PROPERTIES, formatPrice, getPropertyById } from '@/lib/properties';
-import { createFileRoute } from '@tanstack/react-router';
-import { Check, ChevronDown, Edit, Plus, Trash2, Users } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import * as z from 'zod';
-import { RESERVATIONS, createReservation, updateReservation, toggleReservationStatus, deleteReservation, type Reservation } from '@/lib/reservations';
-import { USERS, createUser } from '@/lib/users';
+import { useAppForm } from '@/components/form/form-context'
+import { Button } from '@/components/ui/button'
+import type { DataTableColumn } from '@/components/ui/data-table'
+import { DataTable } from '@/components/ui/data-table'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Label } from '@/components/ui/label'
+import { PageHeader } from '@/components/ui/page-header'
+import { SearchInput } from '@/components/ui/search-input'
+import { StatusConfirm } from '@/components/ui/status-confirm'
+import { TrashConfirm } from '@/components/ui/trash-confirm'
+import { PROPERTIES, formatPrice, getPropertyById } from '@/lib/properties'
+import { createFileRoute } from '@tanstack/react-router'
+import { Check, ChevronDown, Edit, Plus, Trash2, Users } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import * as z from 'zod'
+import {
+    RESERVATIONS,
+    createReservation,
+    updateReservation,
+    toggleReservationStatus,
+    deleteReservation,
+    type Reservation,
+} from '@/lib/reservations'
+import { USERS, createUser } from '@/lib/users'
 
 export const Route = createFileRoute('/__main/reservations')({
     component: RouteComponent,
 })
 
 const reservationSchema = z.object({
-    userEmail: z.email("Please enter a valid email").toLowerCase(),
+    userEmail: z.email('Please enter a valid email').toLowerCase(),
     property: z.string().min(1, 'Property is required'),
     unit: z.string().min(1, 'unit is required'),
     checkIn: z.string().min(1, 'Check in date is required'),
     checkOut: z.string().min(1, 'Check out date is required'),
     paymentMethod: z.string(),
     image: z.string().optional(),
-    status: z.enum(['Pending', 'Confirmed', 'Cancelled']),
+    status: z.enum(['Pending', 'Confirmed']),
 })
 
 function RouteComponent() {
@@ -56,17 +63,17 @@ function RouteComponent() {
     }
 
     const handleSave = (values: z.infer<typeof reservationSchema>) => {
-        let payment = '$0.00';
-        const property = getPropertyById(values.property);
+        let payment = '$0.00'
+        const property = getPropertyById(values.property)
         if (property && values.unit && values.checkIn && values.checkOut) {
-            const roomType = property.roomTypes.find(rt => rt.units.some(u => u.id === values.unit));
+            const roomType = property.roomTypes.find((rt) => rt.units.some((u) => u.id === values.unit))
             if (roomType) {
-                const checkInDate = new Date(values.checkIn);
-                const checkOutDate = new Date(values.checkOut);
-                let nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 3600 * 24));
-                if (nights <= 0 || isNaN(nights)) nights = 1;
-                const total = roomType.basePrice * nights;
-                payment = `${formatPrice(total, property.property.currency)} (${values.paymentMethod === 'Cash' ? 'Pending' : 'Paid'})`;
+                const checkInDate = new Date(values.checkIn)
+                const checkOutDate = new Date(values.checkOut)
+                let nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 3600 * 24))
+                if (nights <= 0 || isNaN(nights)) nights = 1
+                const total = roomType.basePrice * nights
+                payment = `${formatPrice(total, property.property.currency)} (${values.paymentMethod === 'Cash' ? 'Pending' : 'Paid'})`
             }
         }
 
@@ -76,7 +83,9 @@ function RouteComponent() {
             createReservation({
                 ...values,
                 payment,
-                image: values.userEmail ? `https://api.dicebear.com/7.x/notionists/svg?seed=${values.userEmail.replace(/[^a-zA-Z]/g, '')}` : undefined,
+                image: values.userEmail
+                    ? `https://api.dicebear.com/7.x/notionists/svg?seed=${values.userEmail.replace(/[^a-zA-Z]/g, '')}`
+                    : undefined,
             })
         }
         setReservations([...RESERVATIONS])
@@ -121,8 +130,20 @@ function RouteComponent() {
                     </>
                 ),
             },
-            { key: 'property', header: 'Property', render: (r) => <span className="text-muted-foreground">{getPropertyById(r.property)?.property.name || r.property}</span> },
-            { key: 'dates', header: 'Dates', render: (r) => <span className="text-muted-foreground">{r.checkIn} to {r.checkOut}</span> },
+            {
+                key: 'property',
+                header: 'Property',
+                render: (r) => <span className="text-muted-foreground">{getPropertyById(r.property)?.property.name || r.property}</span>,
+            },
+            {
+                key: 'dates',
+                header: 'Dates',
+                render: (r) => (
+                    <span className="text-muted-foreground">
+                        {r.checkIn} to {r.checkOut}
+                    </span>
+                ),
+            },
             { key: 'payment', header: 'Payment', render: (r) => <span className="text-muted-foreground">{r.payment}</span> },
             {
                 key: 'status',
@@ -178,7 +199,12 @@ function RouteComponent() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <PageHeader title="Reservations" description="Manage reservations and bookings" />
                 <div className="flex items-center gap-4 w-full sm:w-auto">
-                    <SearchInput value={searchQuery} onValueChange={setSearchQuery} placeholder="Search reservations" className="w-full sm:w-[320px]" />
+                    <SearchInput
+                        value={searchQuery}
+                        onValueChange={setSearchQuery}
+                        placeholder="Search reservations"
+                        className="w-full sm:w-[320px]"
+                    />
                     <Button onClick={openAdd} className="w-full sm:w-auto">
                         <Plus className="h-4 w-4 mr-2" />
                         Add Reservation
@@ -202,8 +228,8 @@ function RouteComponent() {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle >{isEditMode ? 'Edit Reservation' : 'Add Reservation'}</DialogTitle>
-                        <DialogDescription >
+                        <DialogTitle>{isEditMode ? 'Edit Reservation' : 'Add Reservation'}</DialogTitle>
+                        <DialogDescription>
                             {isEditMode
                                 ? `Modify reservation for ${editingReservation.userEmail || 'Guest'}.`
                                 : 'Enter reservation details to add a new booking.'}
@@ -215,16 +241,25 @@ function RouteComponent() {
                         defaultValues={
                             editingReservation
                                 ? {
-                                    userEmail: editingReservation.userEmail,
-                                    property: editingReservation.property,
-                                    unit: editingReservation.unit,
-                                    checkIn: editingReservation.checkIn,
-                                    checkOut: editingReservation.checkOut,
-                                    paymentMethod: editingReservation.paymentMethod,
-                                    image: editingReservation.image,
-                                    status: editingReservation.status as 'Pending' | 'Confirmed' | 'Cancelled',
-                                }
-                                : { userEmail: '', property: '', unit: '', checkIn: '', checkOut: '', paymentMethod: 'Credit Card', image: '', status: 'Confirmed' }
+                                      userEmail: editingReservation.userEmail,
+                                      property: editingReservation.property,
+                                      unit: editingReservation.unit,
+                                      checkIn: editingReservation.checkIn,
+                                      checkOut: editingReservation.checkOut,
+                                      paymentMethod: editingReservation.paymentMethod,
+                                      image: editingReservation.image,
+                                      status: editingReservation.status as 'Pending' | 'Confirmed',
+                                  }
+                                : {
+                                      userEmail: '',
+                                      property: '',
+                                      unit: '',
+                                      checkIn: '',
+                                      checkOut: '',
+                                      paymentMethod: 'Credit Card',
+                                      image: '',
+                                      status: 'Confirmed',
+                                  }
                         }
                         onSubmit={handleSave}
                         onCancel={closeDialog}
@@ -278,7 +313,7 @@ function ReservationForm({
                                 phone: guest.phone,
                                 bookings: 0,
                                 status: 'Active',
-                            });
+                            })
                         }}
                     />
                 )}
@@ -289,7 +324,7 @@ function ReservationForm({
                     <field.FormSelect
                         label="Property"
                         placeholder="Select Property"
-                        options={PROPERTIES.map(p => ({
+                        options={PROPERTIES.map((p) => ({
                             value: p.property.id,
                             label: p.property.name,
                         }))}
@@ -300,58 +335,57 @@ function ReservationForm({
             <form.Subscribe
                 selector={(state) => state.values.property}
                 children={(selectedPropertyId) => {
-                    const selectedProperty = getPropertyById(selectedPropertyId);
-                    const unitOptions = selectedProperty ? selectedProperty.roomTypes.flatMap(rt => rt.units.map(u => ({
-                        value: u.id,
-                        label: `${u.roomNumber} (${rt.name})`
-                    }))) : [];
+                    const selectedProperty = getPropertyById(selectedPropertyId)
+                    const unitOptions = selectedProperty
+                        ? selectedProperty.roomTypes.flatMap((rt) =>
+                              rt.units.map((u) => ({
+                                  value: u.id,
+                                  label: `${u.roomNumber} (${rt.name})`,
+                              })),
+                          )
+                        : []
 
                     return (
                         <form.AppField name="unit">
-                            {(field) => (
-                                <field.FormSelect
-                                    label="Unit"
-                                    placeholder="Select Unit"
-                                    options={unitOptions}
-                                />
-                            )}
+                            {(field) => <field.FormSelect label="Unit" placeholder="Select Unit" options={unitOptions} />}
                         </form.AppField>
-                    );
+                    )
                 }}
             />
 
             <form.Subscribe
-                selector={(state) => ({ propertyId: state.values.property, unitId: state.values.unit, checkIn: state.values.checkIn, checkOut: state.values.checkOut })}
+                selector={(state) => ({
+                    propertyId: state.values.property,
+                    unitId: state.values.unit,
+                    checkIn: state.values.checkIn,
+                    checkOut: state.values.checkOut,
+                })}
                 children={({ propertyId, unitId, checkIn, checkOut }) => {
-                    const property = getPropertyById(propertyId);
-                    let priceDisplay = '';
+                    const property = getPropertyById(propertyId)
+                    let priceDisplay = ''
                     if (property && unitId && checkIn && checkOut) {
-                        const roomType = property.roomTypes.find(rt => rt.units.some(u => u.id === unitId));
+                        const roomType = property.roomTypes.find((rt) => rt.units.some((u) => u.id === unitId))
                         if (roomType) {
-                            const checkInDate = new Date(checkIn);
-                            const checkOutDate = new Date(checkOut);
-                            let nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 3600 * 24));
-                            if (nights <= 0 || isNaN(nights)) nights = 1;
-                            const total = roomType.basePrice * nights;
-                            priceDisplay = `${formatPrice(total, property.property.currency)} (${nights} night${nights > 1 ? 's' : ''})`;
+                            const checkInDate = new Date(checkIn)
+                            const checkOutDate = new Date(checkOut)
+                            let nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 3600 * 24))
+                            if (nights <= 0 || isNaN(nights)) nights = 1
+                            const total = roomType.basePrice * nights
+                            priceDisplay = `${formatPrice(total, property.property.currency)} (${nights} night${nights > 1 ? 's' : ''})`
                         }
                     }
-                    if (!priceDisplay) return null;
+                    if (!priceDisplay) return null
                     return (
                         <div className="text-sm font-medium text-slate-700 bg-[#EEF3FF] p-3 rounded-xl border border-[#243E8B]/20">
                             Total Price: <span className="font-bold text-[#243E8B]">{priceDisplay}</span>
                         </div>
-                    );
+                    )
                 }}
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <form.AppField name="checkIn">
-                    {(field) => <field.FormInput type="date" label="Check In" />}
-                </form.AppField>
-                <form.AppField name="checkOut">
-                    {(field) => <field.FormInput type="date" label="Check Out" />}
-                </form.AppField>
+                <form.AppField name="checkIn">{(field) => <field.FormInput type="date" label="Check In" />}</form.AppField>
+                <form.AppField name="checkOut">{(field) => <field.FormInput type="date" label="Check Out" />}</form.AppField>
             </div>
             <form.AppField name="paymentMethod">
                 {(field) => (
@@ -392,15 +426,6 @@ function ReservationForm({
                                     className="h-4 w-4 accent-primary"
                                 />
                                 Confirmed
-                            </label>
-                            <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                <input
-                                    type="radio"
-                                    checked={field.state.value === 'Cancelled'}
-                                    onChange={() => field.handleChange('Cancelled')}
-                                    className="h-4 w-4 accent-primary"
-                                />
-                                Cancelled
                             </label>
                         </div>
                     </div>
