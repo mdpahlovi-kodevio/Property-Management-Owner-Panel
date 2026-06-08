@@ -1,46 +1,50 @@
 import { useAppForm } from '@/components/form/form-context'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import * as z from 'zod'
+import { auth } from '@/lib/auth-client'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/__auth/signin')({
     component: RouteComponent,
 })
 
 const signinSchema = z.object({
-    email: z.email('Enter your email address'),
+    email: z.email('Please enter a valid email address'),
     password: z.string().min(8, 'Password must be at least 8 characters').max(32, 'Password must be at most 32 characters'),
     remember: z.boolean(),
 })
 
 function RouteComponent() {
-    // const navigate = useNavigate()
+    const navigate = useNavigate()
 
     const form = useAppForm({
         defaultValues: { email: '', password: '', remember: false },
         validators: { onChange: signinSchema },
         onSubmit: async ({ value }) => {
-            console.log(value)
-            // await auth.signIn.email(
-            //     {
-            //         email: value.email,
-            //         password: value.password,
-            //         rememberMe: value.remember,
-            //     },
-            //     {
-            //         onSuccess: async ({ data }) => {
-            //             if (!data.user.emailVerified) {
-            //                 navigate({ to: "/verification", search: { user: data.user.email, type: "signup" } });
-            //             } else if (data.user.role !== "admin" && data.user.role !== "superadmin") {
-            //                 await auth.signOut();
-            //                 toast.error("Only admins can access the admin portal.");
-            //                 navigate({ to: "/signin" });
-            //             } else {
-            //                 navigate({ to: "/" });
-            //             }
-            //         },
-            //     },
-            // );
+            await auth.signIn.email(
+                {
+                    email: value.email,
+                    password: value.password,
+                    rememberMe: value.remember,
+                },
+                {
+                    onSuccess: async ({ data }) => {
+                        if (!data.user.emailVerified) {
+                            navigate({ to: "/verification", search: { user: data.user.email, type: "signup" } as any });
+                        } else if (data.user.role !== "admin" && data.user.role !== "superadmin") {
+                            await auth.signOut();
+                            toast.error("You do not have access to this portal.");
+                            navigate({ to: "/signin" } as any);
+                        } else {
+                            navigate({ to: "/" });
+                        }
+                    },
+                    onError: (ctx) => {
+                        toast.error(ctx.error.message || "Failed to sign in");
+                    }
+                },
+            );
         },
     })
 
