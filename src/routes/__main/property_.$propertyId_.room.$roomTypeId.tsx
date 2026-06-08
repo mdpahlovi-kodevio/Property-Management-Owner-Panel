@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-ro
 import { useState } from 'react'
 import { ArrowLeft, BedDouble, Bath, Maximize2, Users, Cigarette, Baby, Shield, CheckCircle2, Calendar, Activity, Key, CreditCard, Plus } from 'lucide-react'
 import { getPropertyById, formatPrice } from '@/lib/properties'
+import { getRoomMetrics, getUnitStatus, UNIT_STATUS_COLORS } from '@/lib/property-rooms'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { PageHeader } from '@/components/ui/page-header'
@@ -61,9 +62,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
         ? Array.from(new Set(rt.units.map((u) => u.floor))).join(', ')
         : '—'
 
-    // Simulate some admin metrics
-    const simulatedOccupancy = Math.floor(Math.random() * 40) + 40 // 40-80%
-    const simulatedRevenue = rt.basePrice * simulatedOccupancy * 30 / 100 * (Math.random() * 0.5 + 0.8)
+    const metrics = getRoomMetrics(rt.id, rt.basePrice)
 
     return (
         <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-8">
@@ -120,17 +119,17 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                 />
                 <MetricCard
                     title="Avg. Occupancy"
-                    value={`${simulatedOccupancy}%`}
+                    value={`${metrics.occupancy}%`}
                     subtitle="Last 30 days"
                     icon={<Activity className="size-4 text-[#243E8B]" />}
-                    trend="+5.2%"
+                    trend={metrics.trendOccupancy}
                 />
                 <MetricCard
                     title="Est. Revenue"
-                    value={formatPrice(simulatedRevenue, currency)}
+                    value={formatPrice(metrics.revenue, currency)}
                     subtitle="Last 30 days"
                     icon={<Calendar className="size-4 text-[#243E8B]" />}
-                    trend="+12.1%"
+                    trend={metrics.trendRevenue}
                 />
             </div>
 
@@ -274,15 +273,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                             {rt.units.length > 0 ? (
                                 <div className="divide-y divide-slate-100">
                                     {rt.units.map((unit) => {
-                                        // Randomly assign statuses for the dashboard mock
-                                        const statuses = ['Clean', 'Occupied', 'Dirty', 'Maintenance']
-                                        const statusColors = {
-                                            'Clean': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-                                            'Occupied': 'bg-blue-100 text-blue-700 border-blue-200',
-                                            'Dirty': 'bg-amber-100 text-amber-700 border-amber-200',
-                                            'Maintenance': 'bg-rose-100 text-rose-700 border-rose-200'
-                                        }
-                                        const randomStatus = statuses[Math.floor(Math.random() * statuses.length)] as keyof typeof statusColors
+                                        const status = getUnitStatus(unit.id)
 
                                         return (
                                             <div key={unit.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
@@ -295,8 +286,8 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                                                         <div className="text-xs text-slate-500">Floor {unit.floor}</div>
                                                     </div>
                                                 </div>
-                                                <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", statusColors[randomStatus])}>
-                                                    {randomStatus}
+                                                <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", UNIT_STATUS_COLORS[status])}>
+                                                    {status}
                                                 </Badge>
                                             </div>
                                         )
