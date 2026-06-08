@@ -55,9 +55,7 @@ export function FormSearchableSelect({
 
     const selectedOption = options.find((o) => o.value === field.state.value)
 
-    const filtered = search.trim()
-        ? options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
-        : options
+    const filtered = search.trim() ? options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase())) : options
 
     // Close dropdown on outside click
     useEffect(() => {
@@ -107,10 +105,16 @@ export function FormSearchableSelect({
 
     const handleAddNewGuest = () => {
         const result = newGuestSchema.safeParse({ name: newName, email: newEmail, phone: newPhone })
-        if (!result.success) { setAddError(result.error.issues[0].message); return }
+        if (!result.success) {
+            setAddError(result.error.issues[0].message)
+            return
+        }
 
         const { name, email, phone } = result.data
-        if (options.some((o) => o.value === email)) { setAddError('This guest already exists.'); return }
+        if (options.some((o) => o.value === email)) {
+            setAddError('This guest already exists.')
+            return
+        }
 
         if (onAddNew) {
             onAddNew({ name, email, phone })
@@ -143,12 +147,11 @@ export function FormSearchableSelect({
                         if (!open) field.handleBlur()
                     }}
                     className={cn(
-                        'flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background',
-                        'hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+                        'flex h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 py-2 text-sm',
+                        'hover:border-primary/50 focus:outline-none',
                         'transition-colors duration-150',
                         disabled && 'cursor-not-allowed opacity-50',
-                        isInvalid && 'border-destructive focus:ring-destructive',
-                        open && 'ring-2 ring-ring ring-offset-2 border-primary/50',
+                        isInvalid && 'border-destructive',
                     )}
                 >
                     <span className={cn('truncate', !selectedOption && 'text-muted-foreground')}>
@@ -193,7 +196,11 @@ export function FormSearchableSelect({
                                         className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                                     />
                                     {search && (
-                                        <button type="button" onClick={() => setSearch('')} className="text-muted-foreground hover:text-foreground">
+                                        <button
+                                            type="button"
+                                            onClick={() => setSearch('')}
+                                            className="text-muted-foreground hover:text-foreground"
+                                        >
                                             <X className="h-3 w-3" />
                                         </button>
                                     )}
@@ -249,7 +256,13 @@ export function FormSearchableSelect({
                                     </span>
                                     <button
                                         type="button"
-                                        onClick={() => { setShowAddNew(false); setNewName(''); setNewEmail(''); setNewPhone(''); setAddError('') }}
+                                        onClick={() => {
+                                            setShowAddNew(false)
+                                            setNewName('')
+                                            setNewEmail('')
+                                            setNewPhone('')
+                                            setAddError('')
+                                        }}
                                         className="text-muted-foreground hover:text-foreground rounded-md p-0.5 transition-colors"
                                     >
                                         <X className="h-4 w-4" />
@@ -263,13 +276,21 @@ export function FormSearchableSelect({
                                         ref={nameRef}
                                         type="text"
                                         value={newName}
-                                        onChange={(e) => { setNewName(e.target.value); setAddError('') }}
+                                        onChange={(e) => {
+                                            setNewName(e.target.value)
+                                            setAddError('')
+                                        }}
                                         placeholder="e.g. John Smith"
                                         className={cn(
                                             'flex h-8 w-full rounded-md border border-input bg-background px-3 text-sm outline-none',
-                                            'focus:ring-2 focus:ring-ring focus:ring-offset-1 transition-shadow placeholder:text-muted-foreground',
+                                            'transition-shadow placeholder:text-muted-foreground',
                                         )}
-                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNewGuest() } }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault()
+                                                handleAddNewGuest()
+                                            }
+                                        }}
                                     />
                                 </div>
 
@@ -279,13 +300,21 @@ export function FormSearchableSelect({
                                     <input
                                         type="email"
                                         value={newEmail}
-                                        onChange={(e) => { setNewEmail(e.target.value); setAddError('') }}
+                                        onChange={(e) => {
+                                            setNewEmail(e.target.value)
+                                            setAddError('')
+                                        }}
                                         placeholder="e.g. john@example.com"
                                         className={cn(
                                             'flex h-8 w-full rounded-md border border-input bg-background px-3 text-sm outline-none',
-                                            'focus:ring-2 focus:ring-ring focus:ring-offset-1 transition-shadow placeholder:text-muted-foreground',
+                                            'transition-shadow placeholder:text-muted-foreground',
                                         )}
-                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNewGuest() } }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault()
+                                                handleAddNewGuest()
+                                            }
+                                        }}
                                     />
                                 </div>
 
@@ -295,26 +324,38 @@ export function FormSearchableSelect({
                                     <input
                                         type="tel"
                                         value={newPhone}
-                                        onChange={(e) => { setNewPhone(e.target.value); setAddError('') }}
+                                        onChange={(e) => {
+                                            setNewPhone(e.target.value)
+                                            setAddError('')
+                                        }}
                                         placeholder="e.g. +1 416 XXX XXXX"
                                         className={cn(
                                             'flex h-8 w-full rounded-md border border-input bg-background px-3 text-sm outline-none',
-                                            'focus:ring-2 focus:ring-ring focus:ring-offset-1 transition-shadow placeholder:text-muted-foreground',
+                                            'transition-shadow placeholder:text-muted-foreground',
                                         )}
-                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNewGuest() } }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault()
+                                                handleAddNewGuest()
+                                            }
+                                        }}
                                     />
                                 </div>
 
                                 {/* Error message */}
-                                {addError && (
-                                    <p className="text-xs text-destructive font-medium">{addError}</p>
-                                )}
+                                {addError && <p className="text-xs text-destructive font-medium">{addError}</p>}
 
                                 {/* Action buttons */}
                                 <div className="flex gap-2 pt-1">
                                     <button
                                         type="button"
-                                        onClick={() => { setShowAddNew(false); setNewName(''); setNewEmail(''); setNewPhone(''); setAddError('') }}
+                                        onClick={() => {
+                                            setShowAddNew(false)
+                                            setNewName('')
+                                            setNewEmail('')
+                                            setNewPhone('')
+                                            setAddError('')
+                                        }}
                                         className="flex-1 h-8 rounded-md border border-input text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                                     >
                                         Cancel
