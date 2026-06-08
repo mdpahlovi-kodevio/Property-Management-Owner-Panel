@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { isSameDay, getDaysInMonth, formatDate } from '@/lib/calendar-utils'
-import { ROOM_TYPE_ICONS, STATUS_CONFIG } from '@/data/mock-calendar'
+import { ROOM_TYPE_ICONS, STATUS_CONFIG } from '@/lib/calendar'
 import type { Booking, Room } from '@/types/calendar'
 import { AvatarChip } from './AvatarChip'
 

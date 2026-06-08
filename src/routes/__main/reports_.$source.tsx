@@ -9,23 +9,7 @@ export const Route = createFileRoute('/__main/reports_/$source')({
     component: RouteComponent,
 })
 
-type SourceReportData = {
-    id: number
-    date: string
-    totalBookings: number
-    totalRevenue: string
-    totalEarnings: string
-    expectedPayout: string
-}
-
-const REPORT_DATA: SourceReportData[] = Array.from({ length: 16 }).map((_, i) => ({
-    id: i + 1,
-    date: `${(i + 1).toString().padStart(2, '0')} Apr 2026`,
-    totalBookings: [10, 20, 30, 20, 30, 60, 50, 30, 70, 60, 50, 30, 30, 20, 20, 20][i],
-    totalRevenue: '$10,320',
-    totalEarnings: '$10,320',
-    expectedPayout: '$8,320',
-}))
+import { SOURCE_REPORT_DATA as REPORT_DATA, type SourceReportData } from '@/lib/reports'
 
 function RouteComponent() {
     const { source } = Route.useParams()

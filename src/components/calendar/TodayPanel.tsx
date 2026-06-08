@@ -1,7 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { CalendarDays, LogIn, LogOut } from 'lucide-react'
 import { isSameDay, formatDate } from '@/lib/calendar-utils'
-import { BOOKINGS, ROOMS } from '@/data/mock-calendar'
+import { BOOKINGS, ROOMS } from '@/lib/calendar'
 
 export function TodayPanel({ today }: { today: Date }) {
     const checkIns = BOOKINGS.filter(

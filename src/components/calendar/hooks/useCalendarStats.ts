@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from 'react'
 import type { Room, Booking } from '@/types/calendar'
-import { ROOMS, BOOKINGS } from '@/data/mock-calendar'
+import { ROOMS, BOOKINGS } from '@/lib/calendar'
 
 interface UseCalendarStatsProps {
     currentYear: number

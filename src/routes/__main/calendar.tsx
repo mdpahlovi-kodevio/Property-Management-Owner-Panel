@@ -26,7 +26,7 @@ import {
 import { useCalendarState } from '@/components/calendar/hooks/useCalendarState'
 import { useCalendarStats } from '@/components/calendar/hooks/useCalendarStats'
 import { isSameDay } from '@/lib/calendar-utils'
-import { MONTHS, ROOMS } from '@/data/mock-calendar'
+import { MONTHS, ROOMS } from '@/lib/calendar'
 
 // UI Components
 import { StatCardsGrid } from '@/components/ui/stat-card'

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { STATUS_CONFIG } from '@/data/mock-calendar'
+import { STATUS_CONFIG } from '@/lib/calendar'
 import type { BookingStatus } from '@/types/calendar'
 
 export function AvatarChip({ name, status }: { name: string; status: BookingStatus }) {

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Moon, Users, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDate, daysBetween } from '@/lib/calendar-utils'
-import { STATUS_CONFIG } from '@/data/mock-calendar'
+import { STATUS_CONFIG } from '@/lib/calendar'
 import type { Booking, Room } from '@/types/calendar'
 
 export function BookingDetailDialog({
