@@ -13,7 +13,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Check, ChevronDown, Edit, Plus, Trash2, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import * as z from 'zod'
-import { EMPLOYEES, createEmployee, updateEmployee, toggleEmployeeStatus, deleteEmployee, type Employee } from '@/lib/api/employees'
+import { EMPLOYEES, createEmployee, updateEmployee, toggleEmployeeStatus, deleteEmployee, type Employee } from '#/lib/employees'
 
 export const Route = createFileRoute('/__main/employees')({
     component: RouteComponent,

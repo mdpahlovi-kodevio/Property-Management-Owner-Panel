@@ -13,7 +13,7 @@ import { Check, ChevronDown, Edit, Plus, Trash2, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import * as z from 'zod'
 import type { DataTableColumn } from '@/components/ui/data-table';
-import { USERS, createUser, updateUser, toggleUserStatus, deleteUser, type User } from '@/lib/api/users'
+import { USERS, createUser, updateUser, toggleUserStatus, deleteUser, type User } from '#/lib/users'
 
 export const Route = createFileRoute('/__main/user-management')({
     component: RouteComponent,

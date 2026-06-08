@@ -251,7 +251,7 @@ function StatusBadge({ status }: { status: string }) {
     )
 }
 
-// ─── Component ───────────────────────────────────────────────────────
+// ── Property omponent --
 function PropertyComponent() {
     const navigate = useNavigate()
     const [searchQuery, setSearchQuery] = useState('')

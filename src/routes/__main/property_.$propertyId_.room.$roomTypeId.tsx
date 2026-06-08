@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { ArrowLeft, BedDouble, Bath, Maximize2, Users, Cigarette, Baby, Shield, CheckCircle2, LayoutDashboard, Calendar, Settings, Activity, Key, CreditCard, Plus } from 'lucide-react'
+import { ArrowLeft, BedDouble, Bath, Maximize2, Users, Cigarette, Baby, Shield, CheckCircle2, Calendar, Activity, Key, CreditCard, Plus } from 'lucide-react'
 import { getPropertyById, formatPrice } from '@/lib/properties'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'

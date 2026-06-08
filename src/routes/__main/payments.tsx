@@ -9,7 +9,7 @@ import { SearchInput } from '@/components/ui/search-input'
 import { createFileRoute } from '@tanstack/react-router'
 import { ChevronDown, Eye } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
-import { PAYMENTS, type Payment } from '@/lib/api/payments'
+import { PAYMENTS, type Payment } from '#/lib/payments'
 
 export const Route = createFileRoute('/__main/payments')({
     component: RouteComponent,

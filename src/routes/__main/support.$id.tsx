@@ -18,6 +18,7 @@ const TICKET = {
     description:
         'There is a significant water leak coming from the bathroom ceiling. It appears to be getting worse and water is dripping onto the floor. This seems to be coming from the unit above. Please send someone urgently as it is damaging the ceiling and creating a slip hazard. There is a significant water leak coming from the bathroom ceiling. It appears to be getting worse and water is dripping onto the floor. This seems to be coming from the unit above. Please send someone urgently as it is damaging the ceiling and creating a slip hazard.',
     assignedMember: 'John Cooper',
+
 }
 
 interface ChatMessage {

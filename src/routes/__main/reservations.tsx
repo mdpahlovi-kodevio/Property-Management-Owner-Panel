@@ -14,7 +14,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Check, ChevronDown, Edit, Plus, Trash2, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import * as z from 'zod';
-import { RESERVATIONS, createReservation, updateReservation, toggleReservationStatus, deleteReservation, type Reservation } from '@/lib/api/reservations';
+import { RESERVATIONS, createReservation, updateReservation, toggleReservationStatus, deleteReservation, type Reservation } from '#/lib/reservations';
 
 export const Route = createFileRoute('/__main/reservations')({
     component: RouteComponent,
