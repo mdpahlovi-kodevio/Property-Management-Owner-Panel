@@ -105,7 +105,7 @@ export function BookingDetailDialog({
                     <Button variant="outline" size="sm" onClick={onClose}>
                         Close
                     </Button>
-                    <Button size="sm">Edit Booking</Button>
+                    <Button size="sm">Edit Reservation</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
