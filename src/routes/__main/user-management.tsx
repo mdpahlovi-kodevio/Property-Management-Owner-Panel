@@ -13,6 +13,7 @@ import { Check, ChevronDown, Edit, Plus, Trash2, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import * as z from 'zod'
 import type { DataTableColumn } from '@/components/ui/data-table';
+import { USERS, createUser, updateUser, toggleUserStatus, deleteUser, type User } from '@/lib/api/users'
 
 export const Route = createFileRoute('/__main/user-management')({
     component: RouteComponent,
@@ -27,26 +28,8 @@ const userSchema = z.object({
     status: z.enum(['Active', 'Blocked']),
 })
 
-const INITIAL_USERS = [
-    { id: 1, name: 'Jane Cooper', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Jane', phone: '+1 416 XXX XXXX', email: 'janecoper@gmail.com', bookings: 4, status: 'Active' as const },
-    { id: 2, name: 'Wade Warren', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Wade', phone: '+1 416 XXX XXXX', email: 'weaver@example.com', bookings: 5, status: 'Active' as const },
-    { id: 3, name: 'Esther Howard', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Esther', phone: '+1 416 XXX XXXX', email: 'esther@gmail.com', bookings: 3, status: 'Active' as const },
-    { id: 4, name: 'Leslie Alexander', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Leslie', phone: '+1 416 XXX XXXX', email: 'leslie@gmail.com', bookings: 7, status: 'Active' as const },
-    { id: 5, name: 'Jenny Wilson', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Jenny', phone: '+1 416 XXX XXXX', email: 'janecoper@gmail.com', bookings: 3, status: 'Active' as const },
-    { id: 6, name: 'Guy Hawkins', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Guy', phone: '+1 416 XXX XXXX', email: 'hawkins@gmail.com', bookings: 2, status: 'Active' as const },
-    { id: 7, name: 'Robert Fox', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Robert', phone: '+1 416 XXX XXXX', email: 'robert@gmail.com', bookings: 4, status: 'Active' as const },
-    { id: 8, name: 'Kristin Watson', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Kristin', phone: '+1 416 XXX XXXX', email: 'kristin@gmail.com', bookings: 2, status: 'Blocked' as const },
-    { id: 9, name: 'Jacob Jones', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Jacob', phone: '+1 416 XXX XXXX', email: 'jacob@gmail.com', bookings: 4, status: 'Active' as const },
-    { id: 10, name: 'Bessie Cooper', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Bessie', phone: '+1 416 XXX XXXX', email: 'bessie@gmail.com', bookings: 2, status: 'Active' as const },
-    { id: 11, name: 'Albert Flores', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Albert', phone: '+1 416 XXX XXXX', email: 'albert@gmail.com', bookings: 2, status: 'Active' as const },
-    { id: 12, name: 'Dianne Russell', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Dianne', phone: '+1 416 XXX XXXX', email: 'dianne@gmail.com', bookings: 3, status: 'Blocked' as const },
-    { id: 13, name: 'Eleanor Pena', image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Eleanor', phone: '+1 416 XXX XXXX', email: 'eleanor@gmail.com', bookings: 4, status: 'Blocked' as const },
-]
-
-type User = (typeof INITIAL_USERS)[number]
-
 function RouteComponent() {
-    const [users, setUsers] = useState<User[]>(INITIAL_USERS)
+    const [users, setUsers] = useState<User[]>(USERS)
     const [searchQuery, setSearchQuery] = useState('')
     const [isOpen, setIsOpen] = useState(false)
     const [editingUser, setEditingUser] = useState<User | null>(null)
@@ -70,14 +53,11 @@ function RouteComponent() {
 
     const handleSave = (values: z.infer<typeof userSchema>) => {
         if (isEditMode) {
-            setUsers((prev) => prev.map((u) => (u.id === editingUser.id ? { ...u, ...values } : u)))
+            updateUser(editingUser.id, values)
         } else {
-            const newUser: User = {
-                id: Date.now(),
-                ...values,
-            }
-            setUsers((prev) => [...prev, newUser])
+            createUser(values)
         }
+        setUsers([...USERS])
         closeDialog()
     }
 
@@ -93,11 +73,13 @@ function RouteComponent() {
     }, [users, searchQuery])
 
     const handleToggleStatus = (id: number) => {
-        setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status: u.status === 'Active' ? 'Blocked' : 'Active' } : u)))
+        toggleUserStatus(id)
+        setUsers([...USERS])
     }
 
     const handleDeleteUser = (id: number) => {
-        setUsers((prev) => prev.filter((u) => u.id !== id))
+        deleteUser(id)
+        setUsers([...USERS])
     }
 
     const columns: DataTableColumn<User>[] = useMemo(
