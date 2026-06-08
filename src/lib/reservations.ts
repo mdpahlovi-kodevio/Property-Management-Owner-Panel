@@ -6,7 +6,9 @@ export type Reservation = {
     checkIn: string
     checkOut: string
     payment: string
+    paymentStatus: string
     paymentMethod: string
+    channel: string
     image?: string
     status: 'Pending' | 'Confirmed' | 'Cancelled'
 }
@@ -20,8 +22,10 @@ export let RESERVATIONS: Reservation[] = [
         unit: 'unit_001_01_01',
         checkIn: '2026-06-01',
         checkOut: '2026-06-05',
-        payment: '$480.00 (Paid)',
+        payment: '$480.00',
+        paymentStatus: 'Paid',
         paymentMethod: 'Credit Card',
+        channel: 'Airbnb',
         status: 'Confirmed',
     },
     {
@@ -32,8 +36,10 @@ export let RESERVATIONS: Reservation[] = [
         unit: 'unit_002_01_01',
         checkIn: '2026-06-10',
         checkOut: '2026-06-12',
-        payment: '$220.00 (Pending)',
+        payment: '$220.00',
+        paymentStatus: 'Pending',
         paymentMethod: 'PayPal',
+        channel: 'Direct',
         status: 'Confirmed',
     },
     {
@@ -44,8 +50,10 @@ export let RESERVATIONS: Reservation[] = [
         unit: 'unit_003_01_01',
         checkIn: '2026-07-02',
         checkOut: '2026-07-06',
-        payment: '$640.00 (Paid)',
+        payment: '$640.00',
+        paymentStatus: 'Paid',
         paymentMethod: 'Credit Card',
+        channel: 'Booking.com',
         status: 'Cancelled',
     },
     {
@@ -56,8 +64,10 @@ export let RESERVATIONS: Reservation[] = [
         unit: 'unit_004_01_01',
         checkIn: '2026-08-15',
         checkOut: '2026-08-17',
-        payment: '$180.00 (Paid)',
+        payment: '$180.00',
+        paymentStatus: 'Paid',
         paymentMethod: 'Cash',
+        channel: 'Direct',
         status: 'Confirmed',
     },
 ]

@@ -35,6 +35,7 @@ const reservationSchema = z.object({
     checkIn: z.string().min(1, 'Check in date is required'),
     checkOut: z.string().min(1, 'Check out date is required'),
     paymentMethod: z.string(),
+    channel: z.string().min(1, 'Channel is required'),
     image: z.string().optional(),
     status: z.enum(['Pending', 'Confirmed']),
 })
@@ -64,6 +65,7 @@ function RouteComponent() {
 
     const handleSave = (values: z.infer<typeof reservationSchema>) => {
         let payment = '$0.00'
+        let paymentStatus = 'Pending'
         const property = getPropertyById(values.property)
         if (property && values.unit && values.checkIn && values.checkOut) {
             const roomType = property.roomTypes.find((rt) => rt.units.some((u) => u.id === values.unit))
@@ -73,16 +75,18 @@ function RouteComponent() {
                 let nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 3600 * 24))
                 if (nights <= 0 || isNaN(nights)) nights = 1
                 const total = roomType.basePrice * nights
-                payment = `${formatPrice(total, property.property.currency)} (${values.paymentMethod === 'Cash' ? 'Pending' : 'Paid'})`
+                payment = formatPrice(total, property.property.currency)
+                paymentStatus = values.paymentMethod === 'Cash' ? 'Pending' : 'Paid'
             }
         }
 
         if (isEditMode) {
-            updateReservation(editingReservation.id, { ...values, payment })
+            updateReservation(editingReservation.id, { ...values, payment, paymentStatus })
         } else {
             createReservation({
                 ...values,
                 payment,
+                paymentStatus,
                 image: values.userEmail
                     ? `https://api.dicebear.com/7.x/notionists/svg?seed=${values.userEmail.replace(/[^a-zA-Z]/g, '')}`
                     : undefined,
@@ -101,7 +105,9 @@ function RouteComponent() {
                 getPropertyById(r.property)?.property.name.toLowerCase().includes(query) ||
                 r.checkIn.toLowerCase().includes(query) ||
                 r.checkOut.toLowerCase().includes(query) ||
-                r.payment.toLowerCase().includes(query),
+                r.payment.toLowerCase().includes(query) ||
+                r.paymentStatus.toLowerCase().includes(query) ||
+                r.channel.toLowerCase().includes(query),
         )
     }, [reservations, searchQuery])
 
@@ -144,7 +150,25 @@ function RouteComponent() {
                     </span>
                 ),
             },
+            {
+                key: 'channel',
+                header: 'Channel',
+                render: (r) => <span className="text-muted-foreground">{r.channel}</span>,
+            },
             { key: 'payment', header: 'Payment', render: (r) => <span className="text-muted-foreground">{r.payment}</span> },
+            {
+                key: 'paymentStatus',
+                header: 'Payment Status',
+                render: (r) => (
+                    <span
+                        className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                            r.paymentStatus === 'Paid' ? 'text-green-600 bg-green-500/10' : 'text-yellow-600 bg-yellow-500/10'
+                        }`}
+                    >
+                        {r.paymentStatus}
+                    </span>
+                ),
+            },
             {
                 key: 'status',
                 header: 'Status',
@@ -247,6 +271,7 @@ function RouteComponent() {
                                       checkIn: editingReservation.checkIn,
                                       checkOut: editingReservation.checkOut,
                                       paymentMethod: editingReservation.paymentMethod,
+                                      channel: editingReservation.channel,
                                       image: editingReservation.image,
                                       status: editingReservation.status as 'Pending' | 'Confirmed',
                                   }
@@ -257,6 +282,7 @@ function RouteComponent() {
                                       checkIn: '',
                                       checkOut: '',
                                       paymentMethod: 'Credit Card',
+                                      channel: 'Direct',
                                       image: '',
                                       status: 'Confirmed',
                                   }
@@ -387,22 +413,40 @@ function ReservationForm({
                 <form.AppField name="checkIn">{(field) => <field.FormInput type="date" label="Check In" />}</form.AppField>
                 <form.AppField name="checkOut">{(field) => <field.FormInput type="date" label="Check Out" />}</form.AppField>
             </div>
-            <form.AppField name="paymentMethod">
-                {(field) => (
-                    <field.FormSelect
-                        label="Payment Method"
-                        placeholder="Select Payment Method"
-                        options={[
-                            { value: 'Cash', label: 'Cash' },
-                            { value: 'Credit Card', label: 'Credit Card' },
-                            { value: 'Debit Card', label: 'Debit Card' },
-                            { value: 'Stripe', label: 'Stripe' },
-                            { value: 'Square', label: 'Square' },
-                            { value: 'PayPal', label: 'PayPal' },
-                        ]}
-                    />
-                )}
-            </form.AppField>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <form.AppField name="paymentMethod">
+                    {(field) => (
+                        <field.FormSelect
+                            label="Payment Method"
+                            placeholder="Select Payment Method"
+                            options={[
+                                { value: 'Cash', label: 'Cash' },
+                                { value: 'Credit Card', label: 'Credit Card' },
+                                { value: 'Debit Card', label: 'Debit Card' },
+                                { value: 'Stripe', label: 'Stripe' },
+                                { value: 'Square', label: 'Square' },
+                                { value: 'PayPal', label: 'PayPal' },
+                            ]}
+                        />
+                    )}
+                </form.AppField>
+
+                <form.AppField name="channel">
+                    {(field) => (
+                        <field.FormSelect
+                            label="Booking Channel"
+                            placeholder="Select Booking Channel"
+                            options={[
+                                { value: 'Direct', label: 'Direct' },
+                                { value: 'Airbnb', label: 'Airbnb' },
+                                { value: 'Booking.com', label: 'Booking.com' },
+                                { value: 'Expedia', label: 'Expedia' },
+                                { value: 'Vrbo', label: 'Vrbo' },
+                            ]}
+                        />
+                    )}
+                </form.AppField>
+            </div>
 
             <form.AppField name="status">
                 {(field) => (

@@ -402,10 +402,12 @@ function PropertyUnitComponent() {
                                                 </Button>
                                                 <Button
                                                     variant="default"
-
+                                                    asChild
                                                 >
-                                                    <Eye className="size-3.5" />
-                                                    View
+                                                    <Link to="/property/$propertyId/room/$roomTypeId" params={{ propertyId, roomTypeId: room.id }}>
+                                                        <Eye className="size-3.5" />
+                                                        View
+                                                    </Link>
                                                 </Button>
                                             </div>
                                         </div>
