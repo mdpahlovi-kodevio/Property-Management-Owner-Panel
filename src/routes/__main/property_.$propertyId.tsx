@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { getPropertyById, type Property } from '@/lib/properties'
 import { cn } from '@/lib/utils'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
     Accessibility,
     ArrowLeft,
@@ -202,6 +202,7 @@ function newId(prefix: string) {
 
 // ─── Component ───────────────────────────────────────────────────────
 function PropertyUnitComponent() {
+    const navigate = useNavigate()
     const { propertyId } = Route.useParams()
     const property = getPropertyById(propertyId)
     const roomCards = buildRoomTypeCards(property)
@@ -258,11 +259,9 @@ function PropertyUnitComponent() {
         <>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex flex-col gap-2">
-                    <Button variant="ghost" size="sm" asChild className="w-fit -ml-3 text-slate-500 hover:text-slate-900">
-                        <Link to="/property">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Properties
-                        </Link>
+                    <Button variant="default" size="sm" className="w-fit" onClick={() => navigate({ to: '/property' })}>
+                        <ArrowLeft className="mr-2 w-4" />
+                        Back to Properties
                     </Button>
                     <PageHeader
                         title={pageTitle}
@@ -278,156 +277,154 @@ function PropertyUnitComponent() {
                     />
                     <Button
                         onClick={openAdd}
-                        className="shrink-0 gap-1.5 rounded-xl font-semibold bg-[#243E8B] hover:bg-[#1D3270] text-white shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300"
                     >
                         <Plus className="size-4" />
                         Add Room Type
                     </Button>
                 </div>
             </div>
+            {(() => {
+                const filteredRooms = roomCards.filter(room => {
+                    const query = searchQuery.toLowerCase()
+                    return room.title.toLowerCase().includes(query) || room.location.toLowerCase().includes(query) || room.details.toLowerCase().includes(query)
+                })
+                const paginatedRooms = filteredRooms.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
-            <div className="flex flex-col gap-8 mt-6">
-                {(() => {
-                    const filteredRooms = roomCards.filter(room => {
-                        const query = searchQuery.toLowerCase()
-                        return room.title.toLowerCase().includes(query) || room.location.toLowerCase().includes(query) || room.details.toLowerCase().includes(query)
-                    })
-                    const paginatedRooms = filteredRooms.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-
-                    if (paginatedRooms.length === 0) {
-                        return (
-                            <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">
-                                {property
-                                    ? 'No room types match your search.'
-                                    : `Property "${propertyId}" not found.`}
-                            </div>
-                        )
-                    }
-
+                if (paginatedRooms.length === 0) {
                     return (
-                        <>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4.5">
-                                {paginatedRooms.map((room) => (
-                                    <div
-                                        key={room.id}
-                                        className="group h-full flex flex-col bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_6px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.1),0_12px_28px_rgba(0,0,0,0.08)] border border-border transition-all duration-300 ease-out hover:-translate-y-1 overflow-hidden"
-                                    >
-                                        {/* Image */}
-                                        <div className="relative w-full overflow-hidden bg-muted shrink-0" style={{ paddingTop: '66%' }}>
-                                            <img
-                                                src={room.imageUrl}
-                                                alt={room.title}
-                                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
-                                            />
+                        <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">
+                            {property
+                                ? 'No room types match your search.'
+                                : `Property "${propertyId}" not found.`}
+                        </div>
+                    )
+                }
 
-                                            {/* View type badge (top-left, Guest-Panel style) */}
+                return (
+                    <>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4.5">
+                            {paginatedRooms.map((room) => (
+                                <div
+                                    key={room.id}
+                                    className="group cursor-pointer h-full flex flex-col bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_6px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.1),0_12px_28px_rgba(0,0,0,0.08)] border border-border transition-all duration-300 ease-out hover:-translate-y-1 overflow-hidden"
+                                    onClick={() => navigate({ to: '/property/$propertyId/room/$roomTypeId', params: { propertyId, roomTypeId: room.id } })}
+                                >
+                                    {/* Image */}
+                                    <div className="relative w-full overflow-hidden bg-muted shrink-0" style={{ paddingTop: '66%' }}>
+                                        <img
+                                            src={room.imageUrl}
+                                            alt={room.title}
+                                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+                                        />
+
+                                        {/* View type badge (top-left, Guest-Panel style) */}
+                                        {room.viewType && (
+                                            <span className="absolute top-3 left-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[0.7rem] font-bold uppercase tracking-wide shadow-sm">
+                                                {room.viewType}
+                                            </span>
+                                        )}
+
+                                        {/* Status badge (top-right) — admin affordance */}
+                                        <div className="absolute top-3 right-3">
+                                            <span className={cn(
+                                                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border backdrop-blur-md',
+                                                room.status === 'Active'
+                                                    ? 'bg-emerald-500/90 text-white border-white/20'
+                                                    : 'bg-amber-500/90 text-white border-white/20'
+                                            )}>
+                                                <span className="relative inline-flex rounded-full size-1.5 bg-white" />
+                                                {room.status}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Body */}
+                                    <div className="p-4 flex flex-col gap-2 grow bg-card">
+                                        {/* Title row with viewType chip (mirrors property card rating) */}
+                                        <div className="flex justify-between items-center gap-3">
+                                            <h3 className="text-[1.05rem] font-semibold text-foreground leading-snug line-clamp-1 m-0 group-hover:text-primary transition-colors duration-300">
+                                                {room.title}
+                                            </h3>
                                             {room.viewType && (
-                                                <span className="absolute top-3 left-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[0.7rem] font-bold uppercase tracking-wide shadow-sm">
+                                                <span className="inline-flex items-center gap-1 text-[0.7rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent text-foreground whitespace-nowrap shrink-0">
                                                     {room.viewType}
                                                 </span>
                                             )}
-
-                                            {/* Status badge (top-right) — admin affordance */}
-                                            <div className="absolute top-3 right-3">
-                                                <span className={cn(
-                                                    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border backdrop-blur-md',
-                                                    room.status === 'Active'
-                                                        ? 'bg-emerald-500/90 text-white border-white/20'
-                                                        : 'bg-amber-500/90 text-white border-white/20'
-                                                )}>
-                                                    <span className="relative inline-flex rounded-full size-1.5 bg-white" />
-                                                    {room.status}
-                                                </span>
-                                            </div>
                                         </div>
 
-                                        {/* Body */}
-                                        <div className="p-4 flex flex-col gap-2 grow bg-card">
-                                            {/* Title row with viewType chip (mirrors property card rating) */}
-                                            <div className="flex justify-between items-center gap-3">
-                                                <h3 className="text-[1.05rem] font-semibold text-foreground leading-snug line-clamp-1 m-0 group-hover:text-primary transition-colors duration-300">
-                                                    {room.title}
-                                                </h3>
-                                                {room.viewType && (
-                                                    <span className="inline-flex items-center gap-1 text-[0.7rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent text-foreground whitespace-nowrap shrink-0">
-                                                        {room.viewType}
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            {/* Subtitle: floor / beds chip */}
-                                            <div className="flex justify-between items-center gap-2 text-muted-foreground text-[0.875rem]">
-                                                <span className="inline-flex items-center gap-1">
-                                                    <MapPin className="size-3.5" />
-                                                    {room.location}
+                                        {/* Subtitle: floor / beds chip */}
+                                        <div className="flex justify-between items-center gap-2 text-muted-foreground text-[0.875rem]">
+                                            <span className="inline-flex items-center gap-1">
+                                                <MapPin className="size-3.5" />
+                                                {room.location}
+                                            </span>
+                                            {room.bedsCount > 0 && (
+                                                <span className="text-[0.75rem] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground">
+                                                    🛏 {room.bedsCount} bed{room.bedsCount === 1 ? '' : 's'}
                                                 </span>
-                                                {room.bedsCount > 0 && (
-                                                    <span className="text-[0.75rem] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground">
-                                                        🛏 {room.bedsCount} bed{room.bedsCount === 1 ? '' : 's'}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            )}
+                                        </div>
 
-                                            {/* Meta: guests / baths / size (border-t) */}
-                                            <div className="flex justify-between items-center gap-2 flex-wrap border-t border-border pt-2 text-[0.875rem] text-muted-foreground">
-                                                <span className="inline-flex items-center gap-1">👥 {room.maxGuests} Guest{room.maxGuests === 1 ? '' : 's'}</span>
-                                                <span className="inline-flex items-center gap-1">🚿 {room.privateBathroom ? 'Private' : 'Shared'}</span>
-                                                <span className="inline-flex items-center gap-1">📐 {room.roomSizeLabel}</span>
-                                            </div>
+                                        {/* Meta: guests / baths / size (border-t) */}
+                                        <div className="flex justify-between items-center gap-2 flex-wrap border-t border-border pt-2 text-[0.875rem] text-muted-foreground">
+                                            <span className="inline-flex items-center gap-1">👥 {room.maxGuests} Guest{room.maxGuests === 1 ? '' : 's'}</span>
+                                            <span className="inline-flex items-center gap-1">🚿 {room.privateBathroom ? 'Private' : 'Shared'}</span>
+                                            <span className="inline-flex items-center gap-1">📐 {room.roomSizeLabel}</span>
+                                        </div>
 
-                                            {/* Admin info chips (border-y py-2 — matches property card style) */}
-                                            <div className="flex justify-between items-center gap-1.5 flex-wrap border-y border-border py-2">
-                                                <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                                                    {room.totalUnits} unit{room.totalUnits === 1 ? '' : 's'}
-                                                </span>
-                                                <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                                                    {room.units.length > 0 ? `${room.units.length} room#` : 'No rooms'}
-                                                </span>
-                                            </div>
+                                        {/* Admin info chips (border-y py-2 — matches property card style) */}
+                                        <div className="flex justify-between items-center gap-1.5 flex-wrap border-y border-border py-2">
+                                            <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                                                {room.totalUnits} unit{room.totalUnits === 1 ? '' : 's'}
+                                            </span>
+                                            <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                                                {room.units.length > 0 ? `${room.units.length} room#` : 'No rooms'}
+                                            </span>
+                                        </div>
 
-                                            <div className="flex justify-between items-center gap-1.5 flex-wrap">
-                                                <span className="text-[0.7rem] text-muted-foreground">
-                                                    {room.capacity}
-                                                </span>
-                                            </div>
+                                        <div className="flex justify-between items-center gap-1.5 flex-wrap">
+                                            <span className="text-[0.7rem] text-muted-foreground">
+                                                {room.capacity}
+                                            </span>
+                                        </div>
 
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <Button
-                                                    onClick={() => openEdit(room)}
-                                                    variant="outline"
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <Button
+                                                onClick={(e) => { e.stopPropagation(); openEdit(room); }}
+                                                variant="outline"
 
-                                                >
-                                                    <Edit className="size-3.5" />
-                                                    Edit
-                                                </Button>
-                                                <Button
-                                                    variant="default"
-                                                    asChild
-                                                >
-                                                    <Link to="/property/$propertyId/room/$roomTypeId" params={{ propertyId, roomTypeId: room.id }}>
-                                                        <Eye className="size-3.5" />
-                                                        View
-                                                    </Link>
-                                                </Button>
-                                            </div>
+                                            >
+                                                <Edit className="size-3.5" />
+                                                Edit
+                                            </Button>
+                                            <Button
+                                                variant="default"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    navigate({ to: '/property/$propertyId/room/$roomTypeId', params: { propertyId, roomTypeId: room.id } })
+                                                }}
+                                            >
+                                                <Eye className="size-3.5" />
+                                                View
+                                            </Button>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+                            ))}
+                        </div>
 
-                            <DataTableFooter
-                                page={currentPage}
-                                limit={itemsPerPage}
-                                total={filteredRooms.length}
-                                onPageChange={setCurrentPage}
-                                onLimitChange={(limit) => { setItemsPerPage(limit); setCurrentPage(1) }}
-                                limitOptions={[4, 8, 12, 24]}
-                                noun="rooms"
-                            />
-                        </>
-                    )
-                })()}
-            </div>
+                        <DataTableFooter
+                            page={currentPage}
+                            limit={itemsPerPage}
+                            total={filteredRooms.length}
+                            onPageChange={setCurrentPage}
+                            onLimitChange={(limit) => { setItemsPerPage(limit); setCurrentPage(1) }}
+                            limitOptions={[4, 8, 12, 24]}
+                            noun="rooms"
+                        />
+                    </>
+                )
+            })()}
 
             {/* ══════════════════════════════════════════════════
                 CREATE / EDIT ROOM TYPE DIALOG

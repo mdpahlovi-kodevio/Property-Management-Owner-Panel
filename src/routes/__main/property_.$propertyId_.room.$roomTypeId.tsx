@@ -5,7 +5,6 @@ import { getPropertyById, formatPrice } from '@/lib/properties'
 import { getRoomMetrics, getUnitStatus, UNIT_STATUS_COLORS } from '@/lib/property-rooms'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { PageHeader } from '@/components/ui/page-header'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 
 import { cn } from '@/lib/utils'
@@ -61,46 +60,20 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
     const floors = rt.units.length > 0
         ? Array.from(new Set(rt.units.map((u) => u.floor))).join(', ')
         : '—'
-
     const metrics = getRoomMetrics(rt.id, rt.basePrice)
 
     return (
-        <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-8">
+        <>
             {/* ── Top Navigation & Header ── */}
             <div>
-                <nav className="mb-4 flex items-center gap-2 text-sm text-slate-500 flex-wrap font-medium">
-                    <Link to="/property" className="hover:text-slate-900 transition-colors">
-                        Properties
-                    </Link>
-                    <span>/</span>
-                    <Link
-                        to="/property/$propertyId"
-                        params={{ propertyId: p.id }}
-                        className="hover:text-slate-900 transition-colors"
-                    >
-                        {p.name}
-                    </Link>
-                    <span>/</span>
-                    <span className="text-slate-900">{rt.name}</span>
-                </nav>
-
                 <Button
-                    variant="ghost"
+                    variant="default"
                     size="sm"
-                    className="-ml-3 mb-2 text-slate-500 hover:text-slate-900 w-fit"
                     onClick={() => navigate({ to: '/property/$propertyId', params: { propertyId: p.id } })}
                 >
                     <ArrowLeft className="mr-2 size-4" />
                     Back to Room Types
                 </Button>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
-                    <PageHeader
-                        title={rt.name}
-                        description={`Manage configuration, pricing, and units for ${rt.internalCode}`}
-                        className="pb-0"
-                    />
-                </div>
             </div>
 
             {/* ── Key Metrics ── */}
@@ -314,7 +287,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                     </Card>
                 </div>
             </div>
-        </div>
+        </>
     )
 }
 

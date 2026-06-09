@@ -320,133 +320,131 @@ function PropertyComponent() {
             </div>
 
             {/* ── Grid + pagination ── */}
-            <div className="flex flex-col gap-8 mt-6">
-                {(() => {
-                    const filtered = PROPERTY_CARDS.filter(p => {
-                        const q = searchQuery.toLowerCase()
-                        return p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q) || p.type.toLowerCase().includes(q)
-                    })
-                    const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                    return (
-                        <>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4.5">
-                                {paginated.map((property) => (
-                                    <div
-                                        key={property.id}
-                                        onClick={() => navigate({ to: '/property/$propertyId', params: { propertyId: property.id } })}
-                                        className="group h-full flex flex-col bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_6px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.1),0_12px_28px_rgba(0,0,0,0.08)] border border-border transition-all duration-300 ease-out hover:-translate-y-1 cursor-pointer overflow-hidden"
-                                    >
-                                        {/* Image */}
-                                        <div className="relative w-full overflow-hidden bg-muted shrink-0" style={{ paddingTop: '66%' }}>
-                                            <img
-                                                src={property.imageUrl}
-                                                alt={property.title}
-                                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
-                                            />
 
-                                            {/* Property type badge (top-left, Guest-Panel style) */}
-                                            <span className="absolute top-3 left-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[0.7rem] font-bold uppercase tracking-wide shadow-sm">
-                                                {property.type}
-                                            </span>
+            {(() => {
+                const filtered = PROPERTY_CARDS.filter(p => {
+                    const q = searchQuery.toLowerCase()
+                    return p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q) || p.type.toLowerCase().includes(q)
+                })
+                const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                return (
+                    <>
+                        <div className="grid gap-4 grid-cols-[repeat(auto-fit,_minmax(18rem,_1fr))]">
+                            {paginated.map((property) => (
+                                <div
+                                    key={property.id}
+                                    onClick={() => navigate({ to: '/property/$propertyId', params: { propertyId: property.id } })}
+                                    className="group h-full flex flex-col bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_6px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.1),0_12px_28px_rgba(0,0,0,0.08)] border border-border transition-all duration-300 ease-out hover:-translate-y-1 cursor-pointer overflow-hidden"
+                                >
+                                    {/* Image */}
+                                    <div className="relative w-full overflow-hidden bg-muted shrink-0" style={{ paddingTop: '66%' }}>
+                                        <img
+                                            src={property.imageUrl}
+                                            alt={property.title}
+                                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+                                        />
 
-                                            {/* Status badge (top-right) — admin affordance */}
-                                            <div className="absolute top-3 right-3">
-                                                <StatusBadge status={property.status} />
-                                            </div>
-                                        </div>
+                                        {/* Property type badge (top-left, Guest-Panel style) */}
+                                        <span className="absolute top-3 left-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[0.7rem] font-bold uppercase tracking-wide shadow-sm">
+                                            {property.type}
+                                        </span>
 
-                                        {/* Body */}
-                                        <div className="p-4 flex flex-col gap-2 grow bg-card">
-                                            {/* Title row with rating */}
-                                            <div className="flex justify-between items-center gap-3">
-                                                <h3 className="text-[1.05rem] font-semibold text-foreground leading-snug line-clamp-1 m-0 group-hover:text-primary transition-colors duration-300">
-                                                    {property.title}
-                                                </h3>
-                                                <div
-                                                    className="inline-flex items-center gap-1 bg-accent text-foreground px-2 py-0.5 rounded-full text-[0.75rem] font-semibold whitespace-nowrap shrink-0"
-                                                    aria-label={`Rated ${property.rating} out of 5 from ${property.reviewCount} reviews`}
-                                                >
-                                                    <Star className="size-3 fill-amber-400 text-amber-400" />
-                                                    {property.rating.toFixed(1)}
-                                                    <span className="text-muted-foreground font-normal ml-0.5">({property.reviewCount})</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Location + view type */}
-                                            <div className="flex justify-between items-center gap-2 flex-wrap">
-                                                <p className="text-muted-foreground m-0 text-[0.875rem] flex items-center gap-1">
-                                                    <MapPin className="size-3.5" />
-                                                    {property.city}, {property.country}
-                                                </p>
-                                                {property.viewType && (
-                                                    <span className="text-[0.75rem] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground">
-                                                        {property.viewType}
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            {/* Meta: beds / baths / guests */}
-                                            <div className="flex justify-between items-center gap-2 flex-wrap border-t pt-2 text-sm text-muted-foreground">
-                                                <span className="inline-flex items-center gap-1">🛏 {property.totalBeds} Beds</span>
-                                                <span className="inline-flex items-center gap-1">🚿 {property.totalBaths} Baths</span>
-                                                <span className="inline-flex items-center gap-1">👥 {property.maxGuests} Guests</span>
-                                            </div>
-
-                                            {/* Admin info chips (secondary info) */}
-                                            <div className="flex justify-between items-center gap-1.5 flex-wrap border-y border-border py-2">
-                                                <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                                                    <span className={cn("size-1.5 rounded-full",
-                                                        property.occupancy > 80 ? "bg-emerald-500"
-                                                            : property.occupancy > 50 ? "bg-amber-500"
-                                                                : "bg-rose-500"
-                                                    )} />
-                                                    {property.occupancy}% Occ
-                                                </span>
-                                                <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                                                    {property.totalRooms} Units
-                                                </span>
-                                                <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                                                    {property.todayCheckIns} Arrivals
-                                                </span>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-2 mt-1">
-                                                <Button
-                                                    onClick={(e) => { e.stopPropagation(); openEdit(property) }}
-                                                    variant="outline"
-
-                                                >
-                                                    <Edit className="size-3.5" />
-                                                    Edit
-                                                </Button>
-                                                <Button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        navigate({ to: '/property/$propertyId', params: { propertyId: property.id } })
-                                                    }}
-
-                                                >
-                                                    <Eye className="size-3.5" />
-                                                    View
-                                                </Button>
-                                            </div>
+                                        {/* Status badge (top-right) — admin affordance */}
+                                        <div className="absolute top-3 right-3">
+                                            <StatusBadge status={property.status} />
                                         </div>
                                     </div>
-                                ))}
-                            </div>
 
-                            <DataTableFooter
-                                page={currentPage}
-                                limit={itemsPerPage}
-                                total={filtered.length}
-                                onPageChange={setCurrentPage}
-                                onLimitChange={(limit) => { setItemsPerPage(limit); setCurrentPage(1) }}
-                                limitOptions={[4, 8, 12, 24]}
-                                noun="properties"
-                            />
-                        </>
-                    )
-                })()}
-            </div>
+                                    {/* Body */}
+                                    <div className="p-4 flex flex-col gap-2 grow bg-card">
+                                        {/* Title row with rating */}
+                                        <div className="flex justify-between items-center gap-3">
+                                            <h3 className="text-[1.05rem] font-semibold text-foreground leading-snug line-clamp-1 m-0 group-hover:text-primary transition-colors duration-300">
+                                                {property.title}
+                                            </h3>
+                                            <div
+                                                className="inline-flex items-center gap-1 bg-accent text-foreground px-2 py-0.5 rounded-full text-[0.75rem] font-semibold whitespace-nowrap shrink-0"
+                                                aria-label={`Rated ${property.rating} out of 5 from ${property.reviewCount} reviews`}
+                                            >
+                                                <Star className="size-3 fill-amber-400 text-amber-400" />
+                                                {property.rating.toFixed(1)}
+                                                <span className="text-muted-foreground font-normal ml-0.5">({property.reviewCount})</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Location + view type */}
+                                        <div className="flex justify-between items-center gap-2 flex-wrap">
+                                            <p className="text-muted-foreground m-0 text-[0.875rem] flex items-center gap-1">
+                                                <MapPin className="size-3.5" />
+                                                {property.city}, {property.country}
+                                            </p>
+                                            {property.viewType && (
+                                                <span className="text-[0.75rem] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground">
+                                                    {property.viewType}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Meta: beds / baths / guests */}
+                                        <div className="flex justify-between items-center gap-2 flex-wrap border-t pt-2 text-sm text-muted-foreground">
+                                            <span className="inline-flex items-center gap-1">🛏 {property.totalBeds} Beds</span>
+                                            <span className="inline-flex items-center gap-1">🚿 {property.totalBaths} Baths</span>
+                                            <span className="inline-flex items-center gap-1">👥 {property.maxGuests} Guests</span>
+                                        </div>
+
+                                        {/* Admin info chips (secondary info) */}
+                                        <div className="flex justify-between items-center gap-1.5 flex-wrap border-y border-border py-2">
+                                            <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                                                <span className={cn("size-1.5 rounded-full",
+                                                    property.occupancy > 80 ? "bg-emerald-500"
+                                                        : property.occupancy > 50 ? "bg-amber-500"
+                                                            : "bg-rose-500"
+                                                )} />
+                                                {property.occupancy}% Occ
+                                            </span>
+                                            <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                                                {property.totalRooms} Units
+                                            </span>
+                                            <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                                                {property.todayCheckIns} Arrivals
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 mt-1">
+                                            <Button
+                                                onClick={(e) => { e.stopPropagation(); openEdit(property) }}
+                                                variant="outline"
+                                            >
+                                                <Edit className="size-3.5" />
+                                                Edit
+                                            </Button>
+                                            <Button
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    navigate({ to: '/property/$propertyId', params: { propertyId: property.id } })
+                                                }}
+
+                                            >
+                                                <Eye className="size-3.5" />
+                                                View
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <DataTableFooter
+                            page={currentPage}
+                            limit={itemsPerPage}
+                            total={filtered.length}
+                            onPageChange={setCurrentPage}
+                            onLimitChange={(limit) => { setItemsPerPage(limit); setCurrentPage(1) }}
+                            limitOptions={[4, 8, 12, 24]}
+                            noun="properties"
+                        />
+                    </>
+                )
+            })()}
 
             {/* ══════════════════════════════════════════════════
                 CREATE / EDIT PROPERTY DIALOG

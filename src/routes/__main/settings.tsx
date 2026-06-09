@@ -141,7 +141,7 @@ function GeneralTab() {
     const [compactView, setCompactView] = useState(false)
 
     const form = useAppForm({
-        defaultValues: { language: 'English', timezone: 'UTC+06:00' },
+        defaultValues: { language: 'Bangla', timezone: 'UTC+06:00' },
         validators: { onChange: generalSchema },
         onSubmit: async ({ value }) => {
             console.log('General saved:', value)
