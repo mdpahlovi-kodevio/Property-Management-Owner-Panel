@@ -31,8 +31,8 @@ import { Route as _authForgotPasswordRouteImport } from './routes/__auth/forgot-
 import { Route as _mainSupportIndexRouteImport } from './routes/__main/support.index'
 import { Route as _mainSupportIdRouteImport } from './routes/__main/support.$id'
 import { Route as _mainReportsSourceRouteImport } from './routes/__main/reports_.$source'
-import { Route as _mainPropertyPropertyIdRouteImport } from './routes/__main/property_.$propertyId'
-import { Route as _mainPropertyPropertyIdRoomRoomTypeIdRouteImport } from './routes/__main/property_.$propertyId_.room.$roomTypeId'
+import { Route as _mainPropertyPropertySlugRouteImport } from './routes/__main/property_.$propertySlug'
+import { Route as _mainPropertyPropertySlugRoomRoomSlugRouteImport } from './routes/__main/property_.$propertySlug_.room.$roomSlug'
 
 const _mainRouteRoute = _mainRouteRouteImport.update({
   id: '/__main',
@@ -142,15 +142,16 @@ const _mainReportsSourceRoute = _mainReportsSourceRouteImport.update({
   path: '/reports/$source',
   getParentRoute: () => _mainRouteRoute,
 } as any)
-const _mainPropertyPropertyIdRoute = _mainPropertyPropertyIdRouteImport.update({
-  id: '/property_/$propertyId',
-  path: '/property/$propertyId',
-  getParentRoute: () => _mainRouteRoute,
-} as any)
-const _mainPropertyPropertyIdRoomRoomTypeIdRoute =
-  _mainPropertyPropertyIdRoomRoomTypeIdRouteImport.update({
-    id: '/property_/$propertyId_/room/$roomTypeId',
-    path: '/property/$propertyId/room/$roomTypeId',
+const _mainPropertyPropertySlugRoute =
+  _mainPropertyPropertySlugRouteImport.update({
+    id: '/property_/$propertySlug',
+    path: '/property/$propertySlug',
+    getParentRoute: () => _mainRouteRoute,
+  } as any)
+const _mainPropertyPropertySlugRoomRoomSlugRoute =
+  _mainPropertyPropertySlugRoomRoomSlugRouteImport.update({
+    id: '/property_/$propertySlug_/room/$roomSlug',
+    path: '/property/$propertySlug/room/$roomSlug',
     getParentRoute: () => _mainRouteRoute,
   } as any)
 
@@ -172,11 +173,11 @@ export interface FileRoutesByFullPath {
   '/role-management': typeof _mainRoleManagementRoute
   '/settings': typeof _mainSettingsRoute
   '/user-management': typeof _mainUserManagementRoute
-  '/property/$propertyId': typeof _mainPropertyPropertyIdRoute
+  '/property/$propertySlug': typeof _mainPropertyPropertySlugRoute
   '/reports/$source': typeof _mainReportsSourceRoute
   '/support/$id': typeof _mainSupportIdRoute
   '/support/': typeof _mainSupportIndexRoute
-  '/property/$propertyId/room/$roomTypeId': typeof _mainPropertyPropertyIdRoomRoomTypeIdRoute
+  '/property/$propertySlug/room/$roomSlug': typeof _mainPropertyPropertySlugRoomRoomSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof _mainIndexRoute
@@ -196,11 +197,11 @@ export interface FileRoutesByTo {
   '/role-management': typeof _mainRoleManagementRoute
   '/settings': typeof _mainSettingsRoute
   '/user-management': typeof _mainUserManagementRoute
-  '/property/$propertyId': typeof _mainPropertyPropertyIdRoute
+  '/property/$propertySlug': typeof _mainPropertyPropertySlugRoute
   '/reports/$source': typeof _mainReportsSourceRoute
   '/support/$id': typeof _mainSupportIdRoute
   '/support': typeof _mainSupportIndexRoute
-  '/property/$propertyId/room/$roomTypeId': typeof _mainPropertyPropertyIdRoomRoomTypeIdRoute
+  '/property/$propertySlug/room/$roomSlug': typeof _mainPropertyPropertySlugRoomRoomSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -223,11 +224,11 @@ export interface FileRoutesById {
   '/__main/settings': typeof _mainSettingsRoute
   '/__main/user-management': typeof _mainUserManagementRoute
   '/__main/': typeof _mainIndexRoute
-  '/__main/property_/$propertyId': typeof _mainPropertyPropertyIdRoute
+  '/__main/property_/$propertySlug': typeof _mainPropertyPropertySlugRoute
   '/__main/reports_/$source': typeof _mainReportsSourceRoute
   '/__main/support/$id': typeof _mainSupportIdRoute
   '/__main/support/': typeof _mainSupportIndexRoute
-  '/__main/property_/$propertyId_/room/$roomTypeId': typeof _mainPropertyPropertyIdRoomRoomTypeIdRoute
+  '/__main/property_/$propertySlug_/room/$roomSlug': typeof _mainPropertyPropertySlugRoomRoomSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -249,11 +250,11 @@ export interface FileRouteTypes {
     | '/role-management'
     | '/settings'
     | '/user-management'
-    | '/property/$propertyId'
+    | '/property/$propertySlug'
     | '/reports/$source'
     | '/support/$id'
     | '/support/'
-    | '/property/$propertyId/room/$roomTypeId'
+    | '/property/$propertySlug/room/$roomSlug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -273,11 +274,11 @@ export interface FileRouteTypes {
     | '/role-management'
     | '/settings'
     | '/user-management'
-    | '/property/$propertyId'
+    | '/property/$propertySlug'
     | '/reports/$source'
     | '/support/$id'
     | '/support'
-    | '/property/$propertyId/room/$roomTypeId'
+    | '/property/$propertySlug/room/$roomSlug'
   id:
     | '__root__'
     | '/__auth'
@@ -299,11 +300,11 @@ export interface FileRouteTypes {
     | '/__main/settings'
     | '/__main/user-management'
     | '/__main/'
-    | '/__main/property_/$propertyId'
+    | '/__main/property_/$propertySlug'
     | '/__main/reports_/$source'
     | '/__main/support/$id'
     | '/__main/support/'
-    | '/__main/property_/$propertyId_/room/$roomTypeId'
+    | '/__main/property_/$propertySlug_/room/$roomSlug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -467,18 +468,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof _mainReportsSourceRouteImport
       parentRoute: typeof _mainRouteRoute
     }
-    '/__main/property_/$propertyId': {
-      id: '/__main/property_/$propertyId'
-      path: '/property/$propertyId'
-      fullPath: '/property/$propertyId'
-      preLoaderRoute: typeof _mainPropertyPropertyIdRouteImport
+    '/__main/property_/$propertySlug': {
+      id: '/__main/property_/$propertySlug'
+      path: '/property/$propertySlug'
+      fullPath: '/property/$propertySlug'
+      preLoaderRoute: typeof _mainPropertyPropertySlugRouteImport
       parentRoute: typeof _mainRouteRoute
     }
-    '/__main/property_/$propertyId_/room/$roomTypeId': {
-      id: '/__main/property_/$propertyId_/room/$roomTypeId'
-      path: '/property/$propertyId/room/$roomTypeId'
-      fullPath: '/property/$propertyId/room/$roomTypeId'
-      preLoaderRoute: typeof _mainPropertyPropertyIdRoomRoomTypeIdRouteImport
+    '/__main/property_/$propertySlug_/room/$roomSlug': {
+      id: '/__main/property_/$propertySlug_/room/$roomSlug'
+      path: '/property/$propertySlug/room/$roomSlug'
+      fullPath: '/property/$propertySlug/room/$roomSlug'
+      preLoaderRoute: typeof _mainPropertyPropertySlugRoomRoomSlugRouteImport
       parentRoute: typeof _mainRouteRoute
     }
   }
@@ -516,11 +517,11 @@ interface _mainRouteRouteChildren {
   _mainSettingsRoute: typeof _mainSettingsRoute
   _mainUserManagementRoute: typeof _mainUserManagementRoute
   _mainIndexRoute: typeof _mainIndexRoute
-  _mainPropertyPropertyIdRoute: typeof _mainPropertyPropertyIdRoute
+  _mainPropertyPropertySlugRoute: typeof _mainPropertyPropertySlugRoute
   _mainReportsSourceRoute: typeof _mainReportsSourceRoute
   _mainSupportIdRoute: typeof _mainSupportIdRoute
   _mainSupportIndexRoute: typeof _mainSupportIndexRoute
-  _mainPropertyPropertyIdRoomRoomTypeIdRoute: typeof _mainPropertyPropertyIdRoomRoomTypeIdRoute
+  _mainPropertyPropertySlugRoomRoomSlugRoute: typeof _mainPropertyPropertySlugRoomRoomSlugRoute
 }
 
 const _mainRouteRouteChildren: _mainRouteRouteChildren = {
@@ -537,12 +538,12 @@ const _mainRouteRouteChildren: _mainRouteRouteChildren = {
   _mainSettingsRoute: _mainSettingsRoute,
   _mainUserManagementRoute: _mainUserManagementRoute,
   _mainIndexRoute: _mainIndexRoute,
-  _mainPropertyPropertyIdRoute: _mainPropertyPropertyIdRoute,
+  _mainPropertyPropertySlugRoute: _mainPropertyPropertySlugRoute,
   _mainReportsSourceRoute: _mainReportsSourceRoute,
   _mainSupportIdRoute: _mainSupportIdRoute,
   _mainSupportIndexRoute: _mainSupportIndexRoute,
-  _mainPropertyPropertyIdRoomRoomTypeIdRoute:
-    _mainPropertyPropertyIdRoomRoomTypeIdRoute,
+  _mainPropertyPropertySlugRoomRoomSlugRoute:
+    _mainPropertyPropertySlugRoomRoomSlugRoute,
 }
 
 const _mainRouteRouteWithChildren = _mainRouteRoute._addFileChildren(

@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
 import type { DataTableColumn } from '@/components/ui/data-table'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
@@ -17,9 +17,6 @@ function RouteComponent() {
     const { source } = Route.useParams()
     const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily')
 
-    // Capitalize source for the title
-    const formattedSource = source.charAt(0).toUpperCase() + source.slice(1)
-
     const columns = useMemo<DataTableColumn<SourceReportData>[]>(
         () => [
             { key: 'date', header: 'Date', render: (r) => <span className="text-muted-foreground">{r.date}</span> },
@@ -34,7 +31,7 @@ function RouteComponent() {
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-2">
-                <Button variant="default" size="sm" className="w-fit" onClick={() => navigate({ to: '/reports' })}>
+                <Button variant="destructive" size="sm" className="w-fit" onClick={() => navigate({ to: '/reports' })}>
                     <ArrowLeft className="mr-2 w-4" />
                     Back to Reports
                 </Button>

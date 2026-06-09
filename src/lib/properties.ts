@@ -648,6 +648,25 @@ export function getPropertyById(id: string): Property | undefined {
     return PROPERTIES.find((p) => p.property.id === id)
 }
 
+export function slugify(text: string): string {
+    return text
+        .toString()
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w-]+/g, '')
+        .replace(/--+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '')
+}
+
+export function getPropertyBySlug(slug: string): Property | undefined {
+    return PROPERTIES.find((p) => slugify(p.property.name) === slug)
+}
+
+export function getRoomBySlug(property: Property, roomSlug: string) {
+    return property.roomTypes.find(rt => slugify(rt.name) === roomSlug)
+}
+
 export function getPriceRange(property: Property) {
     const prices = property.roomTypes.map((rt) => rt.basePrice)
     const min = Math.min(...prices)

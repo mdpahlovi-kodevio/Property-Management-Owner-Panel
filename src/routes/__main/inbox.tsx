@@ -155,10 +155,11 @@ function RouteComponent() {
     }
 
     return (
-        <>
+        <div className="flex flex-col flex-1 h-[calc(100vh-7rem)] min-h-0 gap-6">
             <PageHeader
                 title="Inbox"
                 description="Manage your guest communications and requests"
+                className="shrink-0"
             />
 
             <div className="flex-1 bg-card border rounded-lg overflow-hidden flex shadow-sm min-h-0 relative z-0">
@@ -332,7 +333,7 @@ function RouteComponent() {
                 {activeConversation ? (
                     <div
                         className={cn(
-                            "flex-1 flex-col bg-background relative z-0",
+                            "flex-1 min-h-0 flex-col overflow-hidden bg-background relative z-0",
                             activeConversationId ? "flex" : "hidden md:flex"
                         )}
                     >
@@ -403,130 +404,132 @@ function RouteComponent() {
                         </div>
 
                         {/* Messages Area */}
-                        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-muted/5 scroll-smooth">
-                            {activeConversation.messages.map((msg, index) => {
-                                const isMe = msg.senderId === CURRENT_USER_ID
+                        <div className="flex-1 overflow-hidden">
+                            <div ref={scrollRef} className="h-full overflow-y-auto p-6 space-y-6 bg-muted/5 scroll-smooth">
+                                {activeConversation.messages.map((msg, index) => {
+                                    const isMe = msg.senderId === CURRENT_USER_ID
 
-                                const group = getDateGroup(msg.timestamp)
-                                const showGroup = index === 0 || getDateGroup(activeConversation.messages[index - 1].timestamp) !== group
+                                    const group = getDateGroup(msg.timestamp)
+                                    const showGroup = index === 0 || getDateGroup(activeConversation.messages[index - 1].timestamp) !== group
 
-                                const showAvatar =
-                                    !isMe &&
-                                    (index === 0 ||
-                                        activeConversation.messages[index - 1].senderId === CURRENT_USER_ID ||
-                                        showGroup)
+                                    const showAvatar =
+                                        !isMe &&
+                                        (index === 0 ||
+                                            activeConversation.messages[index - 1].senderId === CURRENT_USER_ID ||
+                                            showGroup)
 
-                                return (
-                                    <React.Fragment key={msg.id}>
-                                        {showGroup && (
-                                            <div className="flex justify-center my-6 first:mt-0">
-                                                <span className="bg-card border px-3 py-1 rounded-full text-[10px] font-semibold text-muted-foreground shadow-sm">
-                                                    {group}
-                                                </span>
-                                            </div>
-                                        )}
-                                        <div
-                                            className={cn('flex w-full', isMe ? 'justify-end' : 'justify-start')}
-                                        >
-                                            <div className={cn('flex max-w-[70%] gap-3', isMe ? 'flex-row-reverse' : 'flex-row')}>
-                                                {/* Avatar for incoming messages */}
-                                                {!isMe && (
-                                                    <div className="shrink-0 w-8 flex flex-col justify-end">
-                                                        {showAvatar && (
-                                                            <div className="size-8 rounded-full overflow-hidden border bg-card">
-                                                                <img
-                                                                    src={activeConversation.contact.avatar}
-                                                                    alt="avatar"
-                                                                    className="size-full object-cover"
-                                                                />
+                                    return (
+                                        <React.Fragment key={msg.id}>
+                                            {showGroup && (
+                                                <div className="flex justify-center my-6 first:mt-0">
+                                                    <span className="bg-card border px-3 py-1 rounded-full text-[10px] font-semibold text-muted-foreground shadow-sm">
+                                                        {group}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <div
+                                                className={cn('flex w-full', isMe ? 'justify-end' : 'justify-start')}
+                                            >
+                                                <div className={cn('flex max-w-[70%] gap-3', isMe ? 'flex-row-reverse' : 'flex-row')}>
+                                                    {/* Avatar for incoming messages */}
+                                                    {!isMe && (
+                                                        <div className="shrink-0 w-8 flex flex-col justify-end">
+                                                            {showAvatar && (
+                                                                <div className="size-8 rounded-full overflow-hidden border bg-card">
+                                                                    <img
+                                                                        src={activeConversation.contact.avatar}
+                                                                        alt="avatar"
+                                                                        className="size-full object-cover"
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Bubble Container */}
+                                                    <div className="flex flex-col gap-1 min-w-0 group/bubble relative">
+                                                        {isMe && (
+                                                            <div className="absolute top-1/2 -translate-y-1/2 -left-9 opacity-0 group-hover/bubble:opacity-100 transition-opacity">
+                                                                {/* <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground bg-card/50 backdrop-blur border shadow-sm hover:bg-card hover:text-foreground">
+                                                                <MoreHorizontal className="size-3.5" />
+                                                            </Button> */}
                                                             </div>
                                                         )}
-                                                    </div>
-                                                )}
-
-                                                {/* Bubble Container */}
-                                                <div className="flex flex-col gap-1 min-w-0 group/bubble relative">
-                                                    {isMe && (
-                                                        <div className="absolute top-1/2 -translate-y-1/2 -left-9 opacity-0 group-hover/bubble:opacity-100 transition-opacity">
-                                                            {/* <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground bg-card/50 backdrop-blur border shadow-sm hover:bg-card hover:text-foreground">
+                                                        {!isMe && (
+                                                            <div className="absolute top-1/2 -translate-y-1/2 -right-9 opacity-0 group-hover/bubble:opacity-100 transition-opacity">
+                                                                {/* <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground bg-card/50 backdrop-blur border shadow-sm hover:bg-card hover:text-foreground">
                                                                 <MoreHorizontal className="size-3.5" />
                                                             </Button> */}
-                                                        </div>
-                                                    )}
-                                                    {!isMe && (
-                                                        <div className="absolute top-1/2 -translate-y-1/2 -right-9 opacity-0 group-hover/bubble:opacity-100 transition-opacity">
-                                                            {/* <Button variant="ghost" size="icon" className="size-7 rounded-full text-muted-foreground bg-card/50 backdrop-blur border shadow-sm hover:bg-card hover:text-foreground">
-                                                                <MoreHorizontal className="size-3.5" />
-                                                            </Button> */}
-                                                        </div>
-                                                    )}
-
-                                                    {msg.isInternalNote && (
-                                                        <span className="text-[10px] font-semibold text-amber-600 flex items-center gap-1 mb-0.5 ml-1">
-                                                            <Lock className="size-3" /> Internal Note
-                                                        </span>
-                                                    )}
-                                                    <div
-                                                        className={cn(
-                                                            'px-4 py-2.5 rounded-lg text-[13px] leading-relaxed relative',
-                                                            msg.isInternalNote
-                                                                ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-100 border border-amber-200 dark:border-amber-500/30 rounded-br-sm shadow-sm'
-                                                                : isMe
-                                                                    ? 'bg-primary text-primary-foreground rounded-br-sm shadow-md shadow-primary/20'
-                                                                    : 'bg-card border text-foreground rounded-bl-sm shadow-sm',
+                                                            </div>
                                                         )}
-                                                    >
-                                                        <p>{msg.text}</p>
-                                                    </div>
 
-                                                    {/* Timestamp & Status */}
-                                                    <div
-                                                        className={cn(
-                                                            'flex items-center gap-1.5 text-[10px] text-muted-foreground px-1',
-                                                            isMe ? 'justify-end' : 'justify-start',
-                                                        )}
-                                                    >
-                                                        <span>{msg.timestamp}</span>
-                                                        {isMe && (
-                                                            <span className="flex items-center">
-                                                                {msg.status === 'read' ? (
-                                                                    <CheckCheck className="size-3.5 text-blue-500" />
-                                                                ) : msg.status === 'delivered' ? (
-                                                                    <CheckCheck className="size-3.5" />
-                                                                ) : (
-                                                                    <Check className="size-3.5" />
-                                                                )}
+                                                        {msg.isInternalNote && (
+                                                            <span className="text-[10px] font-semibold text-amber-600 flex items-center gap-1 mb-0.5 ml-1">
+                                                                <Lock className="size-3" /> Internal Note
                                                             </span>
                                                         )}
+                                                        <div
+                                                            className={cn(
+                                                                'px-4 py-2 rounded-lg text-[13px] leading-normal relative',
+                                                                msg.isInternalNote
+                                                                    ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-100 border border-amber-200 dark:border-amber-500/30 rounded-br-sm shadow-sm'
+                                                                    : isMe
+                                                                        ? 'bg-primary text-primary-foreground rounded-br-sm shadow-md shadow-primary/20'
+                                                                        : 'bg-card border text-foreground rounded-bl-sm shadow-sm',
+                                                            )}
+                                                        >
+                                                            <p>{msg.text}</p>
+                                                        </div>
+
+                                                        {/* Timestamp & Status */}
+                                                        <div
+                                                            className={cn(
+                                                                'flex items-center gap-1.5 text-[10px] text-muted-foreground px-1',
+                                                                isMe ? 'justify-end' : 'justify-start',
+                                                            )}
+                                                        >
+                                                            <span>{msg.timestamp}</span>
+                                                            {isMe && (
+                                                                <span className="flex items-center">
+                                                                    {msg.status === 'read' ? (
+                                                                        <CheckCheck className="size-3.5 text-blue-500" />
+                                                                    ) : msg.status === 'delivered' ? (
+                                                                        <CheckCheck className="size-3.5" />
+                                                                    ) : (
+                                                                        <Check className="size-3.5" />
+                                                                    )}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </React.Fragment>
-                                )
-                            })}
+                                        </React.Fragment>
+                                    )
+                                })}
 
-                            {/* Typing Indicator */}
-                            {typingIn === activeConversation.id && (
-                                <div className="flex w-full justify-start">
-                                    <div className="flex flex-row gap-3">
-                                        <div className="shrink-0 w-8 flex flex-col justify-end">
-                                            <div className="size-8 rounded-full overflow-hidden border bg-card">
-                                                <img
-                                                    src={activeConversation.contact.avatar}
-                                                    alt="avatar"
-                                                    className="size-full object-cover"
-                                                />
+                                {/* Typing Indicator */}
+                                {typingIn === activeConversation.id && (
+                                    <div className="flex w-full justify-start">
+                                        <div className="flex flex-row gap-3">
+                                            <div className="shrink-0 w-8 flex flex-col justify-end">
+                                                <div className="size-8 rounded-full overflow-hidden border bg-card">
+                                                    <img
+                                                        src={activeConversation.contact.avatar}
+                                                        alt="avatar"
+                                                        className="size-full object-cover"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="px-4 py-3 rounded-lg rounded-bl-sm bg-card border text-foreground shadow-sm flex items-center gap-1">
+                                                <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: '0ms' }} />
+                                                <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: '150ms' }} />
+                                                <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: '300ms' }} />
                                             </div>
                                         </div>
-                                        <div className="px-4 py-3 rounded-lg rounded-bl-sm bg-card border text-foreground shadow-sm flex items-center gap-1">
-                                            <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: '0ms' }} />
-                                            <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: '150ms' }} />
-                                            <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: '300ms' }} />
-                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
 
                         {/* Input Area */}
@@ -790,6 +793,6 @@ function RouteComponent() {
                     )}
                 </DialogContent>
             </Dialog>
-        </>
+        </div>
     )
 }

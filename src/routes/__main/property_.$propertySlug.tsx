@@ -9,7 +9,7 @@ import { SearchInput } from '@/components/ui/search-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
-import { getPropertyById, type Property } from '@/lib/properties'
+import { getPropertyBySlug, slugify, type Property } from '@/lib/properties'
 import { cn } from '@/lib/utils'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
@@ -34,7 +34,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import * as z from 'zod'
 
-export const Route = createFileRoute('/__main/property_/$propertyId')({
+export const Route = createFileRoute('/__main/property_/$propertySlug')({
     component: PropertyUnitComponent,
 })
 
@@ -203,8 +203,8 @@ function newId(prefix: string) {
 // ─── Component ───────────────────────────────────────────────────────
 function PropertyUnitComponent() {
     const navigate = useNavigate()
-    const { propertyId } = Route.useParams()
-    const property = getPropertyById(propertyId)
+    const { propertySlug } = Route.useParams()
+    const property = getPropertyBySlug(propertySlug)
     const roomCards = buildRoomTypeCards(property)
 
     const [searchQuery, setSearchQuery] = useState('')
@@ -253,13 +253,13 @@ function PropertyUnitComponent() {
 
     const pageTitle = property
         ? `Room Types — ${property.property.name}`
-        : `Room Types — ${propertyId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}`
+        : `Room Types — ${propertySlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}`
 
     return (
         <>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex flex-col gap-2">
-                    <Button variant="default" size="sm" className="w-fit" onClick={() => navigate({ to: '/property' })}>
+                    <Button variant="destructive" size="sm" className="w-fit" onClick={() => navigate({ to: '/property' })}>
                         <ArrowLeft className="mr-2 w-4" />
                         Back to Properties
                     </Button>
@@ -295,7 +295,7 @@ function PropertyUnitComponent() {
                         <div className="rounded-lg border border-dashed border-slate-200 p-10 text-center text-slate-500">
                             {property
                                 ? 'No room types match your search.'
-                                : `Property "${propertyId}" not found.`}
+                                : `Property "${propertySlug}" not found.`}
                         </div>
                     )
                 }
@@ -307,7 +307,7 @@ function PropertyUnitComponent() {
                                 <div
                                     key={room.id}
                                     className="group cursor-pointer h-full flex flex-col bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_6px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.1),0_12px_28px_rgba(0,0,0,0.08)] border border-border transition-all duration-300 ease-out hover:-translate-y-1 overflow-hidden"
-                                    onClick={() => navigate({ to: '/property/$propertyId/room/$roomTypeId', params: { propertyId, roomTypeId: room.id } })}
+                                    onClick={() => navigate({ to: '/property/$propertySlug/room/$roomSlug', params: { propertySlug, roomSlug: slugify(room.title) } })}
                                 >
                                     {/* Image */}
                                     <div className="relative w-full overflow-hidden bg-muted shrink-0" style={{ paddingTop: '66%' }}>
@@ -401,7 +401,7 @@ function PropertyUnitComponent() {
                                                 variant="default"
                                                 onClick={(e) => {
                                                     e.stopPropagation()
-                                                    navigate({ to: '/property/$propertyId/room/$roomTypeId', params: { propertyId, roomTypeId: room.id } })
+                                                    navigate({ to: '/property/$propertySlug/room/$roomSlug', params: { propertySlug, roomSlug: slugify(room.title) } })
                                                 }}
                                             >
                                                 <Eye className="size-3.5" />

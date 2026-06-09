@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { ArrowLeft, BedDouble, Bath, Maximize2, Users, Cigarette, Baby, Shield, CheckCircle2, Calendar, Activity, Key, CreditCard, Plus } from 'lucide-react'
-import { getPropertyById, formatPrice } from '@/lib/properties'
+import { getPropertyBySlug, getRoomBySlug, slugify, formatPrice } from '@/lib/properties'
 import { getRoomMetrics, getUnitStatus, UNIT_STATUS_COLORS } from '@/lib/property-rooms'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -9,12 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 
 import { cn } from '@/lib/utils'
 
-export const Route = createFileRoute('/__main/property_/$propertyId_/room/$roomTypeId')({
+export const Route = createFileRoute('/__main/property_/$propertySlug_/room/$roomSlug')({
     loader: async ({ params }) => {
-        const propId = (params as any).propertyId_ || (params as any).propertyId
-        const property = getPropertyById(propId)
+        const propSlug = (params as any).propertySlug_ || (params as any).propertySlug
+        const property = getPropertyBySlug(propSlug)
         if (!property) throw notFound()
-        const roomType = property.roomTypes.find((rt) => rt.id === params.roomTypeId)
+        const roomType = getRoomBySlug(property, params.roomSlug)
         if (!roomType) throw notFound()
         return { property, roomType }
     },
@@ -45,7 +45,7 @@ function RoomAdminDashboardComponent() {
     return <RoomTypeAdminDetails property={property} roomType={roomType} />
 }
 
-type Property = NonNullable<ReturnType<typeof getPropertyById>>
+type Property = NonNullable<ReturnType<typeof getPropertyBySlug>>
 type RoomType = Property['roomTypes'][number]
 
 function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; roomType: RoomType }) {
@@ -67,9 +67,9 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
             {/* ── Top Navigation & Header ── */}
             <div>
                 <Button
-                    variant="default"
+                    variant="destructive"
                     size="sm"
-                    onClick={() => navigate({ to: '/property/$propertyId', params: { propertyId: p.id } })}
+                    onClick={() => navigate({ to: '/property/$propertySlug', params: { propertySlug: slugify(p.name) } })}
                 >
                     <ArrowLeft className="mr-2 size-4" />
                     Back to Room Types

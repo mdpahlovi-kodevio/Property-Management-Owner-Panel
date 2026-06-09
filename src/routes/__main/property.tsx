@@ -16,7 +16,7 @@ import { DataTableFooter } from '@/components/ui/data-table'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
-import { PROPERTIES, type Property, getPropertyById, getPriceRange, formatPrice } from '@/lib/properties'
+import { PROPERTIES, type Property, getPropertyById, getPriceRange, formatPrice, slugify } from '@/lib/properties'
 import * as z from 'zod'
 
 export const Route = createFileRoute('/__main/property')({
@@ -333,7 +333,7 @@ function PropertyComponent() {
                             {paginated.map((property) => (
                                 <div
                                     key={property.id}
-                                    onClick={() => navigate({ to: '/property/$propertyId', params: { propertyId: property.id } })}
+                                    onClick={() => navigate({ to: '/property/$propertySlug', params: { propertySlug: slugify(property.title) } })}
                                     className="group h-full flex flex-col bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_6px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.1),0_12px_28px_rgba(0,0,0,0.08)] border border-border transition-all duration-300 ease-out hover:-translate-y-1 cursor-pointer overflow-hidden"
                                 >
                                     {/* Image */}
@@ -420,9 +420,8 @@ function PropertyComponent() {
                                             <Button
                                                 onClick={(e) => {
                                                     e.stopPropagation()
-                                                    navigate({ to: '/property/$propertyId', params: { propertyId: property.id } })
+                                                    navigate({ to: '/property/$propertySlug', params: { propertySlug: slugify(property.title) } })
                                                 }}
-
                                             >
                                                 <Eye className="size-3.5" />
                                                 View
