@@ -136,12 +136,21 @@ function ProfileTab() {
 
 // ─── General Tab ────────────────────────────────────────────────────────────────
 
+const TIMEZONES = [
+    'UTC-12:00', 'UTC-11:00', 'UTC-10:00', 'UTC-09:30', 'UTC-09:00', 'UTC-08:00', 'UTC-07:00',
+    'UTC-06:00', 'UTC-05:00', 'UTC-04:00', 'UTC-03:30', 'UTC-03:00', 'UTC-02:00', 'UTC-01:00',
+    'UTC+00:00', 'UTC+01:00', 'UTC+02:00', 'UTC+03:00', 'UTC+03:30', 'UTC+04:00', 'UTC+04:30',
+    'UTC+05:00', 'UTC+05:30', 'UTC+05:45', 'UTC+06:00', 'UTC+06:30', 'UTC+07:00', 'UTC+08:00',
+    'UTC+08:45', 'UTC+09:00', 'UTC+09:30', 'UTC+10:00', 'UTC+10:30', 'UTC+11:00', 'UTC+12:00',
+    'UTC+12:45', 'UTC+13:00', 'UTC+14:00',
+]
+
 function GeneralTab() {
     const [darkMode, setDarkMode] = useState(false)
     const [compactView, setCompactView] = useState(false)
 
     const form = useAppForm({
-        defaultValues: { language: 'Bangla', timezone: 'UTC+06:00' },
+        defaultValues: { language: 'English', timezone: 'UTC+06:00' },
         validators: { onChange: generalSchema },
         onSubmit: async ({ value }) => {
             console.log('General saved:', value)
@@ -164,10 +173,28 @@ function GeneralTab() {
             <Separator />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <form.AppField name="language">{(field) => <field.FormInput label="Language" placeholder="e.g. English" />}</form.AppField>
+                <form.AppField name="language">
+                    {(field) => (
+                        <field.FormSelect
+                            label="Language"
+                            placeholder="Select a language"
+                            options={[
+                                { label: 'English', value: 'English' },
+                                { label: 'Dutch', value: 'Dutch' },
+                                { label: 'German', value: 'German' },
+                            ]}
+                        />
+                    )}
+                </form.AppField>
 
                 <form.AppField name="timezone">
-                    {(field) => <field.FormInput label="Timezone" placeholder="e.g. UTC+06:00" />}
+                    {(field) => (
+                        <field.FormSelect
+                            label="Timezone"
+                            placeholder="Select a timezone"
+                            options={TIMEZONES.map((tz) => ({ label: tz, value: tz }))}
+                        />
+                    )}
                 </form.AppField>
             </div>
 
@@ -257,7 +284,6 @@ function SecurityTab() {
                 </div>
                 <Switch checked={twoFactor} onCheckedChange={setTwoFactor} />
             </div>
-
             <div>
                 <form.AppForm>
                     <form.FormSubmit label="Update Security" />
