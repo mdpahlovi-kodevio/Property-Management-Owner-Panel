@@ -18,6 +18,7 @@ import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { PROPERTIES, type Property, getPropertyById, getPriceRange, formatPrice, slugify } from '@/lib/properties'
 import * as z from 'zod'
+import { useTranslation } from 'react-i18next'
 
 export const Route = createFileRoute('/__main/property')({
     component: PropertyComponent,
@@ -253,6 +254,7 @@ function StatusBadge({ status }: { status: string }) {
 
 // ── Property omponent --
 function PropertyComponent() {
+    const { t } = useTranslation()
     const navigate = useNavigate()
     const [searchQuery, setSearchQuery] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
@@ -301,10 +303,10 @@ function PropertyComponent() {
         <>
             {/* ── Page header ── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <PageHeader title="Rental Properties" description="Manage your Rental Properties" />
+                <PageHeader title={t('properties.title')} description={t('properties.description')} />
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                     <SearchInput
-                        placeholder="Search properties..."
+                        placeholder={t('properties.searchPlaceholder')}
                         value={searchQuery}
                         onValueChange={(val) => { setSearchQuery(val); setCurrentPage(1) }}
                         className="w-full sm:w-[300px]"
@@ -314,7 +316,7 @@ function PropertyComponent() {
                         className="shrink-0 gap-1.5 rounded-xl font-semibold bg-[#243E8B] hover:bg-[#1D3270] text-white shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300"
                     >
                         <Plus className="size-4" />
-                        Add Property
+                        {t('properties.addProperty')}
                     </Button>
                 </div>
             </div>
@@ -387,9 +389,9 @@ function PropertyComponent() {
 
                                         {/* Meta: beds / baths / guests */}
                                         <div className="flex justify-between items-center gap-2 flex-wrap border-t pt-2 text-sm text-muted-foreground">
-                                            <span className="inline-flex items-center gap-1">🛏 {property.totalBeds} Beds</span>
-                                            <span className="inline-flex items-center gap-1">🚿 {property.totalBaths} Baths</span>
-                                            <span className="inline-flex items-center gap-1">👥 {property.maxGuests} Guests</span>
+                                            <span className="inline-flex items-center gap-1">🛏 {property.totalBeds} {t('properties.beds')}</span>
+                                            <span className="inline-flex items-center gap-1">🚿 {property.totalBaths} {t('properties.baths')}</span>
+                                            <span className="inline-flex items-center gap-1">👥 {property.maxGuests} {t('properties.guests')}</span>
                                         </div>
 
                                         {/* Admin info chips (secondary info) */}
@@ -400,13 +402,13 @@ function PropertyComponent() {
                                                         : property.occupancy > 50 ? "bg-amber-500"
                                                             : "bg-rose-500"
                                                 )} />
-                                                {property.occupancy}% Occ
+                                                {property.occupancy}% {t('properties.occ')}
                                             </span>
                                             <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                                                {property.totalRooms} Units
+                                                {property.totalRooms} {t('properties.units')}
                                             </span>
                                             <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                                                {property.todayCheckIns} Arrivals
+                                                {property.todayCheckIns} {t('properties.arrivals')}
                                             </span>
                                         </div>
                                         <div className="grid grid-cols-2 gap-2 mt-1">
@@ -415,7 +417,7 @@ function PropertyComponent() {
                                                 variant="outline"
                                             >
                                                 <Edit className="size-3.5" />
-                                                Edit
+                                                {t('properties.edit')}
                                             </Button>
                                             <Button
                                                 onClick={(e) => {
@@ -424,7 +426,7 @@ function PropertyComponent() {
                                                 }}
                                             >
                                                 <Eye className="size-3.5" />
-                                                View
+                                                {t('properties.view')}
                                             </Button>
                                         </div>
                                     </div>
@@ -439,7 +441,7 @@ function PropertyComponent() {
                             onPageChange={setCurrentPage}
                             onLimitChange={(limit) => { setItemsPerPage(limit); setCurrentPage(1) }}
                             limitOptions={[4, 8, 12, 24]}
-                            noun="properties"
+                            noun={t('properties.noun')}
                         />
                     </>
                 )
@@ -452,10 +454,10 @@ function PropertyComponent() {
                 <DialogContent className="sm:max-w-160">
                     <DialogHeader>
                         <DialogTitle>
-                            {isEditMode ? 'Edit property' : 'Create property'}
+                            {isEditMode ? t('properties.editProperty') : t('properties.createProperty')}
                         </DialogTitle>
                         <DialogDescription>
-                            {isEditMode ? `Editing "${editingCard?.title ?? ''}"` : 'Add a new property to your portfolio'}
+                            {isEditMode ? `Editing "${editingCard?.title ?? ''}"` : t('properties.addDesc')}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -466,7 +468,7 @@ function PropertyComponent() {
                         onActiveTabChange={setActiveTab}
                         onSubmit={handleSave}
                         onCancel={closeDialog}
-                        submitLabel={isEditMode ? 'Save changes' : 'Save property'}
+                        submitLabel={isEditMode ? t('properties.saveChanges') : t('properties.saveProperty')}
                     />
                 </DialogContent>
             </Dialog>

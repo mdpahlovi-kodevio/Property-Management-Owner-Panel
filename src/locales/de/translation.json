@@ -1,0 +1,144 @@
+{
+  "properties": {
+    "title": "Mietobjekte",
+    "description": "Verwalten Sie Ihre Mietobjekte",
+    "searchPlaceholder": "Eigenschaften suchen...",
+    "addProperty": "Eigenschaft hinzufügen",
+    "beds": "Betten",
+    "baths": "Bäder",
+    "guests": "Gäste",
+    "occ": "Ausl.",
+    "units": "Einh.",
+    "arrivals": "Ankünfte",
+    "edit": "Bearbeiten",
+    "view": "Ansehen",
+    "noun": "Mietobjekte",
+    "createProperty": "Eigenschaft erstellen",
+    "editProperty": "Eigenschaft bearbeiten",
+    "addDesc": "Fügen Sie Ihrem Portfolio eine neue Eigenschaft hinzu",
+    "saveChanges": "Änderungen speichern",
+    "saveProperty": "Eigenschaft speichern",
+    "cancel": "Abbrechen"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "Statistische Dashboard-Daten anzeigen",
+    "stats": {
+      "totalBooking": "Gesamte Buchungen",
+      "revenue": "Einnahmen",
+      "occupancyRate": "Auslastung",
+      "pendingReservations": "Ausstehende Reservierungen",
+      "fromLastMonth": "seit letztem Monat",
+      "fromLastWeek": "seit letzter Woche"
+    },
+    "charts": {
+      "bookingChartTitle": "Buchungsdiagramm",
+      "bookingChartDesc": "Monatliche Übersicht des systemweiten Buchungsdiagramms",
+      "selectPeriod": "Zeitraum auswählen",
+      "last3Months": "Letzte 3 Monate",
+      "last7Months": "Letzte 7 Monate",
+      "last12Months": "Letzte 12 Monate",
+      "recentBookingsTitle": "Letzte Buchungen",
+      "recentBookingsDesc": "Wiederkehrende vs. neue Kundenbuchungen",
+      "returningUser": "Wiederkehrender Benutzer",
+      "newUser": "Neuer Benutzer"
+    },
+    "analytics": {
+      "viewDetailed": "Detaillierte Analysen anzeigen",
+      "dialogTitle": "Detaillierte Analysen",
+      "dialogDesc": "Detaillierte Aufschlüsselung von Kundenverhalten und Leistungskennzahlen.",
+      "returningUsers": "Wiederkehrende Benutzer",
+      "newUsers": "Neue Benutzer",
+      "ofTotal": "der Gesamtmenge",
+      "avgBookingDuration": "Durchschnittliche Buchungsdauer",
+      "cancellationRate": "Stornierungsrate",
+      "customerSatisfaction": "Kundenzufriedenheit"
+    }
+  },
+  "nav": {
+    "signOut": "Abmelden",
+    "signOutConfirm": "Sind Sie sicher, dass Sie sich abmelden möchten?",
+    "cancel": "Abbrechen",
+    "yes": "Ja"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "reservations": "Reservierungen",
+    "calendar": "Kalender",
+    "inbox": "Posteingang",
+    "rentalproperties": "Mietobjekte",
+    "usersmanagement": "Benutzerverwaltung",
+    "payments": "Zahlungen",
+    "channelmanager": "Channel-Manager",
+    "employee": "Mitarbeiter",
+    "rolemanagement": "Rollenverwaltung",
+    "reviews": "Bewertungen",
+    "reports": "Berichte",
+    "support": "Support",
+    "settings": "Einstellungen"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "description": "Verwalten Sie Ihre Einstellungen",
+    "tabs": {
+      "profile": "Profilinformationen",
+      "general": "Allgemein",
+      "security": "Sicherheit",
+      "contact": "Kontakt"
+    },
+    "profile": {
+      "title": "Profilinformationen",
+      "description": "Aktualisieren Sie Ihre Kontodetails und Kontaktinformationen.",
+      "name": "Name",
+      "namePlaceholder": "Geben Sie Ihren Namen ein",
+      "email": "E-Mail",
+      "emailPlaceholder": "Geben Sie Ihre E-Mail ein",
+      "save": "Änderungen speichern"
+    },
+    "general": {
+      "title": "Allgemein",
+      "description": "Verwalten Sie Ihre Anwendungseinstellungen.",
+      "language": "Sprache",
+      "timezone": "Zeitzone",
+      "darkMode": {
+        "label": "Dunkler Modus",
+        "description": "Dunkles Thema für die Anwendung umschalten."
+      },
+      "compactView": {
+        "label": "Kompakte Ansicht",
+        "description": "Kompaktes Layout für Tabellen und Listen verwenden."
+      },
+      "save": "Änderungen speichern"
+    },
+    "security": {
+      "title": "Sicherheit",
+      "description": "Verwalten Sie Ihr Passwort und Ihre Sicherheitseinstellungen.",
+      "currentPassword": "Aktuelles Passwort",
+      "currentPasswordPlaceholder": "Aktuelles Passwort eingeben",
+      "newPassword": "Neues Passwort",
+      "newPasswordPlaceholder": "Neues Passwort eingeben",
+      "confirmPassword": "Passwort bestätigen",
+      "confirmPasswordPlaceholder": "Neues Passwort bestätigen",
+      "twoFactor": {
+        "label": "Zwei-Faktor-Authentifizierung",
+        "description": "Fügen Sie Ihrem Konto eine zusätzliche Sicherheitsebene hinzu."
+      },
+      "save": "Sicherheit aktualisieren"
+    },
+    "contact": {
+      "title": "Kontakt",
+      "description": "Aktualisieren Sie Ihre Kontaktinformationen.",
+      "phone": "Telefonnummer",
+      "phonePlaceholder": "Telefonnummer eingeben",
+      "contactEmail": "Kontakt-E-Mail",
+      "contactEmailPlaceholder": "Kontakt-E-Mail eingeben",
+      "address": "Adresse",
+      "addressPlaceholder": "Geben Sie Ihre Adresse ein",
+      "city": "Stadt",
+      "cityPlaceholder": "Geben Sie Ihre Stadt ein",
+      "country": "Land",
+      "countryPlaceholder": "Geben Sie Ihr Land ein",
+      "save": "Kontaktinfo speichern"
+    }
+  }
+}

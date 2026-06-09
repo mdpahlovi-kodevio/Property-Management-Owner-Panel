@@ -22,6 +22,7 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/c
 import { Link, useNavigate } from '@tanstack/react-router'
 import { BadgeCheckIcon, ChevronsUpDownIcon, LogOutIcon } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export function NavUser({
     user,
@@ -32,6 +33,7 @@ export function NavUser({
         avatar: string
     }
 }) {
+    const { t } = useTranslation()
     const { isMobile } = useSidebar()
     const navigate = useNavigate()
     const [logoutOpen, setLogoutOpen] = useState(false)
@@ -85,14 +87,14 @@ export function NavUser({
                                 <DropdownMenuItem asChild>
                                     <Link to="/settings">
                                         <BadgeCheckIcon />
-                                        Settings
+                                        {t('sidebar.settings')}
                                     </Link>
                                 </DropdownMenuItem>
                             </DropdownMenuGroup>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onSelect={() => setLogoutOpen(true)}>
                                 <LogOutIcon />
-                                Sign out
+                                {t('nav.signOut')}
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -103,21 +105,19 @@ export function NavUser({
                 <AlertDialogContent className="max-w-[400px]">
                     <AlertDialogHeader className="flex flex-col items-center text-center pb-4">
                         <AlertDialogTitle className="text-2xl font-bold tracking-tight mb-2">
-                            Are you sure you want to
-                            <br />
-                            sign out?
+                            {t('nav.signOutConfirm')}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="hidden">Confirm if you want to sign out of your account.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex flex-row gap-3 sm:justify-center mt-2 w-full">
                         <AlertDialogCancel className="w-full sm:w-1/2 m-0 h-11 text-base border-[#24357B] text-[#24357B] hover:bg-[#24357B]/5">
-                            Cancel
+                            {t('nav.cancel')}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleLogout}
                             className="w-full sm:w-1/2 m-0 h-11 text-base bg-[#24357B] hover:bg-[#24357B]/90 text-white"
                         >
-                            Yes
+                            {t('nav.yes')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

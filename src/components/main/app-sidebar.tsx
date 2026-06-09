@@ -5,6 +5,7 @@ import { NavUser } from '@/components/main/nav-user'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
 import { Headphones, LayoutDashboard, CircleCheck, Calendar1, House, MessageCircleMore, User, CreditCard, IdCardLanyard, ShieldUser, Star, FileText, Settings, } from 'lucide-react'
 import * as React from 'react'
+import { useTranslation } from 'react-i18next'
 
 export const data = {
     user: {
@@ -89,6 +90,13 @@ export const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    const { t } = useTranslation()
+
+    const navMain = data.navMain.map((item) => ({
+        ...item,
+        title: t(`sidebar.${item.title.toLowerCase().replace(/\s+/g, '')}`, { defaultValue: item.title })
+    }))
+
     return (
         <Sidebar collapsible="icon" {...props}>
             <SidebarHeader>
@@ -100,7 +108,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </div>
             </SidebarHeader>
             <SidebarContent>
-                <NavMain items={data.navMain} />
+                <NavMain items={navMain} />
             </SidebarContent>
             <SidebarFooter>
                 <NavUser user={data.user} />

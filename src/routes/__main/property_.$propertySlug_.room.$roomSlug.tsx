@@ -67,7 +67,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
             {/* ── Top Navigation & Header ── */}
             <div>
                 <Button
-                    variant="destructive"
+                    variant="secondary"
                     size="sm"
                     onClick={() => navigate({ to: '/property/$propertySlug', params: { propertySlug: slugify(p.name) } })}
                 >

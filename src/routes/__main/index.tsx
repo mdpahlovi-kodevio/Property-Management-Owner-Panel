@@ -19,6 +19,7 @@ import {
     YAxis,
 } from 'recharts'
 import { PageHeader } from '#/components/ui/page-header'
+import { useTranslation } from 'react-i18next'
 
 export const Route = createFileRoute('/__main/')({
     component: RouteComponent,
@@ -70,41 +71,47 @@ const ChartData = [
 ]
 
 function RouteComponent() {
+    const { t } = useTranslation()
     const [timeframe, setTimeframe] = useState<'7months' | '3months' | '12months'>('7months')
     const chartData = CHART_DATA_OPTIONS[timeframe]
 
+    const chartDataWithT = ChartData.map(item => ({
+        ...item,
+        name: item.name === "Returning User" ? t('dashboard.charts.returningUser') : t('dashboard.charts.newUser')
+    }))
+
     return (
         <>
-            <PageHeader title="Dashboard" description="View Dashboard Statical Data" />
+            <PageHeader title={t('dashboard.title')} description={t('dashboard.description')} />
             {/* Stat Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
-                    label="Total Booking"
+                    label={t('dashboard.stats.totalBooking')}
                     value="124"
                     icon={UsersRound}
                     color="blue"
-                    trend={{ value: '+12.4%', direction: 'up', label: 'from last month' }}
+                    trend={{ value: '+12.4%', direction: 'up', label: t('dashboard.stats.fromLastMonth') }}
                 />
                 <StatCard
-                    label="Revenue"
+                    label={t('dashboard.stats.revenue')}
                     value="$84,000"
                     icon={DollarSign}
                     color="emerald"
-                    trend={{ value: '+8.2%', direction: 'up', label: 'from last month' }}
+                    trend={{ value: '+8.2%', direction: 'up', label: t('dashboard.stats.fromLastMonth') }}
                 />
                 <StatCard
-                    label="Occupancy Rate"
+                    label={t('dashboard.stats.occupancyRate')}
                     value="85%"
                     icon={Activity}
                     color="pink"
-                    trend={{ value: '+18.3%', direction: 'up', label: 'from last month' }}
+                    trend={{ value: '+18.3%', direction: 'up', label: t('dashboard.stats.fromLastMonth') }}
                 />
                 <StatCard
-                    label="Pending Reservations"
+                    label={t('dashboard.stats.pendingReservations')}
                     value="6"
                     icon={Clock}
                     color="amber"
-                    trend={{ value: '-2.4%', direction: 'down', label: 'from last week' }}
+                    trend={{ value: '-2.4%', direction: 'down', label: t('dashboard.stats.fromLastWeek') }}
                 />
             </div>
 
@@ -114,17 +121,17 @@ function RouteComponent() {
                 <Card className="lg:col-span-2 border border-border/50 shadow-sm p-4 flex flex-col gap-4">
                     <CardHeader className="p-0 flex flex-row items-center justify-between pb-4 border-b">
                         <div>
-                            <CardTitle className="text-lg font-semibold tracking-tight">Booking Chart</CardTitle>
-                            <CardDescription>Monthly visual of system-wide Booking Chart</CardDescription>
+                            <CardTitle className="text-lg font-semibold tracking-tight">{t('dashboard.charts.bookingChartTitle')}</CardTitle>
+                            <CardDescription>{t('dashboard.charts.bookingChartDesc')}</CardDescription>
                         </div>
                         <Select value={timeframe} onValueChange={(val) => setTimeframe(val as '7months' | '3months' | '12months')}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Select period" />
+                                <SelectValue placeholder={t('dashboard.charts.selectPeriod')} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="3months">Last 3 months</SelectItem>
-                                <SelectItem value="7months">Last 7 months</SelectItem>
-                                <SelectItem value="12months">Last 12 months</SelectItem>
+                                <SelectItem value="3months">{t('dashboard.charts.last3Months')}</SelectItem>
+                                <SelectItem value="7months">{t('dashboard.charts.last7Months')}</SelectItem>
+                                <SelectItem value="12months">{t('dashboard.charts.last12Months')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </CardHeader>
@@ -175,11 +182,11 @@ function RouteComponent() {
                     <CardHeader className="p-0 flex flex-row items-center justify-between pb-4 border-b">
                         <div>
                             <CardTitle className="text-lg font-semibold tracking-tight">
-                                Recent Bookings
+                                {t('dashboard.charts.recentBookingsTitle')}
                             </CardTitle>
 
                             <CardDescription>
-                                Returning vs new customer bookings
+                                {t('dashboard.charts.recentBookingsDesc')}
                             </CardDescription>
                         </div>
                     </CardHeader>
@@ -189,14 +196,14 @@ function RouteComponent() {
                             <ResponsiveContainer width="100%" height="100%">
                                 <RechartsPieChart>
                                     <Pie
-                                        data={ChartData}
+                                        data={chartDataWithT}
                                         dataKey="value"
                                         innerRadius={70}
                                         outerRadius={105}
                                         paddingAngle={0}
                                         stroke="none"
                                     >
-                                        {ChartData.map((item, index) => (
+                                        {chartDataWithT.map((item, index) => (
                                             <Cell
                                                 key={`cell-${index}`}
                                                 fill={item.color}
@@ -208,7 +215,7 @@ function RouteComponent() {
                         </div>
 
                         <div className="flex items-center justify-center gap-8 pt-2 pb-1 flex-wrap">
-                            {ChartData.map((item) => (
+                            {chartDataWithT.map((item) => (
                                 <div
                                     key={item.name}
                                     className="flex items-center gap-2"
@@ -232,7 +239,7 @@ function RouteComponent() {
                         <Dialog>
                             <DialogTrigger asChild>
                                 <button className="text-xs font-semibold text-primary inline-flex items-center gap-1.5 hover:underline active:scale-95 transition-all cursor-pointer">
-                                    View Detailed Analytics
+                                    {t('dashboard.analytics.viewDetailed')}
                                     <ExternalLink className="h-3.5 w-3.5" />
                                 </button>
                             </DialogTrigger>
@@ -240,10 +247,10 @@ function RouteComponent() {
                                 <DialogHeader>
                                     <DialogTitle className="text-xl flex items-center gap-2">
                                         <Activity className="w-5 h-5 text-primary" />
-                                        Detailed Analytics
+                                        {t('dashboard.analytics.dialogTitle')}
                                     </DialogTitle>
                                     <DialogDescription>
-                                        In-depth breakdown of customer behaviors and performance metrics.
+                                        {t('dashboard.analytics.dialogDesc')}
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="grid gap-6 py-4">
@@ -251,21 +258,21 @@ function RouteComponent() {
                                         <div className="flex flex-col gap-2 p-4 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30">
                                             <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
                                                 <UserCheck className="w-4 h-4" />
-                                                <span className="text-sm font-semibold">Returning Users</span>
+                                                <span className="text-sm font-semibold">{t('dashboard.analytics.returningUsers')}</span>
                                             </div>
                                             <div className="flex items-baseline gap-2">
                                                 <span className="text-2xl font-bold text-blue-700 dark:text-blue-300">70%</span>
-                                                <span className="text-xs text-blue-600/70 dark:text-blue-400/70">of total</span>
+                                                <span className="text-xs text-blue-600/70 dark:text-blue-400/70">{t('dashboard.analytics.ofTotal')}</span>
                                             </div>
                                         </div>
                                         <div className="flex flex-col gap-2 p-4 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/30">
                                             <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                                                 <UserPlus className="w-4 h-4" />
-                                                <span className="text-sm font-semibold">New Users</span>
+                                                <span className="text-sm font-semibold">{t('dashboard.analytics.newUsers')}</span>
                                             </div>
                                             <div className="flex items-baseline gap-2">
                                                 <span className="text-2xl font-bold text-green-700 dark:text-green-300">30%</span>
-                                                <span className="text-xs text-green-600/70 dark:text-green-400/70">of total</span>
+                                                <span className="text-xs text-green-600/70 dark:text-green-400/70">{t('dashboard.analytics.ofTotal')}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -276,7 +283,7 @@ function RouteComponent() {
                                                 <div className="p-2 rounded-md bg-primary/10 text-primary">
                                                     <CalendarDays className="w-4 h-4" />
                                                 </div>
-                                                <span className="text-sm font-medium">Average Booking Duration</span>
+                                                <span className="text-sm font-medium">{t('dashboard.analytics.avgBookingDuration')}</span>
                                             </div>
                                             <span className="text-sm font-semibold">4.2 days</span>
                                         </div>
@@ -286,7 +293,7 @@ function RouteComponent() {
                                                 <div className="p-2 rounded-md bg-destructive/10 text-destructive">
                                                     <Ban className="w-4 h-4" />
                                                 </div>
-                                                <span className="text-sm font-medium">Cancellation Rate</span>
+                                                <span className="text-sm font-medium">{t('dashboard.analytics.cancellationRate')}</span>
                                             </div>
                                             <span className="text-sm font-semibold">3.1%</span>
                                         </div>
@@ -296,7 +303,7 @@ function RouteComponent() {
                                                 <div className="p-2 rounded-md bg-amber-500/10 text-amber-500">
                                                     <Star className="w-4 h-4" />
                                                 </div>
-                                                <span className="text-sm font-medium">Customer Satisfaction</span>
+                                                <span className="text-sm font-medium">{t('dashboard.analytics.customerSatisfaction')}</span>
                                             </div>
                                             <div className="flex items-center gap-1.5">
                                                 <span className="text-sm font-semibold">4.8</span>
@@ -316,10 +323,12 @@ function RouteComponent() {
 
 // Custom Tooltip component for Recharts
 function CustomTooltip({ active, payload, label }: any) {
+    const { t } = useTranslation()
+
     if (active && payload && payload.length) {
         return (
             <div className="bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md p-3.5 rounded-xl border border-border/40 shadow-xl flex flex-col gap-1.5 animate-in fade-in-0 zoom-in-95 duration-150">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label} Booking</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label} {t('dashboard.stats.totalBooking')}</span>
                 <span className="text-xl font-bold text-primary tabular-nums">${payload[0].value.toLocaleString()}</span>
                 <div className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
                     <ArrowUpRight className="h-3 w-3" />

@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch'
 import { createFileRoute } from '@tanstack/react-router'
 import { Globe, Phone, Shield, User } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
 export const Route = createFileRoute('/__main/settings')({
@@ -51,11 +52,12 @@ const contactSchema = z.object({
 // ─── Main Component ─────────────────────────────────────────────────────────────
 
 function RouteComponent() {
+    const { t } = useTranslation()
     const [activeTab, setActiveTab] = useState<TabId>('profile')
 
     return (
         <>
-            <PageHeader title="Settings" description="Manage your Settings" />
+            <PageHeader title={t('settings.title')} description={t('settings.description')} />
 
             <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-5">
                 {/* Left Sidebar Tabs */}
@@ -67,7 +69,7 @@ function RouteComponent() {
                             onClick={() => setActiveTab(tab.id)}
                             className="justify-start"
                         >
-                            {tab.label}
+                            {t(`settings.tabs.${tab.id}`)}
                         </Button>
                     ))}
                 </nav>
@@ -87,6 +89,7 @@ function RouteComponent() {
 // ─── Profile Information Tab ────────────────────────────────────────────────────
 
 function ProfileTab() {
+    const { t } = useTranslation()
     const form = useAppForm({
         defaultValues: { image: '', name: '', email: '' },
         validators: { onChange: profileSchema },
@@ -104,8 +107,8 @@ function ProfileTab() {
             className="flex flex-col gap-5"
         >
             <div>
-                <h3 className="text-base font-semibold text-foreground">Profile Information</h3>
-                <p className="text-sm text-muted-foreground mt-0.5">Update your account details and contact information.</p>
+                <h3 className="text-base font-semibold text-foreground">{t('settings.profile.title')}</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">{t('settings.profile.description')}</p>
             </div>
 
             <Separator />
@@ -117,17 +120,17 @@ function ProfileTab() {
 
             {/* Form Fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <form.AppField name="name">{(field) => <field.FormInput label="Name" placeholder="Enter your name" />}</form.AppField>
+                <form.AppField name="name">{(field) => <field.FormInput label={t('settings.profile.name')} placeholder={t('settings.profile.namePlaceholder')} />}</form.AppField>
 
                 <form.AppField name="email">
-                    {(field) => <field.FormInput type="email" label="Email" placeholder="Enter your email" />}
+                    {(field) => <field.FormInput type="email" label={t('settings.profile.email')} placeholder={t('settings.profile.emailPlaceholder')} />}
                 </form.AppField>
             </div>
 
             {/* Save Button */}
             <div>
                 <form.AppForm>
-                    <form.FormSubmit label="Save Changes" />
+                    <form.FormSubmit label={t('settings.profile.save')} />
                 </form.AppForm>
             </div>
         </form>
@@ -146,14 +149,22 @@ const TIMEZONES = [
 ]
 
 function GeneralTab() {
+    const { t, i18n } = useTranslation()
     const [darkMode, setDarkMode] = useState(false)
     const [compactView, setCompactView] = useState(false)
 
+    const reverseMap: Record<string, string> = { en: 'English', de: 'German', nl: 'Dutch' }
+
     const form = useAppForm({
-        defaultValues: { language: 'English', timezone: 'UTC+06:00' },
+        defaultValues: { language: reverseMap[i18n.language] || 'English', timezone: 'UTC+06:00' },
         validators: { onChange: generalSchema },
         onSubmit: async ({ value }) => {
             console.log('General saved:', value)
+            const map: Record<string, string> = { English: 'en', German: 'de', Dutch: 'nl' }
+            if (map[value.language]) {
+                i18n.changeLanguage(map[value.language])
+                localStorage.setItem('app-language', map[value.language])
+            }
         },
     })
 
@@ -166,8 +177,8 @@ function GeneralTab() {
             className="flex flex-col gap-5"
         >
             <div>
-                <h3 className="text-base font-semibold text-foreground">General</h3>
-                <p className="text-sm text-muted-foreground mt-0.5">Manage your application preferences.</p>
+                <h3 className="text-base font-semibold text-foreground">{t('settings.general.title')}</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">{t('settings.general.description')}</p>
             </div>
 
             <Separator />
@@ -176,7 +187,7 @@ function GeneralTab() {
                 <form.AppField name="language">
                     {(field) => (
                         <field.FormSelect
-                            label="Language"
+                            label={t('settings.general.language')}
                             placeholder="Select a language"
                             options={[
                                 { label: 'English', value: 'English' },
@@ -190,7 +201,7 @@ function GeneralTab() {
                 <form.AppField name="timezone">
                     {(field) => (
                         <field.FormSelect
-                            label="Timezone"
+                            label={t('settings.general.timezone')}
                             placeholder="Select a timezone"
                             options={TIMEZONES.map((tz) => ({ label: tz, value: tz }))}
                         />
@@ -203,15 +214,15 @@ function GeneralTab() {
             <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-sm font-medium text-foreground">Dark Mode</p>
-                        <p className="text-xs text-muted-foreground">Toggle dark theme for the application.</p>
+                        <p className="text-sm font-medium text-foreground">{t('settings.general.darkMode.label')}</p>
+                        <p className="text-xs text-muted-foreground">{t('settings.general.darkMode.description')}</p>
                     </div>
                     <Switch checked={darkMode} onCheckedChange={setDarkMode} />
                 </div>
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-sm font-medium text-foreground">Compact View</p>
-                        <p className="text-xs text-muted-foreground">Use compact layout for tables and lists.</p>
+                        <p className="text-sm font-medium text-foreground">{t('settings.general.compactView.label')}</p>
+                        <p className="text-xs text-muted-foreground">{t('settings.general.compactView.description')}</p>
                     </div>
                     <Switch checked={compactView} onCheckedChange={setCompactView} />
                 </div>
@@ -219,7 +230,7 @@ function GeneralTab() {
 
             <div>
                 <form.AppForm>
-                    <form.FormSubmit label="Save Changes" />
+                    <form.FormSubmit label={t('settings.general.save')} />
                 </form.AppForm>
             </div>
         </form>
@@ -229,6 +240,7 @@ function GeneralTab() {
 // ─── Security Tab ───────────────────────────────────────────────────────────────
 
 function SecurityTab() {
+    const { t } = useTranslation()
     const [twoFactor, setTwoFactor] = useState(false)
 
     const form = useAppForm({
@@ -248,8 +260,8 @@ function SecurityTab() {
             className="flex flex-col gap-5"
         >
             <div>
-                <h3 className="text-base font-semibold text-foreground">Security</h3>
-                <p className="text-sm text-muted-foreground mt-0.5">Manage your password and security settings.</p>
+                <h3 className="text-base font-semibold text-foreground">{t('settings.security.title')}</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">{t('settings.security.description')}</p>
             </div>
 
             <Separator />
@@ -258,15 +270,15 @@ function SecurityTab() {
             <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-1 gap-4 max-w-md">
                     <form.AppField name="currentPassword">
-                        {(field) => <field.FormInput type="password" label="Current Password" placeholder="Enter current password" />}
+                        {(field) => <field.FormInput type="password" label={t('settings.security.currentPassword')} placeholder={t('settings.security.currentPasswordPlaceholder')} />}
                     </form.AppField>
 
                     <form.AppField name="newPassword">
-                        {(field) => <field.FormInput type="password" label="New Password" placeholder="Enter new password" />}
+                        {(field) => <field.FormInput type="password" label={t('settings.security.newPassword')} placeholder={t('settings.security.newPasswordPlaceholder')} />}
                     </form.AppField>
 
                     <form.AppField name="confirmPassword">
-                        {(field) => <field.FormInput type="password" label="Confirm Password" placeholder="Confirm new password" />}
+                        {(field) => <field.FormInput type="password" label={t('settings.security.confirmPassword')} placeholder={t('settings.security.confirmPasswordPlaceholder')} />}
                     </form.AppField>
                 </div>
             </div>
@@ -278,15 +290,15 @@ function SecurityTab() {
                 <div>
                     <p className="text-sm font-medium text-foreground flex items-center gap-2">
                         <Shield className="h-4 w-4" />
-                        Two-Factor Authentication
+                        {t('settings.security.twoFactor.label')}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 ml-6">Add an extra layer of security to your account.</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 ml-6">{t('settings.security.twoFactor.description')}</p>
                 </div>
                 <Switch checked={twoFactor} onCheckedChange={setTwoFactor} />
             </div>
             <div>
                 <form.AppForm>
-                    <form.FormSubmit label="Update Security" />
+                    <form.FormSubmit label={t('settings.security.save')} />
                 </form.AppForm>
             </div>
         </form>
@@ -296,6 +308,7 @@ function SecurityTab() {
 // ─── Contact Tab ────────────────────────────────────────────────────────────────
 
 function ContactTab() {
+    const { t } = useTranslation()
     const form = useAppForm({
         defaultValues: { phone: '', contactEmail: '', address: '', city: '', country: '' },
         validators: { onChange: contactSchema },
@@ -313,35 +326,35 @@ function ContactTab() {
             className="flex flex-col gap-5"
         >
             <div>
-                <h3 className="text-base font-semibold text-foreground">Contact</h3>
-                <p className="text-sm text-muted-foreground mt-0.5">Update your contact information.</p>
+                <h3 className="text-base font-semibold text-foreground">{t('settings.contact.title')}</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">{t('settings.contact.description')}</p>
             </div>
 
             <Separator />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <form.AppField name="phone">
-                    {(field) => <field.FormInput label="Phone Number" placeholder="Enter phone number" />}
+                    {(field) => <field.FormInput label={t('settings.contact.phone')} placeholder={t('settings.contact.phonePlaceholder')} />}
                 </form.AppField>
 
                 <form.AppField name="contactEmail">
-                    {(field) => <field.FormInput type="email" label="Contact Email" placeholder="Enter contact email" />}
+                    {(field) => <field.FormInput type="email" label={t('settings.contact.contactEmail')} placeholder={t('settings.contact.contactEmailPlaceholder')} />}
                 </form.AppField>
 
                 <form.AppField name="address">
-                    {(field) => <field.FormInput label="Address" placeholder="Enter your address" />}
+                    {(field) => <field.FormInput label={t('settings.contact.address')} placeholder={t('settings.contact.addressPlaceholder')} />}
                 </form.AppField>
 
-                <form.AppField name="city">{(field) => <field.FormInput label="City" placeholder="Enter your city" />}</form.AppField>
+                <form.AppField name="city">{(field) => <field.FormInput label={t('settings.contact.city')} placeholder={t('settings.contact.cityPlaceholder')} />}</form.AppField>
 
                 <form.AppField name="country">
-                    {(field) => <field.FormInput label="Country" placeholder="Enter your country" />}
+                    {(field) => <field.FormInput label={t('settings.contact.country')} placeholder={t('settings.contact.countryPlaceholder')} />}
                 </form.AppField>
             </div>
 
             <div>
                 <form.AppForm>
-                    <form.FormSubmit label="Save Contact Info" />
+                    <form.FormSubmit label={t('settings.contact.save')} />
                 </form.AppForm>
             </div>
         </form>

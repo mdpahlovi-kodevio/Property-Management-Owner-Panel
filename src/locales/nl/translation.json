@@ -1,0 +1,144 @@
+{
+  "properties": {
+    "title": "Huurwoningen",
+    "description": "Beheer uw huurwoningen",
+    "searchPlaceholder": "Zoek woningen...",
+    "addProperty": "Woning toevoegen",
+    "beds": "Bedden",
+    "baths": "Badkamers",
+    "guests": "Gasten",
+    "occ": "Bez.",
+    "units": "Eenh.",
+    "arrivals": "Aankomsten",
+    "edit": "Bewerken",
+    "view": "Bekijken",
+    "noun": "woningen",
+    "createProperty": "Woning aanmaken",
+    "editProperty": "Woning bewerken",
+    "addDesc": "Voeg een nieuwe woning toe aan uw portfolio",
+    "saveChanges": "Wijzigingen opslaan",
+    "saveProperty": "Woning opslaan",
+    "cancel": "Annuleren"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "Bekijk statistische dashboardgegevens",
+    "stats": {
+      "totalBooking": "Totaal aantal boekingen",
+      "revenue": "Omzet",
+      "occupancyRate": "Bezettingsgraad",
+      "pendingReservations": "In afwachting van reserveringen",
+      "fromLastMonth": "sinds vorige maand",
+      "fromLastWeek": "sinds vorige week"
+    },
+    "charts": {
+      "bookingChartTitle": "Boekingsgrafiek",
+      "bookingChartDesc": "Maandelijks overzicht van de systeembrede boekingsgrafiek",
+      "selectPeriod": "Selecteer periode",
+      "last3Months": "Laatste 3 maanden",
+      "last7Months": "Laatste 7 maanden",
+      "last12Months": "Laatste 12 maanden",
+      "recentBookingsTitle": "Recente boekingen",
+      "recentBookingsDesc": "Terugkerende versus nieuwe klantboekingen",
+      "returningUser": "Terugkerende gebruiker",
+      "newUser": "Nieuwe gebruiker"
+    },
+    "analytics": {
+      "viewDetailed": "Bekijk gedetailleerde analyses",
+      "dialogTitle": "Gedetailleerde analyses",
+      "dialogDesc": "Diepgaande uitsplitsing van klantgedrag en prestatiestatistieken.",
+      "returningUsers": "Terugkerende gebruikers",
+      "newUsers": "Nieuwe gebruikers",
+      "ofTotal": "van totaal",
+      "avgBookingDuration": "Gemiddelde boekingsduur",
+      "cancellationRate": "Annuleringspercentage",
+      "customerSatisfaction": "Klanttevredenheid"
+    }
+  },
+  "nav": {
+    "signOut": "Uitloggen",
+    "signOutConfirm": "Weet u zeker dat u wilt uitloggen?",
+    "cancel": "Annuleren",
+    "yes": "Ja"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "reservations": "Reserveringen",
+    "calendar": "Kalender",
+    "inbox": "Postvak IN",
+    "rentalproperties": "Huurwoningen",
+    "usersmanagement": "Gebruikersbeheer",
+    "payments": "Betalingen",
+    "channelmanager": "Kanaalbeheerder",
+    "employee": "Medewerker",
+    "rolemanagement": "Rolbeheer",
+    "reviews": "Beoordelingen",
+    "reports": "Rapporten",
+    "support": "Ondersteuning",
+    "settings": "Instellingen"
+  },
+  "settings": {
+    "title": "Instellingen",
+    "description": "Beheer uw instellingen",
+    "tabs": {
+      "profile": "Profielinformatie",
+      "general": "Algemeen",
+      "security": "Beveiliging",
+      "contact": "Contact"
+    },
+    "profile": {
+      "title": "Profielinformatie",
+      "description": "Werk uw accountgegevens en contactinformatie bij.",
+      "name": "Naam",
+      "namePlaceholder": "Voer uw naam in",
+      "email": "E-mail",
+      "emailPlaceholder": "Voer uw e-mail in",
+      "save": "Wijzigingen opslaan"
+    },
+    "general": {
+      "title": "Algemeen",
+      "description": "Beheer uw applicatievoorkeuren.",
+      "language": "Taal",
+      "timezone": "Tijdzone",
+      "darkMode": {
+        "label": "Donkere modus",
+        "description": "Schakel donker thema in voor de applicatie."
+      },
+      "compactView": {
+        "label": "Compacte weergave",
+        "description": "Gebruik een compacte lay-out voor tabellen en lijsten."
+      },
+      "save": "Wijzigingen opslaan"
+    },
+    "security": {
+      "title": "Beveiliging",
+      "description": "Beheer uw wachtwoord en beveiligingsinstellingen.",
+      "currentPassword": "Huidig wachtwoord",
+      "currentPasswordPlaceholder": "Voer huidig wachtwoord in",
+      "newPassword": "Nieuw wachtwoord",
+      "newPasswordPlaceholder": "Voer nieuw wachtwoord in",
+      "confirmPassword": "Wachtwoord bevestigen",
+      "confirmPasswordPlaceholder": "Bevestig nieuw wachtwoord",
+      "twoFactor": {
+        "label": "Twee-factor-authenticatie",
+        "description": "Voeg een extra beveiligingslaag toe aan uw account."
+      },
+      "save": "Beveiliging bijwerken"
+    },
+    "contact": {
+      "title": "Contact",
+      "description": "Werk uw contactinformatie bij.",
+      "phone": "Telefoonnummer",
+      "phonePlaceholder": "Voer telefoonnummer in",
+      "contactEmail": "Contact E-mail",
+      "contactEmailPlaceholder": "Voer contact e-mail in",
+      "address": "Adres",
+      "addressPlaceholder": "Voer uw adres in",
+      "city": "Stad",
+      "cityPlaceholder": "Voer uw stad in",
+      "country": "Land",
+      "countryPlaceholder": "Voer uw land in",
+      "save": "Contactinfo opslaan"
+    }
+  }
+}

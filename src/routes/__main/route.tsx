@@ -39,7 +39,7 @@ function RouteComponent() {
             <TooltipProvider>
                 <AppSidebar />
                 <SidebarInset>
-                    <header className="sticky top-0 z-100 bg-background flex h-16 items-center gap-2 px-4 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+                    <header className="sticky top-0 z-10 bg-background flex h-16 items-center gap-2 px-4 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
                         <SidebarTrigger className="-ml-1" />
                         <Separator orientation="vertical" className="my-auto mr-2 data-[orientation=vertical]:h-4" />
                         <Breadcrumb className="flex-1">

@@ -31,7 +31,7 @@ function RouteComponent() {
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-2">
-                <Button variant="destructive" size="sm" className="w-fit" onClick={() => navigate({ to: '/reports' })}>
+                <Button variant="secondary" size="sm" className="w-fit" onClick={() => navigate({ to: '/reports' })}>
                     <ArrowLeft className="mr-2 w-4" />
                     Back to Reports
                 </Button>

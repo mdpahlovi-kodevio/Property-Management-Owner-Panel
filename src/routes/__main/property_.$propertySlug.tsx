@@ -259,7 +259,7 @@ function PropertyUnitComponent() {
         <>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex flex-col gap-2">
-                    <Button variant="destructive" size="sm" className="w-fit" onClick={() => navigate({ to: '/property' })}>
+                    <Button variant="secondary" size="sm" className="w-fit" onClick={() => navigate({ to: '/property' })}>
                         <ArrowLeft className="mr-2 w-4" />
                         Back to Properties
                     </Button>
