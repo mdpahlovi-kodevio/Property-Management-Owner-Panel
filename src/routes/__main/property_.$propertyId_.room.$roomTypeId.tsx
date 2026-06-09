@@ -21,7 +21,7 @@ export const Route = createFileRoute('/__main/property_/$propertyId_/room/$roomT
     notFoundComponent: () => (
         <div className="mx-auto max-w-xl px-4 py-24 text-center">
             <div className="mb-6 flex justify-center">
-                <div className="flex size-16 items-center justify-center rounded-2xl bg-slate-100">
+                <div className="flex size-16 items-center justify-center rounded-lg bg-slate-100">
                     <BedDouble className="size-8 text-slate-400" />
                 </div>
             </div>

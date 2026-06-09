@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
 import type { DataTableColumn } from '@/components/ui/data-table'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
@@ -9,9 +9,11 @@ export const Route = createFileRoute('/__main/reports_/$source')({
     component: RouteComponent,
 })
 
-import { SOURCE_REPORT_DATA as REPORT_DATA, type SourceReportData } from '@/lib/reports'
+import { getSourceReportData, type SourceReportData } from '@/lib/reports'
+import { PageHeader } from '#/components/ui/page-header'
 
 function RouteComponent() {
+    const navigate = useNavigate()
     const { source } = Route.useParams()
     const [activeTab, setActiveTab] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily')
 
@@ -31,14 +33,12 @@ function RouteComponent() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" asChild className="h-8 w-8 rounded-full">
-                    <Link to="/reports">
-                        <ArrowLeft className="h-5 w-5" />
-                        <span className="sr-only">Back</span>
-                    </Link>
+            <div className="flex flex-col gap-2">
+                <Button variant="default" size="sm" className="w-fit" onClick={() => navigate({ to: '/reports' })}>
+                    <ArrowLeft className="mr-2 w-4" />
+                    Back to Reports
                 </Button>
-                <h1 className="text-2xl font-bold tracking-tight">{formattedSource} Reports</h1>
+                <PageHeader title="Reports by Source" description="Manage Reports by Source" />
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -56,7 +56,7 @@ function RouteComponent() {
                 </div>
             </div>
 
-            <DataTable columns={columns} data={REPORT_DATA} noun="records" />
+            <DataTable columns={columns} data={getSourceReportData(source, activeTab)} noun="records" />
         </div>
     )
 }

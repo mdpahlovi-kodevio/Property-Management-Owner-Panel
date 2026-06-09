@@ -654,7 +654,7 @@ function PropertyForm({
                         <div className="flex flex-col gap-6">
                             <Section>
                                 <SectionLabel>Guest Policies</SectionLabel>
-                                <div className="rounded-2xl border border-slate-100 overflow-hidden divide-y divide-slate-100">
+                                <div className="rounded-lg border border-slate-100 overflow-hidden divide-y divide-slate-100">
                                     {([
                                         { name: 'policies.smokingAllowed' as const, label: 'Smoking allowed', sub: 'Guests may smoke on premises' },
                                         { name: 'policies.petsAllowed' as const, label: 'Pets allowed', sub: 'Guests may bring animals' },
@@ -703,10 +703,10 @@ function PropertyForm({
                         <Section>
                             <SectionLabel>Property Photos</SectionLabel>
                             <div
-                                className="border-2 border-dashed border-slate-200 rounded-2xl p-10 flex flex-col items-center gap-3 cursor-pointer hover:border-[#243E8B]/40 hover:bg-[#EEF3FF]/20 transition-all duration-300 group"
+                                className="border-2 border-dashed border-slate-200 rounded-lg p-10 flex flex-col items-center gap-3 cursor-pointer hover:border-[#243E8B]/40 hover:bg-[#EEF3FF]/20 transition-all duration-300 group"
                                 onClick={() => {/* file pick */ }}
                             >
-                                <div className="size-12 rounded-2xl bg-slate-100 group-hover:bg-[#EEF3FF] flex items-center justify-center transition-colors duration-300">
+                                <div className="size-12 rounded-lg bg-slate-100 group-hover:bg-[#EEF3FF] flex items-center justify-center transition-colors duration-300">
                                     <Plus className="size-5 text-slate-400 group-hover:text-[#243E8B] transition-colors duration-300" />
                                 </div>
                                 <div className="text-center">

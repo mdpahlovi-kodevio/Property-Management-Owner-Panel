@@ -198,7 +198,7 @@ function RouteComponent() {
 
             {/* New Support Request Dialog */}
             <Dialog open={isNewRequestOpen} onOpenChange={setIsNewRequestOpen}>
-                <DialogContent className="w-[95%] sm:max-w-150 bg-white p-8 rounded-2xl gap-6">
+                <DialogContent className="w-[95%] sm:max-w-150 bg-white p-8 rounded-lg gap-6">
                     <DialogHeader className="text-left mb-2">
                         <DialogTitle className="text-[22px] font-bold text-slate-900 mb-2">Submit Support Request</DialogTitle>
                         <DialogDescription className="text-[15px] text-slate-600 font-medium">Drag and drop your files here</DialogDescription>

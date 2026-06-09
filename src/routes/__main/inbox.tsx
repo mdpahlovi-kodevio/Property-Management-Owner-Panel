@@ -161,7 +161,7 @@ function RouteComponent() {
                 description="Manage your guest communications and requests"
             />
 
-            <div className="flex-1 bg-card border rounded-2xl overflow-hidden flex shadow-sm min-h-0 relative z-0">
+            <div className="flex-1 bg-card border rounded-lg overflow-hidden flex shadow-sm min-h-0 relative z-0">
                 {/* ─── Sidebar ─── */}
                 <div
                     className={cn(
@@ -468,7 +468,7 @@ function RouteComponent() {
                                                     )}
                                                     <div
                                                         className={cn(
-                                                            'px-4 py-2.5 rounded-2xl text-[13px] leading-relaxed relative',
+                                                            'px-4 py-2.5 rounded-lg text-[13px] leading-relaxed relative',
                                                             msg.isInternalNote
                                                                 ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-100 border border-amber-200 dark:border-amber-500/30 rounded-br-sm shadow-sm'
                                                                 : isMe
@@ -519,7 +519,7 @@ function RouteComponent() {
                                                 />
                                             </div>
                                         </div>
-                                        <div className="px-4 py-3 rounded-2xl rounded-bl-sm bg-card border text-foreground shadow-sm flex items-center gap-1">
+                                        <div className="px-4 py-3 rounded-lg rounded-bl-sm bg-card border text-foreground shadow-sm flex items-center gap-1">
                                             <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: '0ms' }} />
                                             <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: '150ms' }} />
                                             <span className="size-1.5 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -533,7 +533,7 @@ function RouteComponent() {
                         <div className="p-4 bg-card border-t shrink-0 z-10 flex flex-col gap-2">
                             <div
                                 className={cn(
-                                    'relative flex items-center rounded-2xl border px-2 py-2 shadow-sm transition-all focus-within:ring-1 focus-within:bg-background',
+                                    'relative flex items-center rounded-lg border px-2 py-2 shadow-sm transition-all focus-within:ring-1 focus-within:bg-background',
                                     isInternalNote
                                         ? 'bg-amber-50/50 dark:bg-amber-500/10 border-amber-200 focus-within:ring-amber-400 focus-within:border-amber-400'
                                         : 'bg-muted/40 focus-within:ring-primary/40 focus-within:border-primary/40'

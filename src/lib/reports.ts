@@ -9,7 +9,7 @@ export type OccupancyData = {
     revenue: string
 }
 
-export const OCCUPANCY_DATA: OccupancyData[] = [
+const OCCUPANCY_DATA: OccupancyData[] = [
     { id: 1, date: 'Apr 28, 2026', availableRooms: 24, occupied: 20, occupancyRate: '83.3%', adr: '$185.00', revpar: '$154.17', revenue: '$3,700.00' },
     { id: 2, date: 'Apr 27, 2026', availableRooms: 24, occupied: 19, occupancyRate: '79.2%', adr: '$180.00', revpar: '$154.17', revenue: '$3,420.00' },
     { id: 3, date: 'Apr 26, 2026', availableRooms: 24, occupied: 22, occupancyRate: '91.7%', adr: '$195.00', revpar: '$154.17', revenue: '$4,290.00' },
@@ -34,7 +34,7 @@ export type RevenueData = {
     expectedPayout: string
 }
 
-export const REVENUE_DATA: RevenueData[] = [
+const REVENUE_DATA: RevenueData[] = [
     { id: 1, source: 'Airbnb', bookings: 142, totalRevenue: '$84,320', totalEarnings: '$84,320', expectedPayout: '$50000' },
     { id: 2, source: 'Booking.com', bookings: 142, totalRevenue: '$84,320', totalEarnings: '$84,320', expectedPayout: '$50000' },
     { id: 3, source: 'Direct', bookings: 142, totalRevenue: '$84,320', totalEarnings: '$84,320', expectedPayout: '$50000' },
@@ -56,7 +56,7 @@ export type ArrivalsData = {
     status: 'Checked-in' | 'Pending'
 }
 
-export const ARRIVALS_DATA: ArrivalsData[] = [
+const ARRIVALS_DATA: ArrivalsData[] = [
     { id: 1, bookingId: '#BK-1042', guest: 'Sarah Mitchell', propertyUnit: 'Sunset Villa / 201', checkIn: 'Apr 28, 15:00', checkOut: 'May 02, 11:00', nights: 4, source: 'Airbnb', status: 'Checked-in' },
     { id: 2, bookingId: '#BK-1043', guest: 'James Carter', propertyUnit: 'Downtown Loft / 12B', checkIn: 'Apr 28, 15:00', checkOut: 'May 02, 11:00', nights: 4, source: 'Airbnb', status: 'Checked-in' },
     { id: 3, bookingId: '#BK-1044', guest: 'James Carter', propertyUnit: 'Sunset Villa / 201', checkIn: 'Apr 28, 15:00', checkOut: 'May 02, 11:00', nights: 4, source: 'Airbnb', status: 'Checked-in' },
@@ -81,18 +81,47 @@ export type SourceReportData = {
     expectedPayout: string
 }
 
-export const SOURCE_REPORT_DATA: SourceReportData[] = Array.from({ length: 16 }).map((_, i) => ({
-    id: i + 1,
-    date: `${(i + 1).toString().padStart(2, '0')} Apr 2026`,
-    totalBookings: [10, 20, 30, 20, 30, 60, 50, 30, 70, 60, 50, 30, 30, 20, 20, 20][i],
-    totalRevenue: '$10,320',
-    totalEarnings: '$10,320',
-    expectedPayout: '$8,320',
-}))
+const generateReportData = (period: 'daily' | 'weekly' | 'monthly' | 'yearly', source: string): SourceReportData[] => {
+    const sourceSeed = source.toLowerCase().split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const sourceMultiplier = (sourceSeed % 5) * 0.5 + 0.5; // Varies between 0.5x and 2.5x
+
+    return Array.from({ length: 16 }).map((_, i) => {
+        let dateStr = '';
+        if (period === 'daily') {
+            const d = new Date(2026, 3, i + 1); // April 2026
+            dateStr = `${d.getDate().toString().padStart(2, '0')} ${d.toLocaleString('default', { month: 'short' })} ${d.getFullYear()}`;
+        } else if (period === 'weekly') {
+            dateStr = `Week ${i + 1}, 2026`;
+        } else if (period === 'monthly') {
+            const d = new Date(2025, i, 1);
+            dateStr = `${d.toLocaleString('default', { month: 'short' })} ${d.getFullYear()}`;
+        } else if (period === 'yearly') {
+            dateStr = `${2020 + i}`;
+        }
+
+        const multiplier = period === 'daily' ? 1 : period === 'weekly' ? 7 : period === 'monthly' ? 30 : 365;
+        const baseBookings = Math.floor([10, 20, 30, 20, 30, 60, 50, 30, 70, 60, 50, 30, 30, 20, 20, 20][i] * sourceMultiplier);
+        const bookings = baseBookings * multiplier;
+        const revenue = bookings * 250; // $250 per booking
+        const earnings = revenue * 0.8; // 80% earnings
+        const payout = earnings * 0.9;  // 90% of earnings as payout
+
+        return {
+            id: i + 1,
+            date: dateStr,
+            totalBookings: bookings,
+            totalRevenue: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(revenue),
+            totalEarnings: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(earnings),
+            expectedPayout: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(payout),
+        };
+    });
+};
+
+
 
 import { BedDouble, CalendarCheck, CalendarX, Home, Users, ArrowDownRight, ArrowUpRight } from 'lucide-react'
 
-export const OCCUPANCY_STATS_CARDS = [
+const OCCUPANCY_STATS_CARDS = [
     {
         label: "Occupancy Rate",
         value: "83.3%",
@@ -123,7 +152,7 @@ export const OCCUPANCY_STATS_CARDS = [
     }
 ]
 
-export const REVENUE_STATS_CARDS = [
+const REVENUE_STATS_CARDS = [
     {
         label: "Total Revenue",
         value: "$84,320",
@@ -153,7 +182,7 @@ export const REVENUE_STATS_CARDS = [
     }
 ]
 
-export const ARRIVALS_STATS_CARDS = [
+const ARRIVALS_STATS_CARDS = [
     {
         label: "Arrivals Today",
         value: "8",
@@ -179,3 +208,31 @@ export const ARRIVALS_STATS_CARDS = [
         color: "rose" as const
     }
 ]
+
+export function getOccupancyData(): OccupancyData[] {
+    return OCCUPANCY_DATA;
+}
+
+export function getRevenueData(): RevenueData[] {
+    return REVENUE_DATA;
+}
+
+export function getArrivalsData(): ArrivalsData[] {
+    return ARRIVALS_DATA;
+}
+
+export function getSourceReportData(source: string, period: 'daily' | 'weekly' | 'monthly' | 'yearly'): SourceReportData[] {
+    return generateReportData(period, source);
+}
+
+export function getOccupancyStatsCards() {
+    return OCCUPANCY_STATS_CARDS;
+}
+
+export function getRevenueStatsCards() {
+    return REVENUE_STATS_CARDS;
+}
+
+export function getArrivalsStatsCards() {
+    return ARRIVALS_STATS_CARDS;
+}

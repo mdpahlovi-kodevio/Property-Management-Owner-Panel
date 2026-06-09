@@ -42,7 +42,7 @@ function ChannelManagerComponent() {
                 {CHANNELS.map((channel) => (
                     <div
                         key={channel.id}
-                        className="bg-card border rounded-2xl p-4 flex flex-col items-center justify-between shadow-sm h-52 transition-all hover:shadow-md"
+                        className="bg-card border rounded-lg p-4 flex flex-col items-center justify-between shadow-sm h-52 transition-all hover:shadow-md"
                     >
                         <div className="flex-1 flex items-center justify-center w-full px-6">
                             {channel.logoUrl ? (

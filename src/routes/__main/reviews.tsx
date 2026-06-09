@@ -50,21 +50,17 @@ function RouteComponent() {
   return (
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <PageHeader title="Guest Reviews" description="Monitor and respond to guest feedback across all channels." className="mb-0" />
-      </div>
-
-      {/* Filters and Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-end gap-4">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <PageHeader title="Guest Reviews" description="Monitor and respond to guest feedback across all channels." />
+        <div className="flex items-center gap-4 w-full sm:w-auto">
           <SearchInput
             value={searchQuery}
             onValueChange={setSearchQuery}
             placeholder="Search reviews..."
-            className="w-full sm:w-64"
+            className="w-full sm:w-[320px]"
           />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-10 px-4">
+              <Button variant="outline" className="h-10 px-4 w-full sm:w-auto">
                 <Filter className="w-4 h-4 mr-2" />
                 Filter
                 {(filterStatus !== 'All' || filterPlatform !== 'All') && (
@@ -91,7 +87,7 @@ function RouteComponent() {
       {/* Reviews List */}
       <div className="flex flex-col gap-4">
         {filteredReviews.length === 0 ? (
-          <div className="text-center py-16 bg-card rounded-2xl border border-border">
+          <div className="text-center py-16 bg-card rounded-lg border border-border">
             <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
             <h3 className="text-lg font-medium text-foreground">No reviews found</h3>
             <p className="text-muted-foreground">Try adjusting your filters or search query.</p>
@@ -107,7 +103,7 @@ function RouteComponent() {
 function ReviewCard({ review, onDelete }: { review: Review, onReply: (id: string, text: string) => void, onDelete: (id: string) => void }) {
 
   return (
-    <div className="bg-card rounded-2xl border border-border shadow-sm p-6 flex flex-col gap-5 transition-all duration-200 hover:shadow-md">
+    <div className="bg-card rounded-lg border border-border shadow-sm p-6 flex flex-col gap-5 transition-all duration-200 hover:shadow-md">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-4 w-full sm:w-auto">

@@ -292,7 +292,7 @@ function PropertyUnitComponent() {
 
                 if (paginatedRooms.length === 0) {
                     return (
-                        <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">
+                        <div className="rounded-lg border border-dashed border-slate-200 p-10 text-center text-slate-500">
                             {property
                                 ? 'No room types match your search.'
                                 : `Property "${propertyId}" not found.`}
@@ -791,7 +791,7 @@ function RoomTypeForm({
 
                         <Section>
                             <SectionLabel>Room Attributes</SectionLabel>
-                            <div className="rounded-2xl border border-slate-100 overflow-hidden divide-y divide-slate-100">
+                            <div className="rounded-lg border border-slate-100 overflow-hidden divide-y divide-slate-100">
                                 {([
                                     { name: 'smokingRoom' as const, label: 'Smoking room', sub: 'Room permits smoking' },
                                     { name: 'accessibleRoom' as const, label: 'Accessible room', sub: 'Wheelchair / mobility accessible' },

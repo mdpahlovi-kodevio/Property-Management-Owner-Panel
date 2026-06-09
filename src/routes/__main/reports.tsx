@@ -13,12 +13,12 @@ export const Route = createFileRoute('/__main/reports')({
 })
 
 import {
-    OCCUPANCY_DATA,
-    REVENUE_DATA,
-    ARRIVALS_DATA,
-    OCCUPANCY_STATS_CARDS,
-    REVENUE_STATS_CARDS,
-    ARRIVALS_STATS_CARDS,
+    getOccupancyData,
+    getRevenueData,
+    getArrivalsData,
+    getOccupancyStatsCards,
+    getRevenueStatsCards,
+    getArrivalsStatsCards,
     type OccupancyData,
     type RevenueData,
     type ArrivalsData
@@ -124,32 +124,32 @@ function RouteComponent() {
             </div>
             {activeTab === 'occupancy' && (
                 <StatCardsGrid
-                    cards={OCCUPANCY_STATS_CARDS}
+                    cards={getOccupancyStatsCards()}
                 />
             )}
 
             {activeTab === 'revenue' && (
                 <StatCardsGrid
-                    cards={REVENUE_STATS_CARDS}
+                    cards={getRevenueStatsCards()}
                 />
             )}
 
             {activeTab === 'arrivals' && (
                 <StatCardsGrid
-                    cards={ARRIVALS_STATS_CARDS}
+                    cards={getArrivalsStatsCards()}
                 />
             )}
 
             {activeTab === 'occupancy' && (
-                <DataTable columns={occupancyColumns} data={OCCUPANCY_DATA} noun="reports" />
+                <DataTable columns={occupancyColumns} data={getOccupancyData()} noun="reports" />
             )}
 
             {activeTab === 'revenue' && (
-                <DataTable columns={revenueColumns} data={REVENUE_DATA} noun="revenue sources" />
+                <DataTable columns={revenueColumns} data={getRevenueData()} noun="revenue sources" />
             )}
 
             {activeTab === 'arrivals' && (
-                <DataTable columns={arrivalsColumns} data={ARRIVALS_DATA} noun="arrivals" />
+                <DataTable columns={arrivalsColumns} data={getArrivalsData()} noun="arrivals" />
             )}
         </>
     )

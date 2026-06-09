@@ -13,6 +13,12 @@
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "516bd2154eb843a8240e43d5b285229129853114ad7075a5e141e1c08e408c84"
     },
+    "i18n-localization": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/i18n-localization/SKILL.md",
+      "computedHash": "ae8e1840d716a6e700eac1d6bc3d05d2f7270f7dc7fb9b47eca98c840e818e5d"
+    },
     "lucide-icons": {
       "source": "aksuharun/skills",
       "sourceType": "github",
