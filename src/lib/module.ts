@@ -31,25 +31,33 @@ export const MODULES = {
         path: '/',
         permissions: ['stat-cards', 'revenue-overview', 'recent-bookings'],
     },
-    users: {
-        path: '/users',
-        permissions: COMMON_PERMISSIONS,
-    },
-    'property-owners': {
-        path: '/property-owners',
-        permissions: COMMON_PERMISSIONS,
-    },
-    properties: {
-        path: '/properties',
-        permissions: COMMON_PERMISSIONS,
-    },
     reservations: {
         path: '/reservations',
         permissions: COMMON_PERMISSIONS,
     },
-    'website-builder': {
-        path: '/website-builder',
-        permissions: [...COMMON_PERMISSIONS, 'publish'],
+    calendar: {
+        path: '/calendar',
+        permissions: COMMON_PERMISSIONS,
+    },
+    inbox: {
+        path: '/inbox',
+        permissions: COMMON_PERMISSIONS,
+    },
+    properties: {
+        path: '/property',
+        permissions: COMMON_PERMISSIONS,
+    },
+    users: {
+        path: '/user-management',
+        permissions: COMMON_PERMISSIONS,
+    },
+    payments: {
+        path: '/payments',
+        permissions: COMMON_PERMISSIONS,
+    },
+    'channel-manager': {
+        path: '/channel-manager',
+        permissions: COMMON_PERMISSIONS,
     },
     employees: {
         path: '/employees',
@@ -59,13 +67,17 @@ export const MODULES = {
         path: '/role-management',
         permissions: COMMON_PERMISSIONS,
     },
+    reviews: {
+        path: '/reviews',
+        permissions: COMMON_PERMISSIONS,
+    },
     reports: {
         path: '/reports',
         permissions: ['export'],
     },
     support: {
         path: '/support',
-        permissions: [...COMMON_PERMISSIONS, 'reply'],
+        permissions: COMMON_PERMISSIONS,
     },
 } as const
 

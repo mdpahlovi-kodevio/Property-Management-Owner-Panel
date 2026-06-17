@@ -4,7 +4,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { StatCard } from '@/components/ui/stat-card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { createFileRoute } from '@tanstack/react-router'
-import { Activity, ArrowUpRight, DollarSign, Clock, ExternalLink, UsersRound, CalendarDays, Ban, Star, UserCheck, UserPlus } from 'lucide-react'
+import {
+    Activity,
+    ArrowUpRight,
+    DollarSign,
+    Clock,
+    ExternalLink,
+    UsersRound,
+    CalendarDays,
+    Ban,
+    Star,
+    UserCheck,
+    UserPlus,
+} from 'lucide-react'
 import { useState } from 'react'
 import {
     Area,
@@ -59,14 +71,14 @@ const CHART_DATA_OPTIONS = {
 
 const ChartData = [
     {
-        name: "Returning User",
+        name: 'Returning User',
         value: 70,
-        color: "#1E3A8A",
+        color: '#1E3A8A',
     },
     {
-        name: "New User",
+        name: 'New User',
         value: 30,
-        color: "#D97706",
+        color: '#D97706',
     },
 ]
 
@@ -75,9 +87,9 @@ function RouteComponent() {
     const [timeframe, setTimeframe] = useState<'7months' | '3months' | '12months'>('7months')
     const chartData = CHART_DATA_OPTIONS[timeframe]
 
-    const chartDataWithT = ChartData.map(item => ({
+    const chartDataWithT = ChartData.map((item) => ({
         ...item,
-        name: item.name === "Returning User" ? t('dashboard.charts.returningUser') : t('dashboard.charts.newUser')
+        name: item.name === 'Returning User' ? t('dashboard.charts.returningUser') : t('dashboard.charts.newUser'),
     }))
 
     return (
@@ -121,7 +133,9 @@ function RouteComponent() {
                 <Card className="lg:col-span-2 border border-border/50 shadow-sm p-4 flex flex-col gap-4">
                     <CardHeader className="p-0 flex flex-row items-center justify-between pb-4 border-b">
                         <div>
-                            <CardTitle className="text-lg font-semibold tracking-tight">{t('dashboard.charts.bookingChartTitle')}</CardTitle>
+                            <CardTitle className="text-lg font-semibold tracking-tight">
+                                {t('dashboard.charts.bookingChartTitle')}
+                            </CardTitle>
                             <CardDescription>{t('dashboard.charts.bookingChartDesc')}</CardDescription>
                         </div>
                         <Select value={timeframe} onValueChange={(val) => setTimeframe(val as '7months' | '3months' | '12months')}>
@@ -185,9 +199,7 @@ function RouteComponent() {
                                 {t('dashboard.charts.recentBookingsTitle')}
                             </CardTitle>
 
-                            <CardDescription>
-                                {t('dashboard.charts.recentBookingsDesc')}
-                            </CardDescription>
+                            <CardDescription>{t('dashboard.charts.recentBookingsDesc')}</CardDescription>
                         </div>
                     </CardHeader>
 
@@ -204,10 +216,7 @@ function RouteComponent() {
                                         stroke="none"
                                     >
                                         {chartDataWithT.map((item, index) => (
-                                            <Cell
-                                                key={`cell-${index}`}
-                                                fill={item.color}
-                                            />
+                                            <Cell key={`cell-${index}`} fill={item.color} />
                                         ))}
                                     </Pie>
                                 </RechartsPieChart>
@@ -216,10 +225,7 @@ function RouteComponent() {
 
                         <div className="flex items-center justify-center gap-8 pt-2 pb-1 flex-wrap">
                             {chartDataWithT.map((item) => (
-                                <div
-                                    key={item.name}
-                                    className="flex items-center gap-2"
-                                >
+                                <div key={item.name} className="flex items-center gap-2">
                                     <div
                                         className="h-3.5 w-3.5 rounded-full"
                                         style={{
@@ -227,9 +233,7 @@ function RouteComponent() {
                                         }}
                                     />
 
-                                    <span className="text-sm text-muted-foreground font-medium">
-                                        {item.name}
-                                    </span>
+                                    <span className="text-sm text-muted-foreground font-medium">{item.name}</span>
                                 </div>
                             ))}
                         </div>
@@ -249,9 +253,7 @@ function RouteComponent() {
                                         <Activity className="w-5 h-5 text-primary" />
                                         {t('dashboard.analytics.dialogTitle')}
                                     </DialogTitle>
-                                    <DialogDescription>
-                                        {t('dashboard.analytics.dialogDesc')}
-                                    </DialogDescription>
+                                    <DialogDescription>{t('dashboard.analytics.dialogDesc')}</DialogDescription>
                                 </DialogHeader>
                                 <div className="grid gap-6 py-4">
                                     <div className="grid grid-cols-2 gap-4">
@@ -262,7 +264,9 @@ function RouteComponent() {
                                             </div>
                                             <div className="flex items-baseline gap-2">
                                                 <span className="text-2xl font-bold text-blue-700 dark:text-blue-300">70%</span>
-                                                <span className="text-xs text-blue-600/70 dark:text-blue-400/70">{t('dashboard.analytics.ofTotal')}</span>
+                                                <span className="text-xs text-blue-600/70 dark:text-blue-400/70">
+                                                    {t('dashboard.analytics.ofTotal')}
+                                                </span>
                                             </div>
                                         </div>
                                         <div className="flex flex-col gap-2 p-4 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/30">
@@ -272,7 +276,9 @@ function RouteComponent() {
                                             </div>
                                             <div className="flex items-baseline gap-2">
                                                 <span className="text-2xl font-bold text-green-700 dark:text-green-300">30%</span>
-                                                <span className="text-xs text-green-600/70 dark:text-green-400/70">{t('dashboard.analytics.ofTotal')}</span>
+                                                <span className="text-xs text-green-600/70 dark:text-green-400/70">
+                                                    {t('dashboard.analytics.ofTotal')}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -328,7 +334,9 @@ function CustomTooltip({ active, payload, label }: any) {
     if (active && payload && payload.length) {
         return (
             <div className="bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md p-3.5 rounded-xl border border-border/40 shadow-xl flex flex-col gap-1.5 animate-in fade-in-0 zoom-in-95 duration-150">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label} {t('dashboard.stats.totalBooking')}</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {label} {t('dashboard.stats.totalBooking')}
+                </span>
                 <span className="text-xl font-bold text-primary tabular-nums">${payload[0].value.toLocaleString()}</span>
                 <div className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
                     <ArrowUpRight className="h-3 w-3" />

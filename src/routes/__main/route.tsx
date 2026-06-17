@@ -1,34 +1,51 @@
-import { AppSidebar, data } from '#/components/main/app-sidebar'
+import { AppSidebar } from '@/components/main/app-sidebar'
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { createFileRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
-
-const routeLabels: Record<string, string> = {
-    '/': 'Dashboard',
-    '/users': 'Users',
-    '/property-owners': 'Property Owners',
-    '/properties': 'Properties',
-    '/reservations': 'Reservations',
-    '/website-builder': 'Website Builder',
-    '/employees': 'Employee',
-    '/role-management': 'Role Management',
-    '/reports': 'Reports',
-    '/support': 'Support',
-}
+import { authApi, SessionKey } from '@/lib/api/auth'
+import { getModuleByPath, MODULE_KEYS, MODULES } from '@/lib/module'
+import { checkRoutePermission } from '@/lib/permission'
+import { queryClient } from '@/main'
+import { createFileRoute, Link, Outlet, redirect, useRouterState } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 
 export const Route = createFileRoute('/__main')({
+    beforeLoad: async ({ location }) => {
+        const session = await queryClient.ensureQueryData({
+            queryKey: SessionKey,
+            queryFn: () => authApi.getSession().catch(() => null),
+        })
+
+        if (!session) {
+            throw redirect({ to: '/signin' })
+        }
+        if (!session.user.emailVerified) {
+            throw redirect({ to: '/verification', search: { user: session.user.email, type: 'signup' } })
+        }
+
+        checkRoutePermission(session.user, location.pathname)
+        return session
+    },
     component: RouteComponent,
 })
 
+// Derived breadcrumb labels from modules
+const buildRouteLabels = (t: (key: string, opts?: { defaultValue?: string }) => string): Record<string, string> =>
+    Object.fromEntries(MODULE_KEYS.map((id) => [MODULES[id].path, t(`navigation.${id}`, { defaultValue: id })]))
+
 function RouteComponent() {
+    const { t } = useTranslation()
+    const { user } = Route.useRouteContext()
     const pathname = useRouterState({ select: (s) => s.location.pathname })
+
+    const routeLabels = buildRouteLabels(t)
 
     const segments = pathname.split('/').filter(Boolean)
     const crumbs = segments.map((_, index) => {
         const href = '/' + segments.slice(0, index + 1).join('/')
-        const label = routeLabels[href] ?? segments[index].replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+        const id = getModuleByPath(href)
+        const label = id ? routeLabels[href] : segments[index].replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
         return { href, label }
     })
 
@@ -37,7 +54,7 @@ function RouteComponent() {
     return (
         <SidebarProvider>
             <TooltipProvider>
-                <AppSidebar />
+                <AppSidebar user={user} />
                 <SidebarInset>
                     <header className="sticky top-0 z-10 bg-background flex h-16 items-center gap-2 px-4 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
                         <SidebarTrigger className="-ml-1" />
@@ -46,10 +63,10 @@ function RouteComponent() {
                             <BreadcrumbList>
                                 <BreadcrumbItem>
                                     {isHome ? (
-                                        <BreadcrumbPage>Dashboard</BreadcrumbPage>
+                                        <BreadcrumbPage>{t('navigation.dashboard', { defaultValue: 'Dashboard' })}</BreadcrumbPage>
                                     ) : (
                                         <BreadcrumbLink asChild>
-                                            <Link to="/">Dashboard</Link>
+                                            <Link to="/">{t('navigation.dashboard', { defaultValue: 'Dashboard' })}</Link>
                                         </BreadcrumbLink>
                                     )}
                                 </BreadcrumbItem>
@@ -75,7 +92,7 @@ function RouteComponent() {
                         </Breadcrumb>
 
                         <span className="ml-auto mr-1 flex items-center gap-2 rounded-md border bg-muted px-3 py-1 text-xs uppercase font-medium text-muted-foreground">
-                            {data.user.role}
+                            {user.isDefault ? 'Super Admin' : user.role}
                         </span>
                     </header>
                     <div className="flex flex-1 flex-col gap-6 p-6">

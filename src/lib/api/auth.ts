@@ -31,16 +31,16 @@ export interface Session {
 
 export interface SignInPayload {
     email: string
-    panel: 'admin'
+    panel: 'owner'
     password: string
 }
 export interface ForgotPasswordPayload {
     email: string
-    panel: 'admin'
+    panel: 'owner'
 }
 export interface VerifyResetOtpPayload {
     email: string
-    panel: 'admin'
+    panel: 'owner'
     otp: string
 }
 export interface ResetPasswordPayload {
@@ -49,12 +49,12 @@ export interface ResetPasswordPayload {
 }
 export interface VerifyEmailPayload {
     email: string
-    panel: 'admin'
+    panel: 'owner'
     otp: string
 }
 export interface ResendVerificationPayload {
     email: string
-    panel: 'admin'
+    panel: 'owner'
 }
 export interface UpdateMePayload {
     name?: string

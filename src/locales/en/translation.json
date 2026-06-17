@@ -1,144 +1,183 @@
 {
-  "properties": {
-    "title": "Rental Properties",
-    "description": "Manage your Rental Properties",
-    "searchPlaceholder": "Search properties...",
-    "addProperty": "Add Property",
-    "beds": "Beds",
-    "baths": "Baths",
-    "guests": "Guests",
-    "occ": "Occ",
-    "units": "Units",
-    "arrivals": "Arrivals",
-    "edit": "Edit",
-    "view": "View",
-    "noun": "properties",
-    "createProperty": "Create property",
-    "editProperty": "Edit property",
-    "addDesc": "Add a new property to your portfolio",
-    "saveChanges": "Save changes",
-    "saveProperty": "Save property",
-    "cancel": "Cancel"
-  },
-  "dashboard": {
-    "title": "Dashboard",
-    "description": "View Dashboard Statical Data",
-    "stats": {
-      "totalBooking": "Total Booking",
-      "revenue": "Revenue",
-      "occupancyRate": "Occupancy Rate",
-      "pendingReservations": "Pending Reservations",
-      "fromLastMonth": "from last month",
-      "fromLastWeek": "from last week"
+    "auth": {
+        "signIn": "Sign In",
+        "signInLink": "Sign in",
+        "email": "Email",
+        "password": "Password",
+        "enterEmail": "Enter your email address",
+        "enterEmailPlaceholder": "Enter your email",
+        "enterPassword": "Enter your password",
+        "forgotPasswordText": "Forgot password?",
+        "forgotPassword": "Forgot Password",
+        "forgotPasswordDesc": "Enter your registered email address and we'll send you a <br /> verification code to reset your password.",
+        "rememberPassword": "Remember your password?",
+        "sendCode": "Send verification code",
+        "codeSent": "A new code has been sent to your email.",
+        "resetPassword": "Reset Password",
+        "resetPasswordDesc": "Choose a new password for your account.",
+        "newPassword": "New Password",
+        "confirmPassword": "Confirm Password",
+        "confirmPasswordReq": "Please confirm your password",
+        "passwordMin": "Password must be at least 8 characters",
+        "passwordMax": "Password must be at most 32 characters",
+        "passwordsDontMatch": "Passwords don't match",
+        "passwordResetSuccess": "Password reset successfully!",
+        "submit": "Submit",
+        "backToSignIn": "Back to Sign In",
+        "enterCode": "Enter verification code",
+        "weSentCode": "We've sent a 6-digit code to",
+        "otp": "Enter your 6 digit code",
+        "verify": "Verify",
+        "verified": "Code verified. Choose a new password.",
+        "emailVerified": "Email verified! Welcome aboard.",
+        "didntReceiveCode": "Didn't receive the code?",
+        "sending": "Sending...",
+        "resend": "Resend code",
+        "resendIn": "Resend in {{countdown}}s",
+        "failedToResend": "Failed to resend code. Please try again."
     },
-    "charts": {
-      "bookingChartTitle": "Booking Chart",
-      "bookingChartDesc": "Monthly visual of system-wide Booking Chart",
-      "selectPeriod": "Select period",
-      "last3Months": "Last 3 months",
-      "last7Months": "Last 7 months",
-      "last12Months": "Last 12 months",
-      "recentBookingsTitle": "Recent Bookings",
-      "recentBookingsDesc": "Returning vs new customer bookings",
-      "returningUser": "Returning User",
-      "newUser": "New User"
+    "properties": {
+        "title": "Rental Properties",
+        "description": "Manage your Rental Properties",
+        "searchPlaceholder": "Search properties...",
+        "addProperty": "Add Property",
+        "beds": "Beds",
+        "baths": "Baths",
+        "guests": "Guests",
+        "occ": "Occ",
+        "units": "Units",
+        "arrivals": "Arrivals",
+        "edit": "Edit",
+        "view": "View",
+        "noun": "properties",
+        "createProperty": "Create property",
+        "editProperty": "Edit property",
+        "addDesc": "Add a new property to your portfolio",
+        "saveChanges": "Save changes",
+        "saveProperty": "Save property",
+        "cancel": "Cancel"
     },
-    "analytics": {
-      "viewDetailed": "View Detailed Analytics",
-      "dialogTitle": "Detailed Analytics",
-      "dialogDesc": "In-depth breakdown of customer behaviors and performance metrics.",
-      "returningUsers": "Returning Users",
-      "newUsers": "New Users",
-      "ofTotal": "of total",
-      "avgBookingDuration": "Average Booking Duration",
-      "cancellationRate": "Cancellation Rate",
-      "customerSatisfaction": "Customer Satisfaction"
+    "dashboard": {
+        "title": "Dashboard",
+        "description": "View Dashboard Statical Data",
+        "stats": {
+            "totalBooking": "Total Booking",
+            "revenue": "Revenue",
+            "occupancyRate": "Occupancy Rate",
+            "pendingReservations": "Pending Reservations",
+            "fromLastMonth": "from last month",
+            "fromLastWeek": "from last week"
+        },
+        "charts": {
+            "bookingChartTitle": "Booking Chart",
+            "bookingChartDesc": "Monthly visual of system-wide Booking Chart",
+            "selectPeriod": "Select period",
+            "last3Months": "Last 3 months",
+            "last7Months": "Last 7 months",
+            "last12Months": "Last 12 months",
+            "recentBookingsTitle": "Recent Bookings",
+            "recentBookingsDesc": "Returning vs new customer bookings",
+            "returningUser": "Returning User",
+            "newUser": "New User"
+        },
+        "analytics": {
+            "viewDetailed": "View Detailed Analytics",
+            "dialogTitle": "Detailed Analytics",
+            "dialogDesc": "In-depth breakdown of customer behaviors and performance metrics.",
+            "returningUsers": "Returning Users",
+            "newUsers": "New Users",
+            "ofTotal": "of total",
+            "avgBookingDuration": "Average Booking Duration",
+            "cancellationRate": "Cancellation Rate",
+            "customerSatisfaction": "Customer Satisfaction"
+        }
+    },
+    "nav": {
+        "signOut": "Sign out",
+        "signOutConfirm": "Are you sure you want to sign out?",
+        "cancel": "Cancel",
+        "yes": "Yes",
+        "settings": "Settings",
+        "areYouSure": "Are you sure?",
+        "confirmSignOut": "Do you really want to sign out? You will need to sign in again to access the admin panel."
+    },
+    "navigation": {
+        "dashboard": "Dashboard",
+        "reservations": "Reservations",
+        "calendar": "Calendar",
+        "inbox": "Inbox",
+        "properties": "Rental Properties",
+        "users": "Users Management",
+        "payments": "Payments",
+        "channel-manager": "Channel Manager",
+        "employees": "Employee",
+        "role-management": "Role Management",
+        "reviews": "Reviews",
+        "reports": "Reports",
+        "support": "Support"
+    },
+    "settings": {
+        "title": "Settings",
+        "description": "Manage your Settings",
+        "tabs": {
+            "profile": "Profile Information",
+            "general": "General",
+            "security": "Security",
+            "contact": "Contact"
+        },
+        "profile": {
+            "title": "Profile Information",
+            "description": "Update your account details and contact information.",
+            "name": "Name",
+            "namePlaceholder": "Enter your name",
+            "email": "Email",
+            "emailPlaceholder": "Enter your email",
+            "save": "Save Changes"
+        },
+        "general": {
+            "title": "General",
+            "description": "Manage your application preferences.",
+            "language": "Language",
+            "timezone": "Timezone",
+            "darkMode": {
+                "label": "Dark Mode",
+                "description": "Toggle dark theme for the application."
+            },
+            "compactView": {
+                "label": "Compact View",
+                "description": "Use compact layout for tables and lists."
+            },
+            "save": "Save Changes"
+        },
+        "security": {
+            "title": "Security",
+            "description": "Manage your password and security settings.",
+            "currentPassword": "Current Password",
+            "currentPasswordPlaceholder": "Enter current password",
+            "newPassword": "New Password",
+            "newPasswordPlaceholder": "Enter new password",
+            "confirmPassword": "Confirm Password",
+            "confirmPasswordPlaceholder": "Confirm new password",
+            "twoFactor": {
+                "label": "Two-Factor Authentication",
+                "description": "Add an extra layer of security to your account."
+            },
+            "save": "Update Security"
+        },
+        "contact": {
+            "title": "Contact",
+            "description": "Update your contact information.",
+            "phone": "Phone Number",
+            "phonePlaceholder": "Enter phone number",
+            "contactEmail": "Contact Email",
+            "contactEmailPlaceholder": "Enter contact email",
+            "address": "Address",
+            "addressPlaceholder": "Enter your address",
+            "city": "City",
+            "cityPlaceholder": "Enter your city",
+            "country": "Country",
+            "countryPlaceholder": "Enter your country",
+            "save": "Save Contact Info"
+        }
     }
-  },
-  "nav": {
-    "signOut": "Sign out",
-    "signOutConfirm": "Are you sure you want to sign out?",
-    "cancel": "Cancel",
-    "yes": "Yes"
-  },
-  "sidebar": {
-    "dashboard": "Dashboard",
-    "reservations": "Reservations",
-    "calendar": "Calendar",
-    "inbox": "Inbox",
-    "rentalproperties": "Rental Properties",
-    "usersmanagement": "Users Management",
-    "payments": "Payments",
-    "channelmanager": "Channel Manager",
-    "employee": "Employee",
-    "rolemanagement": "Role Management",
-    "reviews": "Reviews",
-    "reports": "Reports",
-    "support": "Support",
-    "settings": "Settings"
-  },
-  "settings": {
-    "title": "Settings",
-    "description": "Manage your Settings",
-    "tabs": {
-      "profile": "Profile Information",
-      "general": "General",
-      "security": "Security",
-      "contact": "Contact"
-    },
-    "profile": {
-      "title": "Profile Information",
-      "description": "Update your account details and contact information.",
-      "name": "Name",
-      "namePlaceholder": "Enter your name",
-      "email": "Email",
-      "emailPlaceholder": "Enter your email",
-      "save": "Save Changes"
-    },
-    "general": {
-      "title": "General",
-      "description": "Manage your application preferences.",
-      "language": "Language",
-      "timezone": "Timezone",
-      "darkMode": {
-        "label": "Dark Mode",
-        "description": "Toggle dark theme for the application."
-      },
-      "compactView": {
-        "label": "Compact View",
-        "description": "Use compact layout for tables and lists."
-      },
-      "save": "Save Changes"
-    },
-    "security": {
-      "title": "Security",
-      "description": "Manage your password and security settings.",
-      "currentPassword": "Current Password",
-      "currentPasswordPlaceholder": "Enter current password",
-      "newPassword": "New Password",
-      "newPasswordPlaceholder": "Enter new password",
-      "confirmPassword": "Confirm Password",
-      "confirmPasswordPlaceholder": "Confirm new password",
-      "twoFactor": {
-        "label": "Two-Factor Authentication",
-        "description": "Add an extra layer of security to your account."
-      },
-      "save": "Update Security"
-    },
-    "contact": {
-      "title": "Contact",
-      "description": "Update your contact information.",
-      "phone": "Phone Number",
-      "phonePlaceholder": "Enter phone number",
-      "contactEmail": "Contact Email",
-      "contactEmailPlaceholder": "Enter contact email",
-      "address": "Address",
-      "addressPlaceholder": "Enter your address",
-      "city": "City",
-      "cityPlaceholder": "Enter your city",
-      "country": "Country",
-      "countryPlaceholder": "Enter your country",
-      "save": "Save Contact Info"
-    }
-  }
 }

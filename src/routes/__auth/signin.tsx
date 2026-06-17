@@ -44,7 +44,7 @@ function RouteComponent() {
         onSubmit: async ({ value }) => {
             await signIn.mutateAsync({
                 email: value.email,
-                panel: 'admin',
+                panel: 'owner',
                 password: value.password,
             })
         },

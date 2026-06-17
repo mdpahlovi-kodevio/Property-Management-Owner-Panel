@@ -33,7 +33,7 @@ function RouteComponent() {
         onSubmit: async ({ value }) => {
             await forgot.mutateAsync({
                 email: value.email,
-                panel: 'admin',
+                panel: 'owner',
             })
         },
     })

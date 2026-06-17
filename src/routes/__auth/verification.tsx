@@ -61,8 +61,8 @@ function RouteComponent() {
     const resend = useMutation({
         mutationFn: () =>
             type === 'signup'
-                ? authApi.resendVerification({ email: user, panel: 'admin' })
-                : authApi.forgotPassword({ email: user, panel: 'admin' }),
+                ? authApi.resendVerification({ email: user, panel: 'owner' })
+                : authApi.forgotPassword({ email: user, panel: 'owner' }),
         onSuccess: () => {
             toast.success(t('auth.codeSent', 'A new code has been sent to your email.'))
             setResendDisabled(true)
@@ -75,7 +75,7 @@ function RouteComponent() {
         defaultValues: { otp: '' },
         validators: { onChange: verifyOtpSchema },
         onSubmit: async ({ value }) => {
-            const payload = { email: user, panel: 'admin' as const, otp: value.otp }
+            const payload = { email: user, panel: 'owner' as const, otp: value.otp }
             if (type === 'signup') {
                 await verifySignup.mutateAsync(payload)
             } else {
