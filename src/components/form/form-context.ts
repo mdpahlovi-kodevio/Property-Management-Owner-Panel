@@ -2,6 +2,7 @@ import { createFormHook, createFormHookContexts } from '@tanstack/react-form'
 import { FormAvatar } from './form-avatar'
 import { FormImage } from './form-image'
 import { FormInput } from './form-input'
+import { FormInputOtp } from './form-input-otp'
 import { FormModuleMap } from './form-module-map'
 import { FormRadio } from './form-radio'
 import { FormSearchableSelect } from './form-searchable-select'
@@ -18,6 +19,7 @@ export const { useAppForm } = createFormHook({
         FormAvatar,
         FormImage,
         FormInput,
+        FormInputOtp,
         FormModuleMap,
         FormRadio,
         FormSearchableSelect,

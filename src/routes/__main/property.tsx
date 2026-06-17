@@ -1,24 +1,35 @@
-import { useState } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { PageHeader } from '@/components/ui/page-header'
-import { Button } from '@/components/ui/button'
-import { SearchInput } from '@/components/ui/search-input'
-import {
-    Plus, MapPin, Edit, Eye,
-    Wifi, ParkingCircle, Waves,
-    Dumbbell, UtensilsCrossed, Car, Accessibility, Clock,
-    Star
-} from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useAppForm } from '@/components/form/form-context'
-import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
 import { DataTableFooter } from '@/components/ui/data-table'
-import { Switch } from '@/components/ui/switch'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { PageHeader } from '@/components/ui/page-header'
+import { SearchInput } from '@/components/ui/search-input'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
+import { PROPERTIES, type Property, formatPrice, getPriceRange, getPropertyById, slugify } from '@/lib/properties'
 import { cn } from '@/lib/utils'
-import { PROPERTIES, type Property, getPropertyById, getPriceRange, formatPrice, slugify } from '@/lib/properties'
-import * as z from 'zod'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import {
+    Accessibility,
+    Car,
+    Clock,
+    Dumbbell,
+    Edit,
+    Eye,
+    MapPin,
+    ParkingCircle,
+    Plus,
+    Star,
+    UtensilsCrossed,
+    Waves,
+    Wifi,
+} from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
+import * as z from 'zod'
 
 export const Route = createFileRoute('/__main/property')({
     component: PropertyComponent,
@@ -50,10 +61,7 @@ type PropertyCard = {
 
 const PROPERTY_CARDS: PropertyCard[] = PROPERTIES.map((p) => {
     const totalRooms = p.roomTypes.reduce((sum, rt) => sum + rt.units.length, 0)
-    const totalBeds = p.roomTypes.reduce(
-        (sum, rt) => sum + rt.beds.reduce((s, b) => s + b.quantity, 0),
-        0
-    )
+    const totalBeds = p.roomTypes.reduce((sum, rt) => sum + rt.beds.reduce((s, b) => s + b.quantity, 0), 0)
     const totalBaths = p.roomTypes.filter((rt) => rt.privateBathroom).length
     const maxGuests = Math.max(...p.roomTypes.map((rt) => rt.maxOccupancy))
     const viewType = p.roomTypes[0]?.viewType ?? ''
@@ -123,21 +131,19 @@ const STATUS_OPTIONS = [
 ] as const
 
 const COUNTRY_OPTIONS = [
-    'Bangladesh', 'United States', 'United Kingdom', 'Indonesia',
-    'Thailand', 'France', 'Spain', 'Australia', 'Japan',
-].map(c => ({ value: c, label: c }))
+    'Bangladesh',
+    'United States',
+    'United Kingdom',
+    'Indonesia',
+    'Thailand',
+    'France',
+    'Spain',
+    'Australia',
+    'Japan',
+].map((c) => ({ value: c, label: c }))
 
-const TIMEZONE_OPTIONS = [
-    { label: 'Asia/Dhaka (UTC+6)', value: 'Asia/Dhaka (UTC+6)' },
-    { label: 'Asia/Bali (UTC+8)', value: 'Asia/Bali (UTC+8)' },
-    { label: 'America/New_York (UTC-5)', value: 'America/New_York (UTC-5)' },
-    { label: 'Europe/London (UTC+0)', value: 'Europe/London (UTC+0)' },
-    { label: 'Europe/Paris (UTC+1)', value: 'Europe/Paris (UTC+1)' },
-    { label: 'Asia/Bangkok (UTC+7)', value: 'Asia/Bangkok (UTC+7)' },
-]
-
-const PROP_TABS = ['Basics', 'Location', 'Amenities and Policies', 'Media'] as const
-type PropTab = typeof PROP_TABS[number]
+const PROP_TABS = ['Basics', 'Location', 'Policies', 'Photos'] as const
+type PropTab = (typeof PROP_TABS)[number]
 
 // ─── Zod schema for the create/edit form ──────────────────────────
 const propertyFormSchema = z.object({
@@ -153,7 +159,6 @@ const propertyFormSchema = z.object({
     address2: z.string(),
     latitude: z.number(),
     longitude: z.number(),
-    timezone: z.string().min(1, 'Timezone is required'),
     checkInTime: z.string().min(1, 'Check-in time is required'),
     checkOutTime: z.string().min(1, 'Check-out time is required'),
     amenities: z.array(z.string()),
@@ -188,7 +193,6 @@ const FORM_DEFAULTS: PropertyFormValues = {
     address2: '',
     latitude: 0,
     longitude: 0,
-    timezone: '',
     checkInTime: '',
     checkOutTime: '',
     amenities: [],
@@ -217,7 +221,6 @@ function valuesFromProperty(p: Property): PropertyFormValues {
         address2: p.property.address2 ?? '',
         latitude: p.property.latitude,
         longitude: p.property.longitude,
-        timezone: p.property.timezone,
         checkInTime: p.property.checkInTime,
         checkOutTime: p.property.checkOutTime,
         amenities: [...p.property.amenities],
@@ -237,14 +240,19 @@ function valuesFromProperty(p: Property): PropertyFormValues {
 function StatusBadge({ status }: { status: string }) {
     const isActive = status === 'Active'
     return (
-        <span className={cn(
-            'shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border',
-            isActive
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
-                : 'bg-amber-50 text-amber-700 border-amber-200/60'
-        )}>
+        <span
+            className={cn(
+                'shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border',
+                isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : 'bg-amber-50 text-amber-700 border-amber-200/60',
+            )}
+        >
             <span className="relative flex size-1.5">
-                <span className={cn('animate-ping absolute inline-flex size-full rounded-full opacity-75', isActive ? 'bg-emerald-400' : 'bg-amber-400')} />
+                <span
+                    className={cn(
+                        'animate-ping absolute inline-flex size-full rounded-full opacity-75',
+                        isActive ? 'bg-emerald-400' : 'bg-amber-400',
+                    )}
+                />
                 <span className={cn('relative inline-flex rounded-full size-1.5', isActive ? 'bg-emerald-500' : 'bg-amber-500')} />
             </span>
             {status}
@@ -282,15 +290,13 @@ function PropertyComponent() {
         setEditingPropertyId(null)
     }
 
-    const editingCard = editingPropertyId
-        ? PROPERTY_CARDS.find(p => p.id === editingPropertyId) ?? null
-        : null
+    const editingCard = editingPropertyId ? (PROPERTY_CARDS.find((p) => p.id === editingPropertyId) ?? null) : null
 
     const formDefaults: PropertyFormValues = editingCard
         ? (() => {
-            const full = getPropertyById(editingCard.id)
-            return full ? valuesFromProperty(full) : FORM_DEFAULTS
-        })()
+              const full = getPropertyById(editingCard.id)
+              return full ? valuesFromProperty(full) : FORM_DEFAULTS
+          })()
         : FORM_DEFAULTS
 
     const handleSave = (values: PropertyFormValues) => {
@@ -308,8 +314,11 @@ function PropertyComponent() {
                     <SearchInput
                         placeholder={t('properties.searchPlaceholder')}
                         value={searchQuery}
-                        onValueChange={(val) => { setSearchQuery(val); setCurrentPage(1) }}
-                        className="w-full sm:w-[300px]"
+                        onValueChange={(val) => {
+                            setSearchQuery(val)
+                            setCurrentPage(1)
+                        }}
+                        className="w-full sm:w-75"
                     />
                     <Button
                         onClick={openAdd}
@@ -324,18 +333,20 @@ function PropertyComponent() {
             {/* ── Grid + pagination ── */}
 
             {(() => {
-                const filtered = PROPERTY_CARDS.filter(p => {
+                const filtered = PROPERTY_CARDS.filter((p) => {
                     const q = searchQuery.toLowerCase()
                     return p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q) || p.type.toLowerCase().includes(q)
                 })
                 const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                 return (
                     <>
-                        <div className="grid gap-4 grid-cols-[repeat(auto-fit,_minmax(18rem,_1fr))]">
+                        <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(18rem,1fr))]">
                             {paginated.map((property) => (
                                 <div
                                     key={property.id}
-                                    onClick={() => navigate({ to: '/property/$propertySlug', params: { propertySlug: slugify(property.title) } })}
+                                    onClick={() =>
+                                        navigate({ to: '/property/$propertySlug', params: { propertySlug: slugify(property.title) } })
+                                    }
                                     className="group h-full flex flex-col bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_6px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.1),0_12px_28px_rgba(0,0,0,0.08)] border border-border transition-all duration-300 ease-out hover:-translate-y-1 cursor-pointer overflow-hidden"
                                 >
                                     {/* Image */}
@@ -389,19 +400,30 @@ function PropertyComponent() {
 
                                         {/* Meta: beds / baths / guests */}
                                         <div className="flex justify-between items-center gap-2 flex-wrap border-t pt-2 text-sm text-muted-foreground">
-                                            <span className="inline-flex items-center gap-1">🛏 {property.totalBeds} {t('properties.beds')}</span>
-                                            <span className="inline-flex items-center gap-1">🚿 {property.totalBaths} {t('properties.baths')}</span>
-                                            <span className="inline-flex items-center gap-1">👥 {property.maxGuests} {t('properties.guests')}</span>
+                                            <span className="inline-flex items-center gap-1">
+                                                🛏 {property.totalBeds} {t('properties.beds')}
+                                            </span>
+                                            <span className="inline-flex items-center gap-1">
+                                                🚿 {property.totalBaths} {t('properties.baths')}
+                                            </span>
+                                            <span className="inline-flex items-center gap-1">
+                                                👥 {property.maxGuests} {t('properties.guests')}
+                                            </span>
                                         </div>
 
                                         {/* Admin info chips (secondary info) */}
                                         <div className="flex justify-between items-center gap-1.5 flex-wrap border-y border-border py-2">
                                             <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                                                <span className={cn("size-1.5 rounded-full",
-                                                    property.occupancy > 80 ? "bg-emerald-500"
-                                                        : property.occupancy > 50 ? "bg-amber-500"
-                                                            : "bg-rose-500"
-                                                )} />
+                                                <span
+                                                    className={cn(
+                                                        'size-1.5 rounded-full',
+                                                        property.occupancy > 80
+                                                            ? 'bg-emerald-500'
+                                                            : property.occupancy > 50
+                                                              ? 'bg-amber-500'
+                                                              : 'bg-rose-500',
+                                                    )}
+                                                />
                                                 {property.occupancy}% {t('properties.occ')}
                                             </span>
                                             <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
@@ -413,7 +435,10 @@ function PropertyComponent() {
                                         </div>
                                         <div className="grid grid-cols-2 gap-2 mt-1">
                                             <Button
-                                                onClick={(e) => { e.stopPropagation(); openEdit(property) }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    openEdit(property)
+                                                }}
                                                 variant="outline"
                                             >
                                                 <Edit className="size-3.5" />
@@ -422,7 +447,10 @@ function PropertyComponent() {
                                             <Button
                                                 onClick={(e) => {
                                                     e.stopPropagation()
-                                                    navigate({ to: '/property/$propertySlug', params: { propertySlug: slugify(property.title) } })
+                                                    navigate({
+                                                        to: '/property/$propertySlug',
+                                                        params: { propertySlug: slugify(property.title) },
+                                                    })
                                                 }}
                                             >
                                                 <Eye className="size-3.5" />
@@ -439,7 +467,10 @@ function PropertyComponent() {
                             limit={itemsPerPage}
                             total={filtered.length}
                             onPageChange={setCurrentPage}
-                            onLimitChange={(limit) => { setItemsPerPage(limit); setCurrentPage(1) }}
+                            onLimitChange={(limit) => {
+                                setItemsPerPage(limit)
+                                setCurrentPage(1)
+                            }}
                             limitOptions={[4, 8, 12, 24]}
                             noun={t('properties.noun')}
                         />
@@ -450,12 +481,15 @@ function PropertyComponent() {
             {/* ══════════════════════════════════════════════════
                 CREATE / EDIT PROPERTY DIALOG
             ══════════════════════════════════════════════════ */}
-            <Dialog open={isAddOpen} onOpenChange={(open) => { if (!open) closeDialog() }}>
+            <Dialog
+                open={isAddOpen}
+                onOpenChange={(open) => {
+                    if (!open) closeDialog()
+                }}
+            >
                 <DialogContent className="sm:max-w-160">
                     <DialogHeader>
-                        <DialogTitle>
-                            {isEditMode ? t('properties.editProperty') : t('properties.createProperty')}
-                        </DialogTitle>
+                        <DialogTitle>{isEditMode ? t('properties.editProperty') : t('properties.createProperty')}</DialogTitle>
                         <DialogDescription>
                             {isEditMode ? `Editing "${editingCard?.title ?? ''}"` : t('properties.addDesc')}
                         </DialogDescription>
@@ -472,8 +506,6 @@ function PropertyComponent() {
                     />
                 </DialogContent>
             </Dialog>
-
-
         </>
     )
 }
@@ -509,10 +541,10 @@ function PropertyForm({
                         type="button"
                         onClick={() => onActiveTabChange(tab)}
                         className={cn(
-                            'flex-1 min-w-[70px] px-4 py-3 text-[12.5px] font-semibold whitespace-nowrap border-b-2 transition-all duration-200',
+                            'flex-1 min-w-17 px-4 py-3 text-[12.5px] font-semibold whitespace-nowrap border-b-2 transition-all duration-200',
                             activeTab === tab
                                 ? 'border-[#243E8B] text-[#243E8B] bg-white'
-                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-white/60'
+                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-white/60',
                         )}
                     >
                         {tab}
@@ -521,7 +553,10 @@ function PropertyForm({
             </div>
 
             <form
-                onSubmit={(e) => { e.preventDefault(); form.handleSubmit() }}
+                onSubmit={(e) => {
+                    e.preventDefault()
+                    form.handleSubmit()
+                }}
                 className="flex flex-col flex-1 min-h-0"
             >
                 {/* ════════ BASICS ════════ */}
@@ -534,7 +569,13 @@ function PropertyForm({
                             </form.AppField>
                             <div className="grid grid-cols-2 gap-3">
                                 <form.AppField name="propertyType">
-                                    {(field) => <field.FormSelect label="Property type" placeholder="Select type" options={[...PROP_TYPE_OPTIONS]} />}
+                                    {(field) => (
+                                        <field.FormSelect
+                                            label="Property type"
+                                            placeholder="Select type"
+                                            options={[...PROP_TYPE_OPTIONS]}
+                                        />
+                                    )}
                                 </form.AppField>
                                 <form.AppField name="status">
                                     {(field) => (
@@ -546,7 +587,12 @@ function PropertyForm({
                                 </form.AppField>
                             </div>
                             <form.AppField name="description">
-                                {(field) => <field.FormTextarea label="Description" placeholder="Describe your property for guests and OTA listings..." />}
+                                {(field) => (
+                                    <field.FormTextarea
+                                        label="Description"
+                                        placeholder="Describe your property for guests and OTA listings..."
+                                    />
+                                )}
                             </form.AppField>
                         </Section>
 
@@ -554,20 +600,44 @@ function PropertyForm({
                             <SectionLabel>Check-in / Check-out</SectionLabel>
                             <div className="grid grid-cols-2 gap-3">
                                 <form.AppField name="checkInTime">
-                                    {(field) => (
-                                        <field.FormInput type='time' label="Check-in time" />
-                                    )}
+                                    {(field) => <field.FormInput type="time" label="Check-in time" />}
                                 </form.AppField>
                                 <form.AppField name="checkOutTime">
-                                    {(field) => (
-                                        <field.FormInput type='time' label="Check-out time" />
-                                    )}
+                                    {(field) => <field.FormInput type="time" label="Check-out time" />}
                                 </form.AppField>
                             </div>
-                            <form.AppField name="timezone">
-                                {(field) => <field.FormSelect label="Property timezone" placeholder="Select timezone" options={TIMEZONE_OPTIONS} />}
-                            </form.AppField>
+                        </Section>
 
+                        <Section>
+                            <SectionLabel>Property Amenities</SectionLabel>
+                            <form.AppField name="amenities">
+                                {(field) => (
+                                    <div className="flex flex-wrap gap-2">
+                                        {PROP_AMENITIES.map(({ label, icon: Icon }) => {
+                                            const isOn = field.state.value.includes(label)
+                                            return (
+                                                <button
+                                                    key={label}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const cur = field.state.value
+                                                        field.handleChange(isOn ? cur.filter((a) => a !== label) : [...cur, label])
+                                                    }}
+                                                    className={cn(
+                                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] font-medium transition-all duration-200',
+                                                        isOn
+                                                            ? 'border-[#243E8B] bg-[#243E8B] text-white shadow-sm shadow-[#243E8B]/20'
+                                                            : 'border-slate-200 text-slate-600 bg-white hover:border-slate-300 hover:bg-slate-50',
+                                                    )}
+                                                >
+                                                    {Icon && <Icon className="size-3.5" />}
+                                                    {label}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </form.AppField>
                         </Section>
                     </div>
                 )}
@@ -603,109 +673,79 @@ function PropertyForm({
                             <SectionLabel>Coordinates</SectionLabel>
                             <div className="grid grid-cols-2 gap-3">
                                 <form.AppField name="latitude">
-                                    {(field) => (
-                                        <field.FormInput type='number' label="Latitude" placeholder="-8.691195" />
-                                    )}
+                                    {(field) => <field.FormInput type="number" label="Latitude" placeholder="-8.691195" />}
                                 </form.AppField>
                                 <form.AppField name="longitude">
-                                    {(field) => (
-                                        <field.FormInput type='number' label="Longitude" placeholder="115.167820" />
-                                    )}
+                                    {(field) => <field.FormInput type="number" label="Longitude" placeholder="115.167820" />}
                                 </form.AppField>
                             </div>
                         </Section>
                     </div>
                 )}
 
-                {/* ════════ AMENITIES & POLICIES ════════ */}
-                {activeTab === 'Amenities and Policies' && (
-                    <div className="flex flex-col gap-8">
+                {/* ════════ POLICIES ════════ */}
+                {activeTab === 'Policies' && (
+                    <div className="flex flex-col gap-6">
                         <Section>
-                            <SectionLabel>Property Amenities</SectionLabel>
-                            <form.AppField name="amenities">
-                                {(field) => (
-                                    <div className="flex flex-wrap gap-2">
-                                        {PROP_AMENITIES.map(({ label, icon: Icon }) => {
-                                            const isOn = field.state.value.includes(label)
-                                            return (
-                                                <button
-                                                    key={label}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const cur = field.state.value
-                                                        field.handleChange(isOn ? cur.filter(a => a !== label) : [...cur, label])
-                                                    }}
-                                                    className={cn(
-                                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] font-medium transition-all duration-200',
-                                                        isOn
-                                                            ? 'border-[#243E8B] bg-[#243E8B] text-white shadow-sm shadow-[#243E8B]/20'
-                                                            : 'border-slate-200 text-slate-600 bg-white hover:border-slate-300 hover:bg-slate-50'
-                                                    )}
-                                                >
-                                                    {Icon && <Icon className="size-3.5" />}
-                                                    {label}
-                                                </button>
-                                            )
-                                        })}
-                                    </div>
-                                )}
-                            </form.AppField>
+                            <SectionLabel>Guest Policies</SectionLabel>
+                            <div className="rounded-lg border border-slate-100 overflow-hidden divide-y divide-slate-100">
+                                {(
+                                    [
+                                        {
+                                            name: 'policies.smokingAllowed' as const,
+                                            label: 'Smoking allowed',
+                                            sub: 'Guests may smoke on premises',
+                                        },
+                                        { name: 'policies.petsAllowed' as const, label: 'Pets allowed', sub: 'Guests may bring animals' },
+                                        {
+                                            name: 'policies.partiesAllowed' as const,
+                                            label: 'Parties / events allowed',
+                                            sub: 'Guests may host gatherings',
+                                        },
+                                    ] as const
+                                ).map((policy) => (
+                                    <form.AppField key={policy.name} name={policy.name}>
+                                        {(f) => (
+                                            <div className="flex items-center justify-between px-4 py-3.5 bg-white hover:bg-slate-50/70 transition-colors">
+                                                <div>
+                                                    <p className="text-[13px] font-semibold text-slate-800">{policy.label}</p>
+                                                    <p className="text-[11.5px] text-slate-400 mt-0.5">{policy.sub}</p>
+                                                </div>
+                                                <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
+                                            </div>
+                                        )}
+                                    </form.AppField>
+                                ))}
+                            </div>
                         </Section>
 
-                        <div className="flex flex-col gap-6">
-                            <Section>
-                                <SectionLabel>Guest Policies</SectionLabel>
-                                <div className="rounded-lg border border-slate-100 overflow-hidden divide-y divide-slate-100">
-                                    {([
-                                        { name: 'policies.smokingAllowed' as const, label: 'Smoking allowed', sub: 'Guests may smoke on premises' },
-                                        { name: 'policies.petsAllowed' as const, label: 'Pets allowed', sub: 'Guests may bring animals' },
-                                        { name: 'policies.partiesAllowed' as const, label: 'Parties / events allowed', sub: 'Guests may host gatherings' },
-                                    ] as const).map(policy => (
-                                        <form.AppField key={policy.name} name={policy.name}>
-                                            {(f) => (
-                                                <div className="flex items-center justify-between px-4 py-3.5 bg-white hover:bg-slate-50/70 transition-colors">
-                                                    <div>
-                                                        <p className="text-[13px] font-semibold text-slate-800">{policy.label}</p>
-                                                        <p className="text-[11.5px] text-slate-400 mt-0.5">{policy.sub}</p>
-                                                    </div>
-                                                    <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
-                                                </div>
-                                            )}
-                                        </form.AppField>
-                                    ))}
-                                </div>
-                            </Section>
-
-                            <Section>
-                                <SectionLabel>Fees &amp; Rules</SectionLabel>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <form.AppField name="minGuestAge">
-                                        {(field) => (
-                                            <field.FormInput type='number' label="Minimum guest age" placeholder="18" />
-                                        )}
-                                    </form.AppField>
-                                    <form.AppField name="securityDeposit">
-                                        {(field) => (
-                                            <field.FormInput type='number' label="Security deposit" placeholder="0.00" />
-                                        )}
-                                    </form.AppField>
-                                </div>
-                                <form.AppField name="houseRules">
-                                    {(field) => <field.FormTextarea label="House rules" placeholder="e.g. No loud music after 10pm..." />}
+                        <Section>
+                            <SectionLabel>Fees &amp; Rules</SectionLabel>
+                            <div className="grid grid-cols-2 gap-3">
+                                <form.AppField name="minGuestAge">
+                                    {(field) => <field.FormInput type="number" label="Minimum guest age" placeholder="18" />}
                                 </form.AppField>
-                            </Section>
-                        </div>
+                                <form.AppField name="securityDeposit">
+                                    {(field) => <field.FormInput type="number" label="Security deposit" placeholder="0.00" />}
+                                </form.AppField>
+                            </div>
+                            <form.AppField name="houseRules">
+                                {(field) => <field.FormTextarea label="House rules" placeholder="e.g. No loud music after 10pm..." />}
+                            </form.AppField>
+                        </Section>
                     </div>
                 )}
 
-                {/* ════════ MEDIA ════════ */}
-                {activeTab === 'Media' && (
+                {/* ════════ PHOTOS ════════ */}
+                {activeTab === 'Photos' && (
                     <div className="flex flex-col gap-6">
                         <Section>
                             <SectionLabel>Property Photos</SectionLabel>
                             <div
                                 className="border-2 border-dashed border-slate-200 rounded-lg p-10 flex flex-col items-center gap-3 cursor-pointer hover:border-[#243E8B]/40 hover:bg-[#EEF3FF]/20 transition-all duration-300 group"
-                                onClick={() => {/* file pick */ }}
+                                onClick={() => {
+                                    /* file pick */
+                                }}
                             >
                                 <div className="size-12 rounded-lg bg-slate-100 group-hover:bg-[#EEF3FF] flex items-center justify-center transition-colors duration-300">
                                     <Plus className="size-5 text-slate-400 group-hover:text-[#243E8B] transition-colors duration-300" />
@@ -716,10 +756,41 @@ function PropertyForm({
                                 </div>
                             </div>
                         </Section>
+
+                        <Section>
+                            <SectionLabel>Photo URLs</SectionLabel>
+                            <div className="flex flex-col gap-3">
+                                <form.AppField name="thumbnail">
+                                    {(field) => <field.FormInput label="Thumbnail URL" type="url" placeholder="https://..." />}
+                                </form.AppField>
+                                <form.AppField name="gallery">
+                                    {(field) => (
+                                        <div className="flex flex-col gap-1.5">
+                                            <Label className="text-[12px] font-medium text-slate-600">Gallery URLs (comma separated)</Label>
+                                            <Input
+                                                type="text"
+                                                placeholder="https://a..., https://b..."
+                                                className="h-9 rounded-lg border-slate-200 text-[13px]"
+                                                value={field.state.value.join(', ')}
+                                                onChange={(e) =>
+                                                    field.handleChange(
+                                                        e.target.value
+                                                            .split(',')
+                                                            .map((s) => s.trim())
+                                                            .filter(Boolean),
+                                                    )
+                                                }
+                                                onBlur={field.handleBlur}
+                                            />
+                                        </div>
+                                    )}
+                                </form.AppField>
+                            </div>
+                        </Section>
                     </div>
                 )}
 
-                <Separator className='mt-5 mb-4' />
+                <Separator className="mt-5 mb-4" />
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
                         {PROP_TABS.map((tab) => (
@@ -729,18 +800,13 @@ function PropertyForm({
                                 onClick={() => onActiveTabChange(tab)}
                                 className={cn(
                                     'size-1.5 rounded-full transition-all duration-200',
-                                    activeTab === tab ? 'bg-[#243E8B] w-4' : 'bg-slate-200 hover:bg-slate-300'
+                                    activeTab === tab ? 'bg-[#243E8B] w-4' : 'bg-slate-200 hover:bg-slate-300',
                                 )}
                             />
                         ))}
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={onCancel}
-                            className="h-9 px-5 rounded-xl font-semibold text-[13px] border-slate-200"
-                        >
+                        <Button type="button" variant="outline" onClick={onCancel}>
                             Cancel
                         </Button>
                         <form.AppForm>

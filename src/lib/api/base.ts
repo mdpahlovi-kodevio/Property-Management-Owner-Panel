@@ -1,9 +1,17 @@
+import { queryClient } from '@/main'
+import { SessionKey } from './auth'
+
 export const baseURL = import.meta.env.VITE_APP_SERVER as string
 export const apiPrefix = '/api/v1'
 
 export type Paginated<T> = {
-    items: T[]
-    total: number
+    data: T[]
+    meta: {
+        page: number
+        limit: number
+        total: number
+        totalPages: number
+    }
 }
 
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -16,11 +24,16 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
     if (!res.ok) {
         const data = await res.json().catch(() => null)
-        const message = (data && (data.message || data.error)) || `Request failed: ${res.status}`
-        throw new Error(Array.isArray(message) ? message.join(', ') : message)
+
+        if (data?.statusCode === 401) {
+            queryClient.setQueryData(SessionKey, null)
+        }
+
+        const message = data?.message ?? 'Something went wrong'
+        throw new Error(message)
     }
 
-    if (res.status === 204) return undefined as T
+    if (res.status === 204) return null as T
     return res.json() as Promise<T>
 }
 

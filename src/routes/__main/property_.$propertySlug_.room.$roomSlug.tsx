@@ -1,11 +1,26 @@
-import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
-import { ArrowLeft, BedDouble, Bath, Maximize2, Users, Cigarette, Baby, Shield, CheckCircle2, Calendar, Activity, Key, CreditCard, Plus } from 'lucide-react'
-import { getPropertyBySlug, getRoomBySlug, slugify, formatPrice } from '@/lib/properties'
-import { getRoomMetrics, getUnitStatus, UNIT_STATUS_COLORS } from '@/lib/property-rooms'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { formatPrice, getPropertyBySlug, getRoomBySlug, slugify } from '@/lib/properties'
+import { getRoomMetrics, getUnitStatus, UNIT_STATUS_COLORS } from '@/lib/property-rooms'
+import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
+import {
+    Activity,
+    ArrowLeft,
+    Baby,
+    Bath,
+    BedDouble,
+    Calendar,
+    CheckCircle2,
+    Cigarette,
+    CreditCard,
+    Key,
+    Maximize2,
+    Plus,
+    Shield,
+    Users,
+} from 'lucide-react'
+import { useState } from 'react'
 
 import { cn } from '@/lib/utils'
 
@@ -26,9 +41,7 @@ export const Route = createFileRoute('/__main/property_/$propertySlug_/room/$roo
                 </div>
             </div>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Room type not found</h1>
-            <p className="mt-3 text-slate-500">
-                The room type you're looking for doesn't exist or has been removed.
-            </p>
+            <p className="mt-3 text-slate-500">The room type you're looking for doesn't exist or has been removed.</p>
             <Link
                 to="/property"
                 className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-[#243E8B] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#1D3270] transition-colors"
@@ -57,9 +70,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
     const [activeImage, setActiveImage] = useState(0)
 
     const bedsCount = rt.beds.reduce((s, b) => s + b.quantity, 0)
-    const floors = rt.units.length > 0
-        ? Array.from(new Set(rt.units.map((u) => u.floor))).join(', ')
-        : '—'
+    const floors = rt.units.length > 0 ? Array.from(new Set(rt.units.map((u) => u.floor))).join(', ') : '—'
     const metrics = getRoomMetrics(rt.id, rt.basePrice)
 
     return (
@@ -112,15 +123,9 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                     {/* Gallery & Quick Info */}
                     <Card className="overflow-hidden border-slate-200 shadow-sm">
                         <div className="flex flex-col md:flex-row">
-                            <div className="md:w-1/3 bg-slate-100 relative min-h-[250px]">
-                                <img
-                                    src={allImages[activeImage]}
-                                    alt={rt.name}
-                                    className="absolute inset-0 w-full h-full object-cover"
-                                />
-                                <Badge className="absolute top-3 left-3 bg-emerald-500 hover:bg-emerald-600">
-                                    Active
-                                </Badge>
+                            <div className="md:w-1/3 bg-slate-100 relative min-h-64">
+                                <img src={allImages[activeImage]} alt={rt.name} className="absolute inset-0 w-full h-full object-cover" />
+                                <Badge className="absolute top-3 left-3 bg-emerald-500 hover:bg-emerald-600">Active</Badge>
                                 {allImages.length > 1 && (
                                     <div className="absolute bottom-3 left-3 right-3 flex gap-2 overflow-x-auto snap-x scrollbar-hide py-1">
                                         {allImages.map((src, i) => (
@@ -130,7 +135,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                                                 onClick={() => setActiveImage(i)}
                                                 className={cn(
                                                     'h-12 w-12 shrink-0 overflow-hidden rounded-md border-2 transition-all shadow-sm snap-start',
-                                                    i === activeImage ? 'border-white' : 'border-transparent opacity-70 hover:opacity-100'
+                                                    i === activeImage ? 'border-white' : 'border-transparent opacity-70 hover:opacity-100',
                                                 )}
                                             >
                                                 <img src={src} alt="" className="h-full w-full object-cover" />
@@ -149,9 +154,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                                     </Badge>
                                 </div>
                                 <h3 className="text-xl font-bold text-slate-900 mb-2">{rt.name}</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed mb-6">
-                                    {rt.description}
-                                </p>
+                                <p className="text-slate-500 text-sm leading-relaxed mb-6">{rt.description}</p>
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                     <MiniStat icon={<Maximize2 />} label="Size" value={`${rt.roomSize} ${rt.roomSizeUnit}`} />
                                     <MiniStat icon={<Users />} label="Capacity" value={`${rt.maxOccupancy} Max`} />
@@ -173,8 +176,12 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                             </CardHeader>
                             <CardContent className="pt-4">
                                 <div className="flex flex-wrap gap-2">
-                                    {rt.amenities.map(amenity => (
-                                        <Badge key={amenity} variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium px-3 py-1.5">
+                                    {rt.amenities.map((amenity) => (
+                                        <Badge
+                                            key={amenity}
+                                            variant="secondary"
+                                            className="bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium px-3 py-1.5"
+                                        >
                                             {amenity}
                                         </Badge>
                                     ))}
@@ -192,7 +199,10 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                             <CardContent className="pt-4">
                                 <div className="space-y-3">
                                     {rt.beds.map((bed, i) => (
-                                        <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50">
+                                        <div
+                                            key={i}
+                                            className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50"
+                                        >
                                             <div className="flex items-center gap-3">
                                                 <div className="bg-white p-2 rounded-md shadow-sm border border-slate-100">
                                                     <BedDouble className="size-4 text-[#243E8B]" />
@@ -237,9 +247,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                                     <Key className="size-4 text-[#243E8B]" />
                                     Physical Units
                                 </CardTitle>
-                                <Badge className="bg-[#243E8B] hover:bg-[#1D3270]">
-                                    {rt.units.length} Total
-                                </Badge>
+                                <Badge className="bg-[#243E8B] hover:bg-[#1D3270]">{rt.units.length} Total</Badge>
                             </div>
                         </CardHeader>
                         <CardContent className="p-0 flex-1 overflow-hidden">
@@ -249,7 +257,10 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                                         const status = getUnitStatus(unit.id)
 
                                         return (
-                                            <div key={unit.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                                            <div
+                                                key={unit.id}
+                                                className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                                            >
                                                 <div className="flex items-center gap-3">
                                                     <div className="size-10 rounded-xl bg-[#EEF3FF] text-[#243E8B] flex items-center justify-center font-bold text-sm border border-[#243E8B]/10">
                                                         {unit.roomNumber}
@@ -259,7 +270,13 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                                                         <div className="text-xs text-slate-500">Floor {unit.floor}</div>
                                                     </div>
                                                 </div>
-                                                <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider", UNIT_STATUS_COLORS[status])}>
+                                                <Badge
+                                                    variant="outline"
+                                                    className={cn(
+                                                        'text-[10px] uppercase font-bold tracking-wider',
+                                                        UNIT_STATUS_COLORS[status],
+                                                    )}
+                                                >
                                                     {status}
                                                 </Badge>
                                             </div>
@@ -293,16 +310,26 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
 
 // ─── Sub-components ─────────────────────────────────────────────────
 
-function MetricCard({ title, value, subtitle, icon, trend }: { title: string, value: string, subtitle: string, icon: React.ReactNode, trend?: string }) {
+function MetricCard({
+    title,
+    value,
+    subtitle,
+    icon,
+    trend,
+}: {
+    title: string
+    value: string
+    subtitle: string
+    icon: React.ReactNode
+    trend?: string
+}) {
     const isPositive = trend?.startsWith('+')
     return (
         <Card className="border-slate-200 shadow-sm">
             <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                     <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider">{title}</h4>
-                    <div className="p-2 bg-[#EEF3FF] rounded-lg">
-                        {icon}
-                    </div>
+                    <div className="p-2 bg-[#EEF3FF] rounded-lg">{icon}</div>
                 </div>
                 <div className="flex items-end justify-between">
                     <div>
@@ -310,7 +337,7 @@ function MetricCard({ title, value, subtitle, icon, trend }: { title: string, va
                         <div className="text-sm text-slate-400 font-medium mt-1">{subtitle}</div>
                     </div>
                     {trend && (
-                        <div className={cn("text-sm font-bold flex items-center gap-1", isPositive ? "text-emerald-600" : "text-rose-600")}>
+                        <div className={cn('text-sm font-bold flex items-center gap-1', isPositive ? 'text-emerald-600' : 'text-rose-600')}>
                             {trend}
                         </div>
                     )}
@@ -320,7 +347,7 @@ function MetricCard({ title, value, subtitle, icon, trend }: { title: string, va
     )
 }
 
-function MiniStat({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
+function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
     return (
         <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-1.5 text-slate-400 text-xs uppercase font-bold tracking-wider">
@@ -332,7 +359,7 @@ function MiniStat({ icon, label, value }: { icon: React.ReactNode, label: string
     )
 }
 
-function StatusToggle({ label, active, icon }: { label: string, active: boolean, icon: React.ReactNode }) {
+function StatusToggle({ label, active, icon }: { label: string; active: boolean; icon: React.ReactNode }) {
     return (
         <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2 text-slate-500">
@@ -341,12 +368,18 @@ function StatusToggle({ label, active, icon }: { label: string, active: boolean,
             </div>
             <div>
                 {active ? (
-                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 transition-colors text-xs py-1">
+                    <Badge
+                        variant="outline"
+                        className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 transition-colors text-xs py-1"
+                    >
                         <CheckCircle2 className="size-3 mr-1" />
                         Enabled
                     </Badge>
                 ) : (
-                    <Badge variant="outline" className="bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 transition-colors text-xs py-1">
+                    <Badge
+                        variant="outline"
+                        className="bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 transition-colors text-xs py-1"
+                    >
                         Disabled
                     </Badge>
                 )}

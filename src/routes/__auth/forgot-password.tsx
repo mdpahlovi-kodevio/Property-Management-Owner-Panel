@@ -1,46 +1,56 @@
 import { useAppForm } from '@/components/form/form-context'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { authApi } from '@/lib/api/auth'
+import { useMutation } from '@tanstack/react-query'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { z } from 'zod'
 
 export const Route = createFileRoute('/__auth/forgot-password')({
     component: RouteComponent,
 })
 
-const forgotSchema = z.object({
-    email: z.email('Enter your email address'),
-})
-
 function RouteComponent() {
-    // const navigate = useNavigate()
+    const { t } = useTranslation()
+    const navigate = useNavigate()
+
+    const forgotSchema = z.object({
+        email: z.email(t('auth.enterEmail', 'Enter your email address')),
+    })
+
+    const forgot = useMutation({
+        mutationFn: authApi.forgotPassword,
+        onSuccess: () => {
+            toast.success(t('auth.codeSent', 'A new code has been sent to your email.'))
+            navigate({ to: '/verification', search: { user: form.state.values.email, type: 'reset' } })
+        },
+        onError: (error) => toast.error(error.message),
+    })
 
     const form = useAppForm({
         defaultValues: { email: '' },
         validators: { onChange: forgotSchema },
         onSubmit: async ({ value }) => {
-            console.log(value)
-            // await auth.requestPasswordReset(
-            //     {
-            //         email: value.email,
-            //         redirectTo: `${import.meta.env.VITE_APP_CLIENT}/reset-password`,
-            //     },
-            //     {
-            //         onSuccess: () => {
-            //             toast.success("Password reset link sent to your email!");
-            //             navigate({ to: "/verification", search: { user: value.email, type: "reset" } });
-            //         },
-            //     },
-            // );
+            await forgot.mutateAsync({
+                email: value.email,
+                panel: 'admin',
+            })
         },
     })
 
     return (
         <div className="my-16 mx-auto flex w-full max-w-150 flex-col gap-6 rounded-lg border p-6 bg-white">
             <div>
-                <h2 className="text-center text-2xl font-bold">Forgot Password</h2>
-                <p className="mt-2 text-center text-muted-foreground">
-                    Enter your registered email address and we’ll send you a <br />
-                    verification code to reset your password.
-                </p>
+                <h2 className="text-center text-2xl font-bold">{t('auth.forgotPassword', 'Forgot Password')}</h2>
+                <p
+                    className="mt-2 text-center text-muted-foreground"
+                    dangerouslySetInnerHTML={{
+                        __html: t(
+                            'auth.forgotPasswordDesc',
+                            'Enter your registered email address and we’ll send you a <br /> verification code to reset your password.',
+                        ),
+                    }}
+                />
             </div>
 
             <form
@@ -51,18 +61,24 @@ function RouteComponent() {
                 }}
             >
                 <form.AppField name="email">
-                    {(field) => <field.FormInput type="email" label="Email" placeholder="Enter your email" />}
+                    {(field) => (
+                        <field.FormInput
+                            type="email"
+                            label={t('auth.email', 'Email')}
+                            placeholder={t('auth.enterEmail', 'Enter your email')}
+                        />
+                    )}
                 </form.AppField>
 
                 <form.AppForm>
-                    <form.FormSubmit label="Reset Password" />
+                    <form.FormSubmit label={t('auth.sendCode', 'Send verification code')} />
                 </form.AppForm>
             </form>
 
             <p className="text-center text-muted-foreground">
-                Remember your password?{' '}
+                {t('auth.rememberPassword', 'Remember your password?')}{' '}
                 <Link to="/signin" className="text-foreground font-medium hover:underline">
-                    Sign in
+                    {t('auth.signIn', 'Sign in')}
                 </Link>
             </p>
         </div>

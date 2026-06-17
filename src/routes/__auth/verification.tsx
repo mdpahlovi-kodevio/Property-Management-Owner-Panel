@@ -1,7 +1,12 @@
-import { Button, buttonVariants } from '@/components/ui/button'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useEffect, useState, useTransition } from 'react'
-import * as z from 'zod'
+import { useAppForm } from '@/components/form/form-context'
+import { Button } from '@/components/ui/button'
+import { authApi, SessionKey } from '@/lib/api/auth'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
+import { z } from 'zod'
 
 const searchSchema = z.object({
     user: z.email(),
@@ -14,8 +19,10 @@ export const Route = createFileRoute('/__auth/verification')({
 })
 
 function RouteComponent() {
+    const { t } = useTranslation()
+    const navigate = useNavigate()
+    const queryClient = useQueryClient()
     const { user, type } = Route.useSearch()
-    const [loading, startTransition] = useTransition()
     const [resendDisabled, setResendDisabled] = useState(false)
     const [countdown, setCountdown] = useState(0)
 
@@ -28,64 +35,105 @@ function RouteComponent() {
         }
     }, [countdown])
 
-    const handleResendEmail = () => {
-        console.log(user, type)
-        // startTransition(async () => {
-        //     try {
-        //         if (type === 'reset') {
-        //             await auth.requestPasswordReset({
-        //                 email: user,
-        //                 redirectTo: `${import.meta.env.VITE_APP_CLIENT}/reset-password`,
-        //             })
-        //         } else {
-        //             await auth.sendVerificationEmail({
-        //                 email: user,
-        //                 callbackURL: `${import.meta.env.VITE_APP_CLIENT}/account`,
-        //             })
-        //         }
-        //         toast.success('Verification email sent successfully!')
-        //         setResendDisabled(true)
-        //         setCountdown(60)
-        //     } catch (error) {
-        //         toast.error('Failed to resend email. Please try again.')
-        //     }
-        // })
-    }
+    const verifyOtpSchema = z.object({
+        otp: z.string().min(6, t('auth.otp', 'Enter your 6 digit code')),
+    })
+
+    const verifySignup = useMutation({
+        mutationFn: authApi.verifyEmail,
+        onSuccess: (data) => {
+            queryClient.setQueryData(SessionKey, data)
+            toast.success(t('auth.emailVerified', 'Email verified! Welcome aboard.'))
+            navigate({ to: '/' })
+        },
+        onError: (error) => toast.error(error.message),
+    })
+
+    const verifyReset = useMutation({
+        mutationFn: authApi.verifyResetOtp,
+        onSuccess: (data) => {
+            toast.success(t('auth.otpVerified', 'Code verified. Choose a new password.'))
+            navigate({ to: '/reset-password', search: { token: data.data.token } })
+        },
+        onError: (error) => toast.error(error.message),
+    })
+
+    const resend = useMutation({
+        mutationFn: () =>
+            type === 'signup'
+                ? authApi.resendVerification({ email: user, panel: 'admin' })
+                : authApi.forgotPassword({ email: user, panel: 'admin' }),
+        onSuccess: () => {
+            toast.success(t('auth.codeSent', 'A new code has been sent to your email.'))
+            setResendDisabled(true)
+            setCountdown(60)
+        },
+        onError: () => toast.error(t('auth.failedToResend', 'Failed to resend code. Please try again.')),
+    })
+
+    const form = useAppForm({
+        defaultValues: { otp: '' },
+        validators: { onChange: verifyOtpSchema },
+        onSubmit: async ({ value }) => {
+            const payload = { email: user, panel: 'admin' as const, otp: value.otp }
+            if (type === 'signup') {
+                await verifySignup.mutateAsync(payload)
+            } else {
+                await verifyReset.mutateAsync(payload)
+            }
+        },
+    })
 
     return (
         <div className="my-16 mx-auto flex w-full max-w-114 flex-col gap-6 rounded-lg border p-6 bg-white">
-            <h2 className="text-center text-2xl font-bold">Verification</h2>
-
             <div className="text-center grid gap-2">
-                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                     <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                         />
                     </svg>
                 </div>
-                <h2>Check your email</h2>
-                <p>We&apos;ve sent a {type === 'reset' ? 'password reset' : 'verification'} link to</p>
-                {user && <p className="font-medium text-foreground">{user}</p>}
+                <h2 className="text-2xl font-bold">{t('auth.enterCode', 'Enter verification code')}</h2>
+                <p className="text-sm text-muted-foreground">{t('auth.weSentCode', "We've sent a 6-digit code to")}</p>
+                <p className="font-medium text-foreground">{user}</p>
             </div>
 
-            <div className="grid gap-4">
-                <p className="text-center mb-2">
-                    Didn&apos;t receive the email?
-                    <br /> Check your spam folder or
-                </p>
-                <Button variant="outline" onClick={handleResendEmail} disabled={resendDisabled || loading}>
-                    {loading ? 'Sending...' : resendDisabled && countdown > 0 ? `Resend in ${countdown}s` : 'Resend Email'}
-                </Button>
-                <Button asChild>
-                    <Link to="/signin" className={buttonVariants()}>
-                        Back to Sign In
-                    </Link>
-                </Button>
-            </div>
+            <form
+                className="grid gap-6"
+                onSubmit={(e) => {
+                    e.preventDefault()
+                    form.handleSubmit()
+                }}
+            >
+                <form.AppField name="otp">{(field) => <field.FormInputOtp />}</form.AppField>
+
+                <form.AppForm>
+                    <form.FormSubmit label={t('auth.verify', 'Verify')} />
+                </form.AppForm>
+            </form>
+
+            <p className="text-center text-sm text-muted-foreground">
+                {t('auth.didntReceiveCode', "Didn't receive the code?")}{' '}
+                <button
+                    onClick={() => resend.mutate()}
+                    disabled={resendDisabled}
+                    className="font-medium text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
+                >
+                    {resend.isPending
+                        ? t('auth.sending', 'Sending...')
+                        : resendDisabled && countdown > 0
+                          ? t('auth.resendIn', 'Resend in {{countdown}}s', { countdown })
+                          : t('auth.resend', 'Resend code')}
+                </button>
+            </p>
+
+            <Button asChild variant="outline">
+                <Link to="/signin">{t('auth.backToSignIn', 'Back to Sign In')}</Link>
+            </Button>
         </div>
     )
 }
