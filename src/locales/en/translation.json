@@ -132,7 +132,10 @@
             "namePlaceholder": "Enter your name",
             "email": "Email",
             "emailPlaceholder": "Enter your email",
-            "save": "Save Changes"
+            "phone": "Phone Number",
+            "phonePlaceholder": "Enter phone number",
+            "save": "Save Changes",
+            "saved": "Profile updated"
         },
         "general": {
             "title": "General",
@@ -167,10 +170,6 @@
         "contact": {
             "title": "Contact",
             "description": "Update your contact information.",
-            "phone": "Phone Number",
-            "phonePlaceholder": "Enter phone number",
-            "contactEmail": "Contact Email",
-            "contactEmailPlaceholder": "Enter contact email",
             "address": "Address",
             "addressPlaceholder": "Enter your address",
             "city": "City",

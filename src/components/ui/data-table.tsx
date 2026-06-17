@@ -2,8 +2,8 @@ import { Button } from '@/components/ui/button'
 import { PaginationComp } from '@/components/ui/pagination'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useSearchParams } from '@/hooks/use-search-params'
 import { SearchX } from 'lucide-react'
-import { useMemo, useState } from 'react'
 
 export type DataTableColumn<T> = {
     key: string
@@ -13,37 +13,62 @@ export type DataTableColumn<T> = {
 }
 
 type DataTableProps<T> = {
+    loading?: boolean
     columns: DataTableColumn<T>[]
     data: T[]
     noun?: string
     emptyIcon?: React.ReactNode
+    page?: number
+    limit?: number
+    total?: number
     limitOptions?: number[]
-    defaultLimit?: number
     onReset?: () => void
 }
 
 function DataTable<T>({
+    loading = false,
     columns,
     data,
     noun = 'rows',
     emptyIcon,
+    page = 1,
+    limit = 10,
+    total = 0,
     limitOptions = [5, 10, 20],
-    defaultLimit = 10,
     onReset,
 }: DataTableProps<T>) {
-    const [page, setPage] = useState(1)
-    const [limit, setLimit] = useState(defaultLimit)
+    const mergeSearch = useSearchParams()
 
-    // Reset to page 1 when data changes (e.g. filters applied externally)
-    const dataLength = data.length
-    useMemo(() => {
-        setPage(1)
-    }, [dataLength])
-
-    const paginatedData = useMemo(() => {
-        const start = (page - 1) * limit
-        return data.slice(start, start + limit)
-    }, [data, page, limit])
+    if (loading) {
+        return (
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        {columns.map((col) => (
+                            <TableHead key={col.key}>{col.header}</TableHead>
+                        ))}
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {Array.from({ length: 5 }).map((_, rowIdx) => (
+                        <TableRow key={rowIdx} className="hover:bg-transparent">
+                            {columns.map((col, colIdx) => (
+                                <TableCell key={col.key} className={col.className}>
+                                    <div
+                                        className="h-4 rounded-md bg-muted/70 animate-pulse"
+                                        style={{
+                                            width: colIdx === 0 ? '55%' : colIdx === columns.length - 1 ? '30%' : '70%',
+                                            animationDelay: `${rowIdx * 80 + colIdx * 40}ms`,
+                                        }}
+                                    />
+                                </TableCell>
+                            ))}
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        )
+    }
 
     if (data.length === 0) {
         return (
@@ -77,7 +102,7 @@ function DataTable<T>({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {paginatedData.map((row, index) => (
+                    {data.map((row, index) => (
                         <TableRow key={index}>
                             {columns.map((col) => (
                                 <TableCell key={col.key} className={col.className}>
@@ -92,9 +117,9 @@ function DataTable<T>({
             <DataTableFooter
                 page={page}
                 limit={limit}
-                total={data.length}
-                onPageChange={setPage}
-                onLimitChange={setLimit}
+                total={total}
+                onPageChange={(page) => mergeSearch({ page })}
+                onLimitChange={(limit) => mergeSearch({ page: 1, limit })}
                 limitOptions={limitOptions}
                 noun={noun}
             />
@@ -144,13 +169,7 @@ function DataTableFooter({
                 {/* Page Size Selector — hidden on small screens */}
                 <div className="hidden md:flex items-center gap-1.5 text-sm text-muted-foreground">
                     <span>Rows per page:</span>
-                    <Select
-                        value={String(limit)}
-                        onValueChange={(val) => {
-                            onLimitChange(Number(val))
-                            onPageChange(1)
-                        }}
-                    >
+                    <Select value={String(limit)} onValueChange={(val) => onLimitChange(Number(val))}>
                         <SelectTrigger size="sm">
                             <SelectValue />
                         </SelectTrigger>

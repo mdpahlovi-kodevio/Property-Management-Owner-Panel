@@ -1,40 +1,100 @@
 import { useAppForm } from '@/components/form/form-context'
 import { Button } from '@/components/ui/button'
+import type { DataTableColumn } from '@/components/ui/data-table'
 import { DataTable } from '@/components/ui/data-table'
-import type { DataTableColumn } from '@/components/ui/data-table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
-import { StatusConfirm } from '@/components/ui/status-confirm'
 import { TrashConfirm } from '@/components/ui/trash-confirm'
+import { useSearchParams } from '@/hooks/use-search-params'
+import { resolveImage } from '@/lib/api/base'
+import type { CreateEmployeePayload, Employee, UpdateEmployeePayload } from '@/lib/api/employee'
+import { employeeApi } from '@/lib/api/employee'
+import { roleApi } from '@/lib/api/role'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { Check, ChevronDown, Edit, Plus, Trash2, Users } from 'lucide-react'
+import { ChevronDown, CircleCheck, CircleX, Edit, Plus, Trash2, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import * as z from 'zod'
-import { EMPLOYEES, createEmployee, updateEmployee, toggleEmployeeStatus, deleteEmployee, type Employee } from '#/lib/employees'
+import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
+import { z } from 'zod'
+
+const searchSchema = z.object({
+    page: z.number().default(1),
+    limit: z.number().default(10),
+    search: z.string().optional(),
+})
 
 export const Route = createFileRoute('/__main/employees')({
+    validateSearch: searchSchema,
     component: RouteComponent,
 })
 
 const employeeSchema = z.object({
-    name: z.string().min(1, 'Full name is required'),
-    email: z.email('Please enter a valid email address'),
-    phone: z.string(),
+    name: z.string().min(2, 'Enter employee full name'),
+    email: z.email('Enter a valid email address'),
     image: z.string(),
-    role: z.enum(['Manager', 'Super Admin', 'Maintenance Staff', 'Accountant', 'Customer Support', 'Property Inspector', 'Marketing Specialist', 'IT Administrator', 'Sales Representative', 'HR Manager', 'Legal Advisor', 'Data Analyst']),
-    status: z.enum(['Active', 'Blocked']),
+    phone: z.string(),
+    roleId: z.string().min(1, 'Select employee role'),
+    status: z.enum(['active', 'banned']),
+    password: z.string().optional(),
 })
 
 function RouteComponent() {
-    const [employees, setEmployees] = useState<Employee[]>(EMPLOYEES)
-    const [searchQuery, setSearchQuery] = useState('')
+    const { t } = useTranslation()
+    const query = Route.useSearch()
+    const mergeSearch = useSearchParams()
     const [isOpen, setIsOpen] = useState(false)
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
 
     const isEditMode = editingEmployee !== null
+
+    // Queries
+    const { data, isLoading, refetch } = useQuery({
+        queryKey: ['employees', query],
+        queryFn: () => employeeApi.list(query),
+    })
+
+    // Mutations
+    const createMutation = useMutation({
+        mutationFn: (payload: CreateEmployeePayload) => employeeApi.create(payload),
+        onSuccess: () => {
+            refetch()
+            toast.success(t('employees.createdSuccess', 'Employee registered successfully'))
+            closeDialog()
+        },
+        onError: (error) => toast.error(error.message),
+    })
+
+    const updateMutation = useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: UpdateEmployeePayload }) => employeeApi.update(id, payload),
+        onSuccess: () => {
+            refetch()
+            toast.success(t('employees.updatedSuccess', 'Employee updated successfully'))
+            closeDialog()
+        },
+        onError: (error) => toast.error(error.message),
+    })
+
+    const toggleStatusMutation = useMutation({
+        mutationFn: ({ id, status }: { id: string; status: 'active' | 'banned' }) => employeeApi.update(id, { status }),
+        onSuccess: () => {
+            refetch()
+            toast.success(t('employees.statusUpdated', 'Employee status updated successfully'))
+        },
+        onError: (error) => toast.error(error.message),
+    })
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => employeeApi.delete(id),
+        onSuccess: () => {
+            refetch()
+            toast.success(t('employees.deletedSuccess', 'Employee deleted successfully'))
+        },
+        onError: (error) => toast.error(error.message),
+    })
 
     const openAdd = () => {
         setEditingEmployee(null)
@@ -51,104 +111,146 @@ function RouteComponent() {
         setEditingEmployee(null)
     }
 
-    const handleSave = (values: z.infer<typeof employeeSchema>) => {
+    const handleSave = async (values: z.infer<typeof employeeSchema>) => {
         if (isEditMode) {
-            updateEmployee(editingEmployee.id, values)
+            await updateMutation.mutateAsync({
+                id: editingEmployee.id,
+                payload: {
+                    name: values.name,
+                    image: values.image,
+                    phone: values.phone,
+                    roleId: values.roleId,
+                    status: values.status,
+                },
+            })
         } else {
-            createEmployee({
-                ...values,
-                image: `https://api.dicebear.com/7.x/notionists/svg?seed=${values.name.replace(' ', '')}`,
+            await createMutation.mutateAsync({
+                name: values.name,
+                email: values.email,
+                image: values.image,
+                phone: values.phone,
+                roleId: values.roleId,
+                password: values.password ?? '12345678',
             })
         }
-        setEmployees([...EMPLOYEES])
-        closeDialog()
-    }
-
-    const filteredEmployees = useMemo(() => {
-        if (!searchQuery.trim()) return employees
-        const query = searchQuery.toLowerCase()
-        return employees.filter(
-            (e) =>
-                e.name.toLowerCase().includes(query) ||
-                e.email.toLowerCase().includes(query) ||
-                e.phone.toLowerCase().includes(query) ||
-                e.role.toLowerCase().includes(query),
-        )
-    }, [employees, searchQuery])
-
-    const handleToggleStatus = (id: number) => {
-        toggleEmployeeStatus(id)
-        setEmployees([...EMPLOYEES])
-    }
-
-    const handleDeleteEmployee = (id: number) => {
-        deleteEmployee(id)
-        setEmployees([...EMPLOYEES])
     }
 
     const columns: DataTableColumn<Employee>[] = useMemo(
         () => [
             {
                 key: 'name',
-                header: 'Employee',
+                header: t('employees.employee', 'Employee'),
                 className: 'flex items-center gap-3',
-                render: (user) => (
+                render: (emp) => (
                     <>
                         <div className="size-8 rounded-full overflow-hidden">
-                            <img src={user.image} alt={user.name} className="size-full object-cover" />
+                            <img src={resolveImage(emp.user.image)} alt={emp.user.name} className="size-full object-cover" />
                         </div>
-                        {user.name}
+                        {emp.user.name}
                     </>
                 ),
             },
-            { key: 'email', header: 'Email', render: (emp) => <span className="text-muted-foreground">{emp.email}</span> },
-            { key: 'phone', header: 'Phone Number', render: (emp) => <span className="text-muted-foreground">{emp.phone}</span> },
-            { key: 'role', header: 'Role', render: (emp) => <span className="text-muted-foreground">{emp.role}</span> },
+            {
+                key: 'email',
+                header: t('employees.email', 'Email'),
+                render: (emp) => <span className="text-muted-foreground">{emp.user.email}</span>,
+            },
+            {
+                key: 'phone',
+                header: t('employees.phone', 'Phone Number'),
+                render: (emp) => <span className="text-muted-foreground">{emp.user.phone || '-'}</span>,
+            },
+            {
+                key: 'role',
+                header: t('employees.role', 'Role'),
+                render: (emp) => <span className="text-muted-foreground">{emp.role.name || '-'}</span>,
+            },
             {
                 key: 'status',
-                header: 'Status',
-                render: (emp) =>
-                    emp.status === 'Active' ? (
-                        <span className="text-xs font-semibold text-green-600 bg-green-500/10 px-2.5 py-1 rounded-full">Active</span>
-                    ) : (
-                        <span className="text-xs font-semibold text-red-600 bg-red-500/10 px-2.5 py-1 rounded-full">Blocked</span>
-                    ),
+                header: t('employees.status', 'Status'),
+                render: (emp) => {
+                    if (!emp.user.banned) {
+                        return (
+                            <span className="text-xs font-semibold text-green-600 bg-green-500/10 px-2.5 py-1 rounded-full">
+                                {t('employees.active', 'Active')}
+                            </span>
+                        )
+                    } else {
+                        return (
+                            <span className="text-xs font-semibold text-red-600 bg-red-500/10 px-2.5 py-1 rounded-full">
+                                {t('employees.blocked', 'Blocked')}
+                            </span>
+                        )
+                    }
+                },
             },
             {
                 key: 'action',
-                header: 'Action',
+                header: t('employees.action', 'Action'),
                 render: (emp) => (
-                    <EmployeeActionCell
-                        employee={emp}
-                        onEdit={() => openEdit(emp)}
-                        onToggleStatus={() => handleToggleStatus(emp.id)}
-                        onDelete={() => handleDeleteEmployee(emp.id)}
-                    />
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button size="sm">
+                                {t('employees.action', 'Action')} <ChevronDown className="h-3.5 w-3.5" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-white">
+                            <DropdownMenuItem onClick={() => openEdit(emp)}>
+                                <Edit className="size-3.5" /> {t('employees.editDetails', 'Edit Details')}
+                            </DropdownMenuItem>
+                            {emp.user.banned ? (
+                                <DropdownMenuItem
+                                    variant="success"
+                                    onClick={() => toggleStatusMutation.mutate({ id: emp.id, status: 'active' })}
+                                >
+                                    <CircleCheck className="size-3.5" /> {t('employees.activate', 'Activate')}
+                                </DropdownMenuItem>
+                            ) : (
+                                <DropdownMenuItem
+                                    variant="destructive"
+                                    onClick={() => toggleStatusMutation.mutate({ id: emp.id, status: 'banned' })}
+                                >
+                                    <CircleX className="size-3.5" /> {t('employees.deactivate', 'Deactivate')}
+                                </DropdownMenuItem>
+                            )}
+                            <TrashConfirm name={emp.user.name} onConfirm={() => deleteMutation.mutate(emp.id)}>
+                                <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()}>
+                                    <Trash2 className="size-3.5" /> {t('employees.deleteEmployee', 'Delete Employee')}
+                                </DropdownMenuItem>
+                            </TrashConfirm>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 ),
             },
         ],
-        [],
+        [t],
     )
 
     return (
         <>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <PageHeader title="Employee" description="Manage your reports" />
-                <div className="flex items-center gap-4 w-full sm:w-auto">
-                    <SearchInput value={searchQuery} onValueChange={setSearchQuery} placeholder="Search" className="w-full sm:w-[320px]" />
-                    <Button onClick={openAdd} className="w-full sm:w-auto">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Employee
-                    </Button>
-                </div>
+            <PageHeader
+                title={t('employees.title', 'Employees')}
+                description={t('employees.description', 'Manage your employees and their details.')}
+            />
+
+            <div className="flex items-center justify-between gap-4">
+                <SearchInput value={query.search ?? ''} placeholder={t('employees.searchPlaceholder', 'Search')} className="sm:w-80" />
+                <Button onClick={openAdd}>
+                    <Plus className="h-4 w-4" />
+                    {t('employees.add', 'Add Employee')}
+                </Button>
             </div>
 
             <DataTable
+                loading={isLoading}
                 columns={columns}
-                data={filteredEmployees}
-                noun="employees"
+                data={data?.data ?? []}
+                noun={t('employees.noun', 'employees')}
                 emptyIcon={<Users className="h-6 w-6" />}
-                onReset={() => setSearchQuery('')}
+                page={query.page}
+                limit={query.limit}
+                total={data?.meta.total ?? 0}
+                onReset={() => mergeSearch({ search: '', page: 1, limit: 10 })}
             />
 
             <Dialog
@@ -159,31 +261,40 @@ function RouteComponent() {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle className="text-lg font-semibold">{isEditMode ? 'Edit Employee' : 'Add Employee'}</DialogTitle>
-                        <DialogDescription className="text-sm text-slate-500">
+                        <DialogTitle> {isEditMode ? t('employees.edit', 'Edit Employee') : t('employees.add', 'Add Employee')}</DialogTitle>
+                        <DialogDescription>
                             {isEditMode
-                                ? `Modify details for ${editingEmployee.name}.`
-                                : 'Enter the details of the new employee to register them in the management panel.'}
+                                ? t('employees.editDesc', `Modify details for {{name}}.`, {
+                                      name: editingEmployee.user.name || 'Employee',
+                                  })
+                                : t('employees.addDesc', 'Enter the details of the new employee to register them in the management panel.')}
                         </DialogDescription>
                     </DialogHeader>
 
                     <EmployeeForm
                         key={editingEmployee?.id ?? 'add'}
+                        isEditMode={isEditMode}
                         defaultValues={
                             editingEmployee
                                 ? {
-                                    name: editingEmployee.name,
-                                    email: editingEmployee.email,
-                                    phone: editingEmployee.phone,
-                                    image: editingEmployee.image,
-                                    role: editingEmployee.role as any,
-                                    status: editingEmployee.status as 'Active' | 'Blocked',
-                                }
-                                : { name: '', email: '', phone: '', image: '', role: 'Manager', status: 'Active' }
+                                      name: editingEmployee.user.name,
+                                      email: editingEmployee.user.email,
+                                      phone: editingEmployee.user.phone || '',
+                                      image: editingEmployee.user.image || '',
+                                      roleId: editingEmployee.roleId,
+                                      status: editingEmployee.user.banned ? 'banned' : 'active',
+                                  }
+                                : { name: '', email: '', phone: '', image: '', roleId: '', status: 'active', password: '12345678' }
                         }
                         onSubmit={handleSave}
                         onCancel={closeDialog}
-                        submitLabel={isEditMode ? 'Save Changes' : 'Register Employee'}
+                        submitLabel={
+                            createMutation.isPending || updateMutation.isPending
+                                ? t('employees.saving', 'Saving...')
+                                : isEditMode
+                                  ? t('employees.save', 'Save Changes')
+                                  : t('employees.register', 'Register Employee')
+                        }
                     />
                 </DialogContent>
             </Dialog>
@@ -196,24 +307,42 @@ function EmployeeForm({
     onSubmit,
     onCancel,
     submitLabel,
+    isEditMode,
 }: {
     defaultValues: {
         name: string
         email: string
         phone: string
         image: string
-        role: 'Manager' | 'Super Admin' | 'Maintenance Staff' | 'Accountant' | 'Customer Support' | 'Property Inspector' | 'Marketing Specialist' | 'IT Administrator' | 'Sales Representative' | 'HR Manager' | 'Legal Advisor' | 'Data Analyst'
-        status: 'Active' | 'Blocked'
+        roleId: string
+        status: 'active' | 'banned'
+        password?: string
     }
-    onSubmit: (values: z.infer<typeof employeeSchema>) => void
+    onSubmit: (values: z.infer<typeof employeeSchema>) => Promise<void>
     onCancel: () => void
     submitLabel: string
+    isEditMode: boolean
 }) {
+    const { t } = useTranslation()
     const form = useAppForm({
         defaultValues,
         validators: { onChange: employeeSchema },
-        onSubmit: async ({ value }) => onSubmit(value),
+        onSubmit: async ({ value }) => await onSubmit(value),
     })
+
+    const { data } = useQuery({
+        queryKey: ['roles'],
+        queryFn: () => roleApi.list({ limit: 100 }),
+    })
+
+    const roleOptions = useMemo(() => {
+        return (
+            data?.data.map((r) => ({
+                value: r.id,
+                label: r.name,
+            })) ?? []
+        )
+    }, [data?.data])
 
     return (
         <form
@@ -223,130 +352,85 @@ function EmployeeForm({
             }}
             className="space-y-4"
         >
-            <form.AppField name="image">{(field) => <field.FormAvatar folder="employees" />}</form.AppField>
+            <form.AppField name="image">{(field) => <field.FormAvatar folder="owner-employee" />}</form.AppField>
 
-            <form.AppField name="name">{(field) => <field.FormInput label="Full Name" placeholder="e.g. Jane Cooper" />}</form.AppField>
+            <form.AppField name="name">
+                {(field) => (
+                    <field.FormInput label={t('employees.name', 'Full Name')} placeholder="e.g. Jane Cooper" disabled={isEditMode} />
+                )}
+            </form.AppField>
 
             <form.AppField name="email">
-                {(field) => <field.FormInput type="email" label="Email Address" placeholder="e.g. janecoper@gmail.com" />}
-            </form.AppField>
-
-            <form.AppField name="phone">
-                {(field) => <field.FormInput label="Phone Number" placeholder="e.g. +1 416 555 0192" />}
-            </form.AppField>
-
-            <form.AppField name="role">
                 {(field) => (
-                    <field.FormSelect
-                        label="Role"
-                        placeholder="Select a role"
-                        options={[
-                            { value: 'Manager', label: 'Manager' },
-                            { value: 'Super Admin', label: 'Super Admin' },
-                            { value: 'Maintenance Staff', label: 'Maintenance Staff' },
-                            { value: 'Accountant', label: 'Accountant' },
-                            { value: 'Customer Support', label: 'Customer Support' },
-                            { value: 'Property Inspector', label: 'Property Inspector' },
-                            { value: 'Marketing Specialist', label: 'Marketing Specialist' },
-                            { value: 'IT Administrator', label: 'IT Administrator' },
-                            { value: 'Sales Representative', label: 'Sales Representative' },
-                            { value: 'HR Manager', label: 'HR Manager' },
-                            { value: 'Legal Advisor', label: 'Legal Advisor' },
-                            { value: 'Data Analyst', label: 'Data Analyst' },
-                        ]}
+                    <field.FormInput
+                        type="email"
+                        label={t('employees.email', 'Email Address')}
+                        placeholder="e.g. janecoper@gmail.com"
+                        disabled={isEditMode}
                     />
                 )}
             </form.AppField>
 
-            <form.AppField name="status">
+            <form.AppField name="phone">
+                {(field) => <field.FormInput label={t('employees.phone', 'Phone Number')} placeholder="e.g. +1 416 555 0192" />}
+            </form.AppField>
+
+            {!isEditMode && (
+                <form.AppField name="password">
+                    {(field) => (
+                        <field.FormInput type="password" label={t('auth.password', 'Password')} placeholder="e.g. at least 8 characters" />
+                    )}
+                </form.AppField>
+            )}
+
+            <form.AppField name="roleId">
                 {(field) => (
-                    <div className="space-y-1.5">
-                        <Label>Status</Label>
-                        <div className="flex gap-4">
-                            <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                <input
-                                    type="radio"
-                                    checked={field.state.value === 'Active'}
-                                    onChange={() => field.handleChange('Active')}
-                                    className="h-4 w-4 accent-primary"
-                                />
-                                Active
-                            </label>
-                            <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                <input
-                                    type="radio"
-                                    checked={field.state.value === 'Blocked'}
-                                    onChange={() => field.handleChange('Blocked')}
-                                    className="h-4 w-4 accent-primary"
-                                />
-                                Blocked
-                            </label>
-                        </div>
-                    </div>
+                    <field.FormSelect
+                        label={t('employees.role', 'Role')}
+                        placeholder={t('employees.selectRole', 'Select a role')}
+                        options={roleOptions}
+                    />
                 )}
             </form.AppField>
 
+            {isEditMode && (
+                <form.AppField name="status">
+                    {(field) => (
+                        <div className="space-y-1.5">
+                            <Label>{t('employees.status', 'Status')}</Label>
+                            <div className="flex gap-4">
+                                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        checked={field.state.value === 'active'}
+                                        onChange={() => field.handleChange('active')}
+                                        className="h-4 w-4 accent-primary"
+                                    />
+                                    {t('employees.active', 'Active')}
+                                </label>
+                                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        checked={field.state.value === 'banned'}
+                                        onChange={() => field.handleChange('banned')}
+                                        className="h-4 w-4 accent-primary"
+                                    />
+                                    {t('employees.blocked', 'Blocked')}
+                                </label>
+                            </div>
+                        </div>
+                    )}
+                </form.AppField>
+            )}
+
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={onCancel} className="px-4 py-2 text-sm cursor-pointer">
-                    Cancel
+                    {t('nav.cancel', 'Cancel')}
                 </Button>
                 <form.AppForm>
                     <form.FormSubmit label={submitLabel} />
                 </form.AppForm>
             </DialogFooter>
         </form>
-    )
-}
-
-function EmployeeActionCell({
-    employee,
-    onEdit,
-    onToggleStatus,
-    onDelete,
-}: {
-    employee: Employee
-    onEdit: () => void
-    onToggleStatus: () => void
-    onDelete: () => void
-}) {
-    const [statusOpen, setStatusOpen] = useState(false)
-    const [deleteOpen, setDeleteOpen] = useState(false)
-
-    return (
-        <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button size="sm">
-                        Action <ChevronDown className="h-3.5 w-3.5" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-white">
-                    <DropdownMenuItem onClick={onEdit}>
-                        <Edit className="size-3.5" /> Edit Details
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => setStatusOpen(true)}>
-                        <Check className="size-3.5" /> Toggle Status
-                    </DropdownMenuItem>
-                    <DropdownMenuItem variant="destructive" onSelect={() => setDeleteOpen(true)}>
-                        <Trash2 className="size-3.5" /> Delete Employee
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-
-            <StatusConfirm
-                open={statusOpen}
-                onOpenChange={setStatusOpen}
-                name={employee.name}
-                currentStatus={employee.status}
-                newStatus={employee.status === 'Active' ? 'Blocked' : 'Active'}
-                onConfirm={onToggleStatus}
-            />
-            <TrashConfirm
-                open={deleteOpen}
-                onOpenChange={setDeleteOpen}
-                name={employee.name}
-                onConfirm={onDelete}
-            />
-        </>
     )
 }

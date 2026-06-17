@@ -132,7 +132,10 @@
             "namePlaceholder": "Voer uw naam in",
             "email": "E-mail",
             "emailPlaceholder": "Voer uw e-mail in",
-            "save": "Wijzigingen opslaan"
+            "phone": "Telefoonnummer",
+            "phonePlaceholder": "Voer telefoonnummer in",
+            "save": "Wijzigingen opslaan",
+            "saved": "Profiel bijgewerkt"
         },
         "general": {
             "title": "Algemeen",
@@ -167,10 +170,6 @@
         "contact": {
             "title": "Contact",
             "description": "Werk uw contactinformatie bij.",
-            "phone": "Telefoonnummer",
-            "phonePlaceholder": "Voer telefoonnummer in",
-            "contactEmail": "Contact E-mail",
-            "contactEmailPlaceholder": "Voer contact e-mail in",
             "address": "Adres",
             "addressPlaceholder": "Voer uw adres in",
             "city": "Stad",

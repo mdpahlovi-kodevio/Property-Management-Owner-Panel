@@ -6,6 +6,7 @@ type FormInputProps = {
     type?: React.HTMLInputTypeAttribute
     label: string
     placeholder?: string
+    readOnly?: boolean
     disabled?: boolean
 }
 

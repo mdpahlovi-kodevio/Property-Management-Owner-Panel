@@ -3,10 +3,13 @@ import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/ui/page-header'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import { authApi, SessionKey } from '@/lib/api/auth'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { Globe, Phone, Shield, User } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import * as z from 'zod'
 
 export const Route = createFileRoute('/__main/settings')({
@@ -22,28 +25,33 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id']
 
+// For i18n extractor:
+// t('settings.tabs.profile', 'Profile Information')
+// t('settings.tabs.general', 'General')
+// t('settings.tabs.security', 'Security')
+// t('settings.tabs.contact', 'Contact')
+
 // ─── Schemas ────────────────────────────────────────────────────────────────────
 
 const profileSchema = z.object({
     image: z.string(),
-    name: z.string().min(1, 'Name is required'),
-    email: z.email('Please enter a valid email address'),
+    name: z.string().min(2, 'Enter your full name'),
+    email: z.email('Enter a valid email address'),
+    phone: z.string(),
 })
 
 const generalSchema = z.object({
-    language: z.string().min(1, 'Language is required'),
-    timezone: z.string().min(1, 'Timezone is required'),
+    language: z.string().min(1, 'Select your language'),
+    timezone: z.string().min(1, 'Select your timezone'),
 })
 
 const securitySchema = z.object({
-    currentPassword: z.string().min(1, 'Current password is required'),
+    currentPassword: z.string().min(1, 'Enter your current password'),
     newPassword: z.string().min(6, 'Password must be at least 6 characters'),
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
+    confirmPassword: z.string().min(1, 'Re-enter your new password'),
 })
 
 const contactSchema = z.object({
-    phone: z.string(),
-    contactEmail: z.string(),
     address: z.string(),
     city: z.string(),
     country: z.string(),
@@ -90,11 +98,32 @@ function RouteComponent() {
 
 function ProfileTab() {
     const { t } = useTranslation()
+    const { user } = Route.useRouteContext()
+    const queryClient = useQueryClient()
+
+    const updateUser = useMutation({
+        mutationFn: authApi.updateUser,
+        onSuccess: async (data) => {
+            queryClient.setQueryData(SessionKey, data)
+            toast.success(t('settings.profile.saved', 'Profile updated'))
+        },
+        onError: (error) => toast.error(error.message),
+    })
+
     const form = useAppForm({
-        defaultValues: { image: '', name: '', email: '' },
+        defaultValues: {
+            image: user.image ?? '',
+            name: user.name,
+            email: user.email,
+            phone: user.phone ?? '',
+        },
         validators: { onChange: profileSchema },
         onSubmit: async ({ value }) => {
-            console.log('Profile saved:', value)
+            await updateUser.mutateAsync({
+                name: value.name,
+                image: value.image,
+                phone: value.phone,
+            })
         },
     })
 
@@ -115,15 +144,30 @@ function ProfileTab() {
 
             {/* Avatar Upload */}
             <div className="flex justify-center">
-                <form.AppField name="image">{(field) => <field.FormAvatar folder="settings" />}</form.AppField>
+                <form.AppField name="image">{(field) => <field.FormAvatar folder="owner" />}</form.AppField>
             </div>
 
             {/* Form Fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <form.AppField name="name">{(field) => <field.FormInput label={t('settings.profile.name')} placeholder={t('settings.profile.namePlaceholder')} />}</form.AppField>
+                <form.AppField name="name">
+                    {(field) => <field.FormInput label={t('settings.profile.name')} placeholder={t('settings.profile.namePlaceholder')} />}
+                </form.AppField>
 
                 <form.AppField name="email">
-                    {(field) => <field.FormInput type="email" label={t('settings.profile.email')} placeholder={t('settings.profile.emailPlaceholder')} />}
+                    {(field) => (
+                        <field.FormInput
+                            type="email"
+                            label={t('settings.profile.email')}
+                            placeholder={t('settings.profile.emailPlaceholder')}
+                            readOnly
+                        />
+                    )}
+                </form.AppField>
+
+                <form.AppField name="phone">
+                    {(field) => (
+                        <field.FormInput label={t('settings.profile.phone')} placeholder={t('settings.profile.phonePlaceholder')} />
+                    )}
                 </form.AppField>
             </div>
 
@@ -140,13 +184,56 @@ function ProfileTab() {
 // ─── General Tab ────────────────────────────────────────────────────────────────
 
 const TIMEZONES = [
-    'UTC-12:00', 'UTC-11:00', 'UTC-10:00', 'UTC-09:30', 'UTC-09:00', 'UTC-08:00', 'UTC-07:00',
-    'UTC-06:00', 'UTC-05:00', 'UTC-04:00', 'UTC-03:30', 'UTC-03:00', 'UTC-02:00', 'UTC-01:00',
-    'UTC+00:00', 'UTC+01:00', 'UTC+02:00', 'UTC+03:00', 'UTC+03:30', 'UTC+04:00', 'UTC+04:30',
-    'UTC+05:00', 'UTC+05:30', 'UTC+05:45', 'UTC+06:00', 'UTC+06:30', 'UTC+07:00', 'UTC+08:00',
-    'UTC+08:45', 'UTC+09:00', 'UTC+09:30', 'UTC+10:00', 'UTC+10:30', 'UTC+11:00', 'UTC+12:00',
-    'UTC+12:45', 'UTC+13:00', 'UTC+14:00',
+    'UTC-12:00',
+    'UTC-11:00',
+    'UTC-10:00',
+    'UTC-09:30',
+    'UTC-09:00',
+    'UTC-08:00',
+    'UTC-07:00',
+    'UTC-06:00',
+    'UTC-05:00',
+    'UTC-04:00',
+    'UTC-03:30',
+    'UTC-03:00',
+    'UTC-02:00',
+    'UTC-01:00',
+    'UTC+00:00',
+    'UTC+01:00',
+    'UTC+02:00',
+    'UTC+03:00',
+    'UTC+03:30',
+    'UTC+04:00',
+    'UTC+04:30',
+    'UTC+05:00',
+    'UTC+05:30',
+    'UTC+05:45',
+    'UTC+06:00',
+    'UTC+06:30',
+    'UTC+07:00',
+    'UTC+08:00',
+    'UTC+08:45',
+    'UTC+09:00',
+    'UTC+09:30',
+    'UTC+10:00',
+    'UTC+10:30',
+    'UTC+11:00',
+    'UTC+12:00',
+    'UTC+12:45',
+    'UTC+13:00',
+    'UTC+14:00',
 ]
+
+function LanguageWatcher({ language, i18n }: { language: string; i18n: any }) {
+    useEffect(() => {
+        const map: Record<string, string> = { English: 'en', German: 'de', Dutch: 'nl' }
+        if (map[language] && i18n.language !== map[language]) {
+            i18n.changeLanguage(map[language])
+            localStorage.setItem('app-language', map[language])
+        }
+    }, [language, i18n])
+    return null
+}
 
 function GeneralTab() {
     const { t, i18n } = useTranslation()
@@ -176,6 +263,9 @@ function GeneralTab() {
             }}
             className="flex flex-col gap-5"
         >
+            <form.Subscribe selector={(state) => state.values.language}>
+                {(language) => <LanguageWatcher language={language} i18n={i18n} />}
+            </form.Subscribe>
             <div>
                 <h3 className="text-base font-semibold text-foreground">{t('settings.general.title')}</h3>
                 <p className="text-sm text-muted-foreground mt-0.5">{t('settings.general.description')}</p>
@@ -243,11 +333,24 @@ function SecurityTab() {
     const { t } = useTranslation()
     const [twoFactor, setTwoFactor] = useState(false)
 
+    const changePassword = useMutation({
+        mutationFn: authApi.changePassword,
+        onSuccess: (data) => {
+            toast.success(data.message)
+            form.reset()
+        },
+        onError: (error) => toast.error(error.message),
+    })
+
     const form = useAppForm({
         defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
         validators: { onChange: securitySchema },
         onSubmit: async ({ value }) => {
-            console.log('Security saved:', value)
+            await changePassword.mutateAsync({
+                currentPassword: value.currentPassword,
+                newPassword: value.newPassword,
+                revokeOtherSessions: true,
+            })
         },
     })
 
@@ -270,15 +373,33 @@ function SecurityTab() {
             <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-1 gap-4 max-w-md">
                     <form.AppField name="currentPassword">
-                        {(field) => <field.FormInput type="password" label={t('settings.security.currentPassword')} placeholder={t('settings.security.currentPasswordPlaceholder')} />}
+                        {(field) => (
+                            <field.FormInput
+                                type="password"
+                                label={t('settings.security.currentPassword')}
+                                placeholder={t('settings.security.currentPasswordPlaceholder')}
+                            />
+                        )}
                     </form.AppField>
 
                     <form.AppField name="newPassword">
-                        {(field) => <field.FormInput type="password" label={t('settings.security.newPassword')} placeholder={t('settings.security.newPasswordPlaceholder')} />}
+                        {(field) => (
+                            <field.FormInput
+                                type="password"
+                                label={t('settings.security.newPassword')}
+                                placeholder={t('settings.security.newPasswordPlaceholder')}
+                            />
+                        )}
                     </form.AppField>
 
                     <form.AppField name="confirmPassword">
-                        {(field) => <field.FormInput type="password" label={t('settings.security.confirmPassword')} placeholder={t('settings.security.confirmPasswordPlaceholder')} />}
+                        {(field) => (
+                            <field.FormInput
+                                type="password"
+                                label={t('settings.security.confirmPassword')}
+                                placeholder={t('settings.security.confirmPasswordPlaceholder')}
+                            />
+                        )}
                     </form.AppField>
                 </div>
             </div>
@@ -310,7 +431,7 @@ function SecurityTab() {
 function ContactTab() {
     const { t } = useTranslation()
     const form = useAppForm({
-        defaultValues: { phone: '', contactEmail: '', address: '', city: '', country: '' },
+        defaultValues: { address: '', city: '', country: '' },
         validators: { onChange: contactSchema },
         onSubmit: async ({ value }) => {
             console.log('Contact saved:', value)
@@ -333,22 +454,20 @@ function ContactTab() {
             <Separator />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <form.AppField name="phone">
-                    {(field) => <field.FormInput label={t('settings.contact.phone')} placeholder={t('settings.contact.phonePlaceholder')} />}
-                </form.AppField>
-
-                <form.AppField name="contactEmail">
-                    {(field) => <field.FormInput type="email" label={t('settings.contact.contactEmail')} placeholder={t('settings.contact.contactEmailPlaceholder')} />}
-                </form.AppField>
-
                 <form.AppField name="address">
-                    {(field) => <field.FormInput label={t('settings.contact.address')} placeholder={t('settings.contact.addressPlaceholder')} />}
+                    {(field) => (
+                        <field.FormInput label={t('settings.contact.address')} placeholder={t('settings.contact.addressPlaceholder')} />
+                    )}
                 </form.AppField>
 
-                <form.AppField name="city">{(field) => <field.FormInput label={t('settings.contact.city')} placeholder={t('settings.contact.cityPlaceholder')} />}</form.AppField>
+                <form.AppField name="city">
+                    {(field) => <field.FormInput label={t('settings.contact.city')} placeholder={t('settings.contact.cityPlaceholder')} />}
+                </form.AppField>
 
                 <form.AppField name="country">
-                    {(field) => <field.FormInput label={t('settings.contact.country')} placeholder={t('settings.contact.countryPlaceholder')} />}
+                    {(field) => (
+                        <field.FormInput label={t('settings.contact.country')} placeholder={t('settings.contact.countryPlaceholder')} />
+                    )}
                 </form.AppField>
             </div>
 

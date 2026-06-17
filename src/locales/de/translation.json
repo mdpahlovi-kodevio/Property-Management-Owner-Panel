@@ -132,7 +132,10 @@
             "namePlaceholder": "Geben Sie Ihren Namen ein",
             "email": "E-Mail",
             "emailPlaceholder": "Geben Sie Ihre E-Mail ein",
-            "save": "Änderungen speichern"
+            "phone": "Telefonnummer",
+            "phonePlaceholder": "Telefonnummer eingeben",
+            "save": "Änderungen speichern",
+            "saved": "Profil aktualisiert"
         },
         "general": {
             "title": "Allgemein",
@@ -167,10 +170,6 @@
         "contact": {
             "title": "Kontakt",
             "description": "Aktualisieren Sie Ihre Kontaktinformationen.",
-            "phone": "Telefonnummer",
-            "phonePlaceholder": "Telefonnummer eingeben",
-            "contactEmail": "Kontakt-E-Mail",
-            "contactEmailPlaceholder": "Kontakt-E-Mail eingeben",
             "address": "Adresse",
             "addressPlaceholder": "Geben Sie Ihre Adresse ein",
             "city": "Stadt",
