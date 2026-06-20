@@ -1,4 +1,6 @@
+export * from './amenity'
 export * from './base'
 export * from './employee'
+export * from './property'
 export * from './role'
 export * from './upload'

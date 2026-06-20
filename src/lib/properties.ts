@@ -1,3 +1,11 @@
+export type Addon = {
+    id: string
+    name: string
+    description: string
+    price: number
+    state: 'active' | 'inactive'
+}
+
 export type Property = {
     property: {
         id: string
@@ -7,7 +15,6 @@ export type Property = {
         status: 'Active' | 'Inactive' | 'Draft'
         rating: number
         reviewCount: number
-        currency: string
         country: string
         state: string
         city: string
@@ -29,6 +36,7 @@ export type Property = {
             securityDeposit: number
             houseRules: string
         }
+        addons: Addon[]
         images: {
             thumbnail: string
             gallery: string[]
@@ -72,7 +80,6 @@ export const PROPERTIES: Property[] = [
             status: 'Active',
             rating: 4.8,
             reviewCount: 312,
-            currency: 'USD',
             country: 'Indonesia',
             state: 'Bali',
             city: 'Uluwatu',
@@ -94,6 +101,32 @@ export const PROPERTIES: Property[] = [
                 securityDeposit: 200.0,
                 houseRules: 'No smoking anywhere on the property. Quiet hours after 10pm. No outside food in pool areas.',
             },
+            addons: [
+                {
+                    id: 'addon_001_01',
+                    name: 'Airport Shuttle',
+                    description: 'Round-trip private transfer from Ngurah Rai International Airport.',
+                    price: 35,
+
+                    state: 'active',
+                },
+                {
+                    id: 'addon_001_02',
+                    name: 'Daily Breakfast',
+                    description: 'Continental breakfast buffet at the cliffside restaurant.',
+                    price: 25,
+
+                    state: 'active',
+                },
+                {
+                    id: 'addon_001_03',
+                    name: 'Spa Session',
+                    description: '60-minute traditional Balinese massage at our ocean-view spa.',
+                    price: 80,
+
+                    state: 'active',
+                },
+            ],
             images: {
                 thumbnail: 'https://images.unsplash.com/photo-1551918120-9739cb430c6d?auto=format&fit=crop&w=1200&q=80',
                 gallery: [
@@ -145,7 +178,6 @@ export const PROPERTIES: Property[] = [
             status: 'Active',
             rating: 4.5,
             reviewCount: 87,
-            currency: 'BDT',
             country: 'Bangladesh',
             state: 'Dhaka Division',
             city: 'Dhaka',
@@ -167,6 +199,32 @@ export const PROPERTIES: Property[] = [
                 securityDeposit: 50.0,
                 houseRules: 'No smoking indoors. Guests must show ID at check-in. Quiet hours 11pm–7am.',
             },
+            addons: [
+                {
+                    id: 'addon_002_01',
+                    name: 'Airport Pickup',
+                    description: 'Pickup from Hazrat Shahjalal International Airport in an AC sedan.',
+                    price: 1500,
+
+                    state: 'active',
+                },
+                {
+                    id: 'addon_002_02',
+                    name: 'Daily Breakfast',
+                    description: 'Continental breakfast delivered to your room each morning.',
+                    price: 800,
+
+                    state: 'active',
+                },
+                {
+                    id: 'addon_002_03',
+                    name: 'Laundry Service',
+                    description: 'Wash, dry and fold, charged per kilogram.',
+                    price: 500,
+
+                    state: 'inactive',
+                },
+            ],
             images: {
                 thumbnail: 'https://images.unsplash.com/photo-1515263487990-61b07816b324?auto=format&fit=crop&w=1200&q=80',
                 gallery: [
@@ -250,7 +308,6 @@ export const PROPERTIES: Property[] = [
             status: 'Active',
             rating: 4.7,
             reviewCount: 543,
-            currency: 'EUR',
             country: 'France',
             state: 'Île-de-France',
             city: 'Paris',
@@ -272,6 +329,32 @@ export const PROPERTIES: Property[] = [
                 securityDeposit: 150.0,
                 houseRules: 'Pets welcome (max 10kg). No smoking anywhere inside. Noise curfew at 11pm.',
             },
+            addons: [
+                {
+                    id: 'addon_003_01',
+                    name: 'Petit-déjeuner',
+                    description: 'Fresh pastries, coffee and juice served in the courtyard garden.',
+                    price: 25,
+
+                    state: 'active',
+                },
+                {
+                    id: 'addon_003_02',
+                    name: 'Airport Pickup',
+                    description: 'Private car transfer from Charles de Gaulle Airport.',
+                    price: 60,
+
+                    state: 'active',
+                },
+                {
+                    id: 'addon_003_03',
+                    name: 'Late Checkout',
+                    description: 'Extend your stay — checkout moved from 12pm to 4pm.',
+                    price: 80,
+
+                    state: 'active',
+                },
+            ],
             images: {
                 thumbnail: 'https://images.unsplash.com/photo-1546783155-4ef83c00d4ef?auto=format&fit=crop&w=1200&q=80',
                 gallery: [
@@ -352,7 +435,6 @@ export const PROPERTIES: Property[] = [
             status: 'Active',
             rating: 4.9,
             reviewCount: 218,
-            currency: 'CAD',
             country: 'Canada',
             state: 'Alberta',
             city: 'Banff',
@@ -374,6 +456,32 @@ export const PROPERTIES: Property[] = [
                 securityDeposit: 100.0,
                 houseRules: 'Ski boots must be removed at entrance. Pets allowed in designated rooms only. No loud noise after 9:30pm.',
             },
+            addons: [
+                {
+                    id: 'addon_004_01',
+                    name: 'Ski Equipment Rental',
+                    description: 'Full ski set (skis, boots, poles) for one day.',
+                    price: 85,
+
+                    state: 'active',
+                },
+                {
+                    id: 'addon_004_02',
+                    name: 'Hot Cocoa Hour',
+                    description: 'Hot chocolate, marshmallows and s’mores by the fireplace.',
+                    price: 15,
+
+                    state: 'active',
+                },
+                {
+                    id: 'addon_004_03',
+                    name: 'Late Checkout',
+                    description: 'Checkout extended from 10am to 2pm.',
+                    price: 50,
+
+                    state: 'inactive',
+                },
+            ],
             images: {
                 thumbnail: 'https://images.unsplash.com/photo-1602436324859-62a81466e723?auto=format&fit=crop&w=1200&q=80',
                 gallery: [
@@ -456,7 +564,6 @@ export const PROPERTIES: Property[] = [
             status: 'Active',
             rating: 4.4,
             reviewCount: 1204,
-            currency: 'THB',
             country: 'Thailand',
             state: 'Bangkok',
             city: 'Bangkok',
@@ -478,6 +585,32 @@ export const PROPERTIES: Property[] = [
                 securityDeposit: 20.0,
                 houseRules: '18+ only. No outside alcohol. Capsule lights out 11pm–7am. Lockers provided; own padlock required.',
             },
+            addons: [
+                {
+                    id: 'addon_005_01',
+                    name: 'Pad Thai Dinner',
+                    description: 'Classic pad thai with chicken or tofu from the rooftop kitchen.',
+                    price: 180,
+
+                    state: 'active',
+                },
+                {
+                    id: 'addon_005_02',
+                    name: 'Towel Rental',
+                    description: 'Fresh towel for shower use, charged per day.',
+                    price: 50,
+
+                    state: 'active',
+                },
+                {
+                    id: 'addon_005_03',
+                    name: 'Padlock Rental',
+                    description: 'Standard padlock for your locker, refundable on return.',
+                    price: 100,
+
+                    state: 'active',
+                },
+            ],
             images: {
                 thumbnail: 'https://images.unsplash.com/photo-1639647564912-651e29b8e6ad?auto=format&fit=crop&w=1200&q=80',
                 gallery: [
@@ -564,7 +697,6 @@ export const PROPERTIES: Property[] = [
             status: 'Active',
             rating: 4.6,
             reviewCount: 67,
-            currency: 'EUR',
             country: 'Spain',
             state: 'Andalusia',
             city: 'Tarifa',
@@ -586,6 +718,32 @@ export const PROPERTIES: Property[] = [
                 securityDeposit: 500.0,
                 houseRules: 'Whole-home rental only; no events. Pool heating available at extra charge. BBQ allowed on terrace only.',
             },
+            addons: [
+                {
+                    id: 'addon_006_01',
+                    name: 'BBQ Pack',
+                    description: 'Pre-marinated meats, vegetables and sides for the outdoor grill.',
+                    price: 45,
+
+                    state: 'active',
+                },
+                {
+                    id: 'addon_006_02',
+                    name: 'Kitesurfing Lesson',
+                    description: '2-hour beginner lesson with board, harness and instructor.',
+                    price: 120,
+
+                    state: 'active',
+                },
+                {
+                    id: 'addon_006_03',
+                    name: 'Mid-stay Cleaning',
+                    description: 'Additional housekeeping visit during your stay.',
+                    price: 90,
+
+                    state: 'inactive',
+                },
+            ],
             images: {
                 thumbnail: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80',
                 gallery: [
@@ -664,7 +822,7 @@ export function getPropertyBySlug(slug: string): Property | undefined {
 }
 
 export function getRoomBySlug(property: Property, roomSlug: string) {
-    return property.roomTypes.find(rt => slugify(rt.name) === roomSlug)
+    return property.roomTypes.find((rt) => slugify(rt.name) === roomSlug)
 }
 
 export function getPriceRange(property: Property) {
@@ -674,14 +832,14 @@ export function getPriceRange(property: Property) {
     return { min, max }
 }
 
-export function formatPrice(value: number, currency: string) {
+export function formatPrice(value: number) {
     try {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
-            currency,
+            currency: 'USD',
             maximumFractionDigits: 0,
         }).format(value)
     } catch {
-        return `${currency} ${value}`
+        return `$${value}`
     }
 }

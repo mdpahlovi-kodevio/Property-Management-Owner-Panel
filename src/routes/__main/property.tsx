@@ -1,37 +1,30 @@
 import { useAppForm } from '@/components/form/form-context'
+import type { GalleryImage } from '@/components/form/form-gallery'
 import { Button } from '@/components/ui/button'
 import { DataTableFooter } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
-import { PROPERTIES, type Property, formatPrice, getPriceRange, getPropertyById, slugify } from '@/lib/properties'
-import { cn } from '@/lib/utils'
+import { useSearchParams } from '@/hooks/use-search-params'
+import { formatPrice, getPriceRange, getPropertyById, PROPERTIES, slugify, type Addon, type Property } from '@/lib/properties'
+import { cn, GetPropertyAmenities } from '@/lib/utils'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import {
-    Accessibility,
-    Car,
-    Clock,
-    Dumbbell,
-    Edit,
-    Eye,
-    MapPin,
-    ParkingCircle,
-    Plus,
-    Star,
-    UtensilsCrossed,
-    Waves,
-    Wifi,
-} from 'lucide-react'
+import { Edit, Eye, MapPin, Package, Plus, Star, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import * as z from 'zod'
 
+const searchSchema = z.object({
+    page: z.number().default(1),
+    limit: z.number().default(12),
+    search: z.string().optional(),
+})
+
 export const Route = createFileRoute('/__main/property')({
+    validateSearch: searchSchema,
     component: PropertyComponent,
 })
 
@@ -49,7 +42,6 @@ type PropertyCard = {
     imageUrl: string
     rating: number
     reviewCount: number
-    currency: string
     priceRangeLabel: string
     totalBeds: number
     totalBaths: number
@@ -66,10 +58,7 @@ const PROPERTY_CARDS: PropertyCard[] = PROPERTIES.map((p) => {
     const maxGuests = Math.max(...p.roomTypes.map((rt) => rt.maxOccupancy))
     const viewType = p.roomTypes[0]?.viewType ?? ''
     const range = getPriceRange(p)
-    const priceRangeLabel =
-        range.min === range.max
-            ? formatPrice(range.min, p.property.currency)
-            : `${formatPrice(range.min, p.property.currency)} – ${formatPrice(range.max, p.property.currency)}`
+    const priceRangeLabel = range.min === range.max ? formatPrice(range.min) : `${formatPrice(range.min)} – ${formatPrice(range.max)}`
 
     return {
         id: p.property.id,
@@ -84,7 +73,6 @@ const PROPERTY_CARDS: PropertyCard[] = PROPERTIES.map((p) => {
         imageUrl: p.property.images.thumbnail,
         rating: p.property.rating,
         reviewCount: p.property.reviewCount,
-        currency: p.property.currency,
         priceRangeLabel,
         totalBeds,
         totalBaths,
@@ -94,23 +82,6 @@ const PROPERTY_CARDS: PropertyCard[] = PROPERTIES.map((p) => {
         country: p.property.country,
     }
 })
-
-const PROP_AMENITIES = [
-    { label: 'WiFi', icon: Wifi },
-    { label: 'Parking', icon: ParkingCircle },
-    { label: 'Pool', icon: Waves },
-    { label: 'Gym', icon: Dumbbell },
-    { label: 'Restaurant', icon: UtensilsCrossed },
-    { label: 'Airport shuttle', icon: Car },
-    { label: 'Wheelchair accessible', icon: Accessibility },
-    { label: '24-hr front desk', icon: Clock },
-    { label: 'Spa', icon: null },
-    { label: 'Bar', icon: null },
-    { label: 'Elevator', icon: null },
-    { label: 'Laundry', icon: null },
-    { label: 'Pet friendly', icon: null },
-    { label: 'Business center', icon: null },
-]
 
 const PROP_TYPE_OPTIONS = [
     { label: 'Hotel', value: 'hotel' },
@@ -130,6 +101,11 @@ const STATUS_OPTIONS = [
     { value: 'Inactive', label: 'Inactive' },
 ] as const
 
+const ADDON_STATE_OPTIONS = [
+    { value: 'active', label: 'Active' },
+    { value: 'inactive', label: 'Inactive' },
+] as const
+
 const COUNTRY_OPTIONS = [
     'Bangladesh',
     'United States',
@@ -142,7 +118,7 @@ const COUNTRY_OPTIONS = [
     'Japan',
 ].map((c) => ({ value: c, label: c }))
 
-const PROP_TABS = ['Basics', 'Location', 'Policies', 'Photos'] as const
+const PROP_TABS = ['Basics', 'Location', 'Policies', 'Addons', 'Photos'] as const
 type PropTab = (typeof PROP_TABS)[number]
 
 // ─── Zod schema for the create/edit form ──────────────────────────
@@ -171,11 +147,24 @@ const propertyFormSchema = z.object({
     minGuestAge: z.number(),
     securityDeposit: z.number(),
     houseRules: z.string(),
-    thumbnail: z.string(),
-    gallery: z.array(z.string()),
+    addons: z.array(
+        z.object({
+            id: z.string(),
+            name: z.string().min(1, 'Addon name is required'),
+            description: z.string(),
+            price: z.number().min(0, 'Price must be 0 or more'),
+            state: z.enum(['active', 'inactive']),
+        }),
+    ),
+    gallery: z.array(
+        z.object({
+            url: z.string(),
+            thumbnail: z.boolean(),
+            sortOrder: z.number(),
+        }),
+    ),
     rating: z.number(),
     reviewCount: z.number(),
-    currency: z.string().min(1, 'Currency is required'),
 })
 
 type PropertyFormValues = z.infer<typeof propertyFormSchema>
@@ -200,11 +189,10 @@ const FORM_DEFAULTS: PropertyFormValues = {
     minGuestAge: 0,
     securityDeposit: 0,
     houseRules: '',
-    thumbnail: '',
+    addons: [],
     gallery: [],
     rating: 0,
     reviewCount: 0,
-    currency: 'USD',
 }
 
 function valuesFromProperty(p: Property): PropertyFormValues {
@@ -228,11 +216,19 @@ function valuesFromProperty(p: Property): PropertyFormValues {
         minGuestAge: p.property.policies.minimumGuestAge,
         securityDeposit: p.property.policies.securityDeposit,
         houseRules: p.property.policies.houseRules,
-        thumbnail: p.property.images.thumbnail,
-        gallery: [...p.property.images.gallery],
+        addons: p.property.addons.map((a) => ({ ...a })),
+        gallery: (() => {
+            const items: GalleryImage[] = []
+            if (p.property.images.thumbnail) {
+                items.push({ url: p.property.images.thumbnail, thumbnail: true, sortOrder: 0 })
+            }
+            p.property.images.gallery.forEach((url) => {
+                items.push({ url, thumbnail: false, sortOrder: items.length })
+            })
+            return items
+        })(),
         rating: p.property.rating,
         reviewCount: p.property.reviewCount,
-        currency: p.property.currency,
     }
 }
 
@@ -263,10 +259,9 @@ function StatusBadge({ status }: { status: string }) {
 // ── Property omponent --
 function PropertyComponent() {
     const { t } = useTranslation()
+    const query = Route.useSearch()
+    const mergeSearch = useSearchParams()
     const navigate = useNavigate()
-    const [searchQuery, setSearchQuery] = useState('')
-    const [currentPage, setCurrentPage] = useState(1)
-    const [itemsPerPage, setItemsPerPage] = useState(4)
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<PropTab>('Basics')
     const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null)
@@ -312,20 +307,13 @@ function PropertyComponent() {
                 <PageHeader title={t('properties.title')} description={t('properties.description')} />
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                     <SearchInput
-                        placeholder={t('properties.searchPlaceholder')}
-                        value={searchQuery}
-                        onValueChange={(val) => {
-                            setSearchQuery(val)
-                            setCurrentPage(1)
-                        }}
-                        className="w-full sm:w-75"
+                        value={query.search ?? ''}
+                        placeholder={t('properties.searchPlaceholder', 'Search properties...')}
+                        className="sm:w-80"
                     />
-                    <Button
-                        onClick={openAdd}
-                        className="shrink-0 gap-1.5 rounded-xl font-semibold bg-[#243E8B] hover:bg-[#1D3270] text-white shadow-sm shadow-[#243E8B]/20 hover:shadow-md hover:shadow-[#243E8B]/30 transition-all duration-300"
-                    >
+                    <Button onClick={openAdd}>
                         <Plus className="size-4" />
-                        {t('properties.addProperty')}
+                        {t('properties.addProperty', 'Add Property')}
                     </Button>
                 </div>
             </div>
@@ -334,10 +322,10 @@ function PropertyComponent() {
 
             {(() => {
                 const filtered = PROPERTY_CARDS.filter((p) => {
-                    const q = searchQuery.toLowerCase()
+                    const q = (query.search ?? '').toLowerCase()
                     return p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q) || p.type.toLowerCase().includes(q)
                 })
-                const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                const paginated = filtered.slice((query.page - 1) * query.limit, query.page * query.limit)
                 return (
                     <>
                         <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(18rem,1fr))]">
@@ -463,15 +451,12 @@ function PropertyComponent() {
                         </div>
 
                         <DataTableFooter
-                            page={currentPage}
-                            limit={itemsPerPage}
-                            total={filtered.length}
-                            onPageChange={setCurrentPage}
-                            onLimitChange={(limit) => {
-                                setItemsPerPage(limit)
-                                setCurrentPage(1)
-                            }}
-                            limitOptions={[4, 8, 12, 24]}
+                            page={query.page}
+                            limit={query.limit}
+                            total={PROPERTY_CARDS.length}
+                            onPageChange={(page) => mergeSearch({ page })}
+                            onLimitChange={(limit) => mergeSearch({ page: 1, limit })}
+                            limitOptions={[12, 24]}
                             noun={t('properties.noun')}
                         />
                     </>
@@ -526,6 +511,8 @@ function PropertyForm({
     onCancel: () => void
     submitLabel: string
 }) {
+    const amenities = GetPropertyAmenities()
+
     const form = useAppForm({
         defaultValues,
         validators: { onChange: propertyFormSchema },
@@ -534,17 +521,15 @@ function PropertyForm({
 
     return (
         <>
-            <div className="flex border-b border-slate-100 bg-slate-50/60 overflow-x-auto shrink-0">
+            <div className="flex bg-muted overflow-x-auto shrink-0">
                 {PROP_TABS.map((tab) => (
                     <button
                         key={tab}
                         type="button"
                         onClick={() => onActiveTabChange(tab)}
                         className={cn(
-                            'flex-1 min-w-17 px-4 py-3 text-[12.5px] font-semibold whitespace-nowrap border-b-2 transition-all duration-200',
-                            activeTab === tab
-                                ? 'border-[#243E8B] text-[#243E8B] bg-white'
-                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-white/60',
+                            'flex-1 min-w-18 px-3 py-2 text-sm font-semibold whitespace-nowrap border-b-2 transition-all duration-200',
+                            activeTab === tab ? 'border-primary text-primary' : 'border-transparent',
                         )}
                     >
                         {tab}
@@ -612,30 +597,14 @@ function PropertyForm({
                             <SectionLabel>Property Amenities</SectionLabel>
                             <form.AppField name="amenities">
                                 {(field) => (
-                                    <div className="flex flex-wrap gap-2">
-                                        {PROP_AMENITIES.map(({ label, icon: Icon }) => {
-                                            const isOn = field.state.value.includes(label)
-                                            return (
-                                                <button
-                                                    key={label}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const cur = field.state.value
-                                                        field.handleChange(isOn ? cur.filter((a) => a !== label) : [...cur, label])
-                                                    }}
-                                                    className={cn(
-                                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] font-medium transition-all duration-200',
-                                                        isOn
-                                                            ? 'border-[#243E8B] bg-[#243E8B] text-white shadow-sm shadow-[#243E8B]/20'
-                                                            : 'border-slate-200 text-slate-600 bg-white hover:border-slate-300 hover:bg-slate-50',
-                                                    )}
-                                                >
-                                                    {Icon && <Icon className="size-3.5" />}
-                                                    {label}
-                                                </button>
-                                            )
-                                        })}
-                                    </div>
+                                    <field.FormTags
+                                        label=""
+                                        options={amenities.map((amenity) => ({
+                                            value: amenity.id,
+                                            label: amenity.name,
+                                            icon: amenity.icon ?? undefined,
+                                        }))}
+                                    />
                                 )}
                             </form.AppField>
                         </Section>
@@ -688,7 +657,7 @@ function PropertyForm({
                     <div className="flex flex-col gap-6">
                         <Section>
                             <SectionLabel>Guest Policies</SectionLabel>
-                            <div className="rounded-lg border border-slate-100 overflow-hidden divide-y divide-slate-100">
+                            <div className="rounded-lg border overflow-hidden divide-y">
                                 {(
                                     [
                                         {
@@ -706,10 +675,10 @@ function PropertyForm({
                                 ).map((policy) => (
                                     <form.AppField key={policy.name} name={policy.name}>
                                         {(f) => (
-                                            <div className="flex items-center justify-between px-4 py-3.5 bg-white hover:bg-slate-50/70 transition-colors">
+                                            <div className="flex items-center justify-between px-3 py-2">
                                                 <div>
-                                                    <p className="text-[13px] font-semibold text-slate-800">{policy.label}</p>
-                                                    <p className="text-[11.5px] text-slate-400 mt-0.5">{policy.sub}</p>
+                                                    <p className="text-sm font-semibold text-foreground">{policy.label}</p>
+                                                    <p className="text-xs text-muted-foreground mt-0.5">{policy.sub}</p>
                                                 </div>
                                                 <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
                                             </div>
@@ -736,56 +705,92 @@ function PropertyForm({
                     </div>
                 )}
 
+                {/* ════════ ADDONS ════════ */}
+                {activeTab === 'Addons' && (
+                    <div className="flex flex-col gap-6">
+                        <Section>
+                            <SectionLabel>Booking Addons</SectionLabel>
+                            <p className="text-xs text-muted-foreground -mt-1.5">
+                                Optional extras guests can add to their booking for a small fee.
+                            </p>
+                            <form.AppField name="addons">
+                                {(field) => (
+                                    <div className="flex flex-col gap-3">
+                                        {field.state.value.length === 0 && (
+                                            <div className="rounded-lg border border-dashed p-8 text-center bg-muted">
+                                                <Package className="size-8 mx-auto mb-2" />
+                                                <p className="text-sm font-semibold">No addons yet</p>
+                                                <p className="text-xs mt-1">Add extras like breakfast, airport pickup, or late checkout.</p>
+                                            </div>
+                                        )}
+                                        {field.state.value.map((_, index) => (
+                                            <div className="rounded-lg border p-4 flex flex-col gap-4">
+                                                <form.AppField name={`addons[${index}].name`}>
+                                                    {(field) => <field.FormInput label="Addon name" placeholder="e.g. Daily Breakfast" />}
+                                                </form.AppField>
+
+                                                <form.AppField name={`addons[${index}].description`}>
+                                                    {(field) => (
+                                                        <field.FormTextarea
+                                                            label="Description"
+                                                            placeholder="Short description shown to guests at checkout..."
+                                                        />
+                                                    )}
+                                                </form.AppField>
+
+                                                <div className="flex items-end gap-4">
+                                                    <form.AppField name={`addons[${index}].price`}>
+                                                        {(field) => <field.FormInput type="number" label="Price" placeholder="0.00" />}
+                                                    </form.AppField>
+                                                    <form.AppField name={`addons[${index}].state`}>
+                                                        {(field) => (
+                                                            <field.FormRadio
+                                                                label="State"
+                                                                options={ADDON_STATE_OPTIONS.map((o) => ({
+                                                                    value: o.value,
+                                                                    label: o.label,
+                                                                }))}
+                                                            />
+                                                        )}
+                                                    </form.AppField>
+                                                    <Button type="button" variant="destructive" onClick={() => field.removeValue(index)}>
+                                                        <Trash2 className="size-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => {
+                                                const newAddon: Addon = {
+                                                    id: `addon_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                                                    name: '',
+                                                    description: '',
+                                                    price: 0,
+                                                    state: 'active',
+                                                }
+                                                field.pushValue(newAddon)
+                                            }}
+                                            className="self-start"
+                                        >
+                                            <Plus className="size-4" />
+                                            Add Addon
+                                        </Button>
+                                    </div>
+                                )}
+                            </form.AppField>
+                        </Section>
+                    </div>
+                )}
+
                 {/* ════════ PHOTOS ════════ */}
                 {activeTab === 'Photos' && (
                     <div className="flex flex-col gap-6">
                         <Section>
-                            <SectionLabel>Property Photos</SectionLabel>
-                            <div
-                                className="border-2 border-dashed border-slate-200 rounded-lg p-10 flex flex-col items-center gap-3 cursor-pointer hover:border-[#243E8B]/40 hover:bg-[#EEF3FF]/20 transition-all duration-300 group"
-                                onClick={() => {
-                                    /* file pick */
-                                }}
-                            >
-                                <div className="size-12 rounded-lg bg-slate-100 group-hover:bg-[#EEF3FF] flex items-center justify-center transition-colors duration-300">
-                                    <Plus className="size-5 text-slate-400 group-hover:text-[#243E8B] transition-colors duration-300" />
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-[13px] font-semibold text-slate-700">Click to upload or drag &amp; drop</p>
-                                    <p className="text-[11.5px] text-slate-400 mt-0.5">JPG, PNG, WEBP · max 10MB each</p>
-                                </div>
-                            </div>
-                        </Section>
-
-                        <Section>
-                            <SectionLabel>Photo URLs</SectionLabel>
-                            <div className="flex flex-col gap-3">
-                                <form.AppField name="thumbnail">
-                                    {(field) => <field.FormInput label="Thumbnail URL" type="url" placeholder="https://..." />}
-                                </form.AppField>
-                                <form.AppField name="gallery">
-                                    {(field) => (
-                                        <div className="flex flex-col gap-1.5">
-                                            <Label className="text-[12px] font-medium text-slate-600">Gallery URLs (comma separated)</Label>
-                                            <Input
-                                                type="text"
-                                                placeholder="https://a..., https://b..."
-                                                className="h-9 rounded-lg border-slate-200 text-[13px]"
-                                                value={field.state.value.join(', ')}
-                                                onChange={(e) =>
-                                                    field.handleChange(
-                                                        e.target.value
-                                                            .split(',')
-                                                            .map((s) => s.trim())
-                                                            .filter(Boolean),
-                                                    )
-                                                }
-                                                onBlur={field.handleBlur}
-                                            />
-                                        </div>
-                                    )}
-                                </form.AppField>
-                            </div>
+                            <form.AppField name="gallery">
+                                {(field) => <field.FormGallery label="Property Photos" folder="properties" />}
+                            </form.AppField>
                         </Section>
                     </div>
                 )}
@@ -800,7 +805,7 @@ function PropertyForm({
                                 onClick={() => onActiveTabChange(tab)}
                                 className={cn(
                                     'size-1.5 rounded-full transition-all duration-200',
-                                    activeTab === tab ? 'bg-[#243E8B] w-4' : 'bg-slate-200 hover:bg-slate-300',
+                                    activeTab === tab ? 'bg-primary w-4' : 'bg-muted hover:bg-muted-foreground/30',
                                 )}
                             />
                         ))}
@@ -832,3 +837,8 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
         </div>
     )
 }
+
+// ─── AddonRow sub-component for the Addons tab ─────────────────────
+// The form prop is typed as `any` because TanStack Form's deeply generic
+// `AppField` return type can't be expressed inline; passing the form down
+// still preserves runtime behavior and form-component integration.

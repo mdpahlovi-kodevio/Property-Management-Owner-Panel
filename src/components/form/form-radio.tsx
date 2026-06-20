@@ -1,4 +1,5 @@
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useFieldContext } from './form-context'
 
@@ -24,9 +25,9 @@ export function FormRadio({ label, options, disabled }: FormRadioProps) {
                 {options.map((option) => (
                     <div key={option.value} className="flex items-center gap-1.5 rounded-full border px-3 py-2">
                         <RadioGroupItem id={option.value} value={option.value} />
-                        <label htmlFor={option.value} className="text-muted-foreground">
+                        <Label htmlFor={option.value} className="leading-normal">
                             {option.label}
-                        </label>
+                        </Label>
                     </div>
                 ))}
             </RadioGroup>

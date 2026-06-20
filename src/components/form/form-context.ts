@@ -1,5 +1,6 @@
 import { createFormHook, createFormHookContexts } from '@tanstack/react-form'
 import { FormAvatar } from './form-avatar'
+import { FormGallery } from './form-gallery'
 import { FormImage } from './form-image'
 import { FormInput } from './form-input'
 import { FormInputOtp } from './form-input-otp'
@@ -8,6 +9,8 @@ import { FormRadio } from './form-radio'
 import { FormSearchableSelect } from './form-searchable-select'
 import { FormSelect } from './form-select'
 import { FormSubmit } from './form-submit'
+import { FormSwitch } from './form-switch'
+import { FormTags } from './form-tags'
 import { FormTextarea } from './form-textarea'
 
 export const { fieldContext, formContext, useFormContext, useFieldContext } = createFormHookContexts()
@@ -17,6 +20,7 @@ export const { useAppForm } = createFormHook({
     formContext,
     fieldComponents: {
         FormAvatar,
+        FormGallery,
         FormImage,
         FormInput,
         FormInputOtp,
@@ -24,6 +28,8 @@ export const { useAppForm } = createFormHook({
         FormRadio,
         FormSearchableSelect,
         FormSelect,
+        FormSwitch,
+        FormTags,
         FormTextarea,
     },
     formComponents: {
