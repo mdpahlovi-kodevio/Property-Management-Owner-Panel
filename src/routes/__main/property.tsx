@@ -1,15 +1,27 @@
 import { useAppForm } from '@/components/form/form-context'
-import type { GalleryImage } from '@/components/form/form-gallery'
 import { Button } from '@/components/ui/button'
 import { DataTableFooter } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
 import { Separator } from '@/components/ui/separator'
+import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
 import { useSearchParams } from '@/hooks/use-search-params'
-import { formatPrice, getPriceRange, getPropertyById, PROPERTIES, slugify, type Addon, type Property } from '@/lib/properties'
-import { cn, GetPropertyAmenities } from '@/lib/utils'
+import { resolveImage } from '@/lib/api/base'
+import {
+    AddonStateOptions,
+    propertyApi,
+    PropertyStatusOptions,
+    PropertyTypeOptions,
+    type CreatePropertyPayload,
+    type Property,
+    type PropertyListItem,
+    type UpdatePropertyPayload,
+} from '@/lib/api/property'
+import { slugify } from '@/lib/properties'
+import { capitalize, cn, GetPropertyAmenities } from '@/lib/utils'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Edit, Eye, MapPin, Package, Plus, Star, Trash2 } from 'lucide-react'
 import { useState } from 'react'
@@ -28,7 +40,7 @@ export const Route = createFileRoute('/__main/property')({
     component: PropertyComponent,
 })
 
-// ─── Map PROPERTIES → card shape used by the grid ──────────────────
+// ─── Card shape used by the grid ────────────────────────────────────
 type PropertyCard = {
     id: string
     title: string
@@ -38,7 +50,7 @@ type PropertyCard = {
     roomTypes: number
     occupancy: number
     todayCheckIns: number
-    status: 'Active' | 'Inactive' | 'Maintenance'
+    status: string
     imageUrl: string
     rating: number
     reviewCount: number
@@ -50,61 +62,6 @@ type PropertyCard = {
     city: string
     country: string
 }
-
-const PROPERTY_CARDS: PropertyCard[] = PROPERTIES.map((p) => {
-    const totalRooms = p.roomTypes.reduce((sum, rt) => sum + rt.units.length, 0)
-    const totalBeds = p.roomTypes.reduce((sum, rt) => sum + rt.beds.reduce((s, b) => s + b.quantity, 0), 0)
-    const totalBaths = p.roomTypes.filter((rt) => rt.privateBathroom).length
-    const maxGuests = Math.max(...p.roomTypes.map((rt) => rt.maxOccupancy))
-    const viewType = p.roomTypes[0]?.viewType ?? ''
-    const range = getPriceRange(p)
-    const priceRangeLabel = range.min === range.max ? formatPrice(range.min) : `${formatPrice(range.min)} – ${formatPrice(range.max)}`
-
-    return {
-        id: p.property.id,
-        title: p.property.name,
-        location: [p.property.city, p.property.state, p.property.country].filter(Boolean).join(', '),
-        type: p.property.propertyType,
-        totalRooms,
-        roomTypes: p.roomTypes.length,
-        occupancy: Math.min(100, Math.max(0, Math.round(p.property.rating * 18))),
-        todayCheckIns: p.property.reviewCount % 5,
-        status: p.property.status === 'Draft' ? 'Maintenance' : p.property.status,
-        imageUrl: p.property.images.thumbnail,
-        rating: p.property.rating,
-        reviewCount: p.property.reviewCount,
-        priceRangeLabel,
-        totalBeds,
-        totalBaths,
-        maxGuests,
-        viewType,
-        city: p.property.city,
-        country: p.property.country,
-    }
-})
-
-const PROP_TYPE_OPTIONS = [
-    { label: 'Hotel', value: 'hotel' },
-    { label: 'Apartment', value: 'apartment' },
-    { label: 'Villa', value: 'villa' },
-    { label: 'Resort', value: 'resort' },
-    { label: 'Guest House', value: 'guest-house' },
-    { label: 'Hostel', value: 'hostel' },
-    { label: 'Homestay', value: 'homestay' },
-    { label: 'Vacation Rental', value: 'vacation-rental' },
-    { label: 'Serviced Apartment', value: 'serviced-apartment' },
-    { label: 'Boutique Hotel', value: 'boutique-hotel' },
-] as const
-
-const STATUS_OPTIONS = [
-    { value: 'Active', label: 'Active' },
-    { value: 'Inactive', label: 'Inactive' },
-] as const
-
-const ADDON_STATE_OPTIONS = [
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' },
-] as const
 
 const COUNTRY_OPTIONS = [
     'Bangladesh',
@@ -121,12 +78,47 @@ const COUNTRY_OPTIONS = [
 const PROP_TABS = ['Basics', 'Location', 'Policies', 'Addons', 'Photos'] as const
 type PropTab = (typeof PROP_TABS)[number]
 
+// ─── API → card mapping helpers ─────────────────────────────────────
+function mapPropertyToCard(p: Property): PropertyCard {
+    const totalRooms = p.roomTypes.reduce((sum, rt) => sum + rt.units.length, 0)
+    const totalBeds = p.roomTypes.reduce((sum, rt) => sum + rt.beds.reduce((s, b) => s + b.quantity, 0), 0)
+    const maxGuests = p.roomTypes.length ? Math.max(...p.roomTypes.map((rt) => rt.maxOccupancy)) : 0
+    const cover = p.images.find((i) => i.isCover) ?? p.images[0]
+
+    return {
+        id: p.id,
+        title: p.name,
+        location: [p.city, p.state, p.country].filter(Boolean).join(', '),
+        type: capitalize(p.propertyType),
+        totalRooms,
+        roomTypes: p.roomTypes.length,
+        // The list endpoint exposes no analytics; these are not available yet.
+        occupancy: 0,
+        todayCheckIns: 0,
+        status: capitalize(p.status),
+        imageUrl: resolveImage(cover?.url),
+        rating: 0,
+        reviewCount: 0,
+        priceRangeLabel: '',
+        totalBeds,
+        totalBaths: p.roomTypes.length,
+        maxGuests,
+        viewType: '',
+        city: p.city,
+        country: p.country,
+    }
+}
+
 // ─── Zod schema for the create/edit form ──────────────────────────
 const propertyFormSchema = z.object({
     name: z.string().min(1, 'Property name is required'),
-    propertyType: z.string().min(1, 'Property type is required'),
+    slug: z
+        .string()
+        .min(2, 'Slug is required')
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers and hyphens'),
+    propertyType: z.enum(PropertyTypeOptions, 'Property type is required'),
     description: z.string().min(1, 'Description is required'),
-    status: z.enum(['Active', 'Inactive']),
+    status: z.enum(PropertyStatusOptions, 'Property status is required'),
     country: z.string().min(1, 'Country is required'),
     state: z.string(),
     city: z.string().min(1, 'City is required'),
@@ -138,42 +130,37 @@ const propertyFormSchema = z.object({
     checkInTime: z.string().min(1, 'Check-in time is required'),
     checkOutTime: z.string().min(1, 'Check-out time is required'),
     amenities: z.array(z.string()),
-    policies: z.object({
-        smokingAllowed: z.boolean(),
+    policy: z.object({
         petsAllowed: z.boolean(),
-        childrenAllowed: z.boolean(),
-        partiesAllowed: z.boolean(),
+        minGuestAge: z.number(),
+        securityDeposit: z.number(),
+        houseRules: z.string(),
     }),
-    minGuestAge: z.number(),
-    securityDeposit: z.number(),
-    houseRules: z.string(),
     addons: z.array(
         z.object({
-            id: z.string(),
             name: z.string().min(1, 'Addon name is required'),
             description: z.string(),
             price: z.number().min(0, 'Price must be 0 or more'),
-            state: z.enum(['active', 'inactive']),
+            state: z.enum(AddonStateOptions, 'Addon state is required'),
         }),
     ),
-    gallery: z.array(
+    images: z.array(
         z.object({
             url: z.string(),
             thumbnail: z.boolean(),
             sortOrder: z.number(),
         }),
     ),
-    rating: z.number(),
-    reviewCount: z.number(),
 })
 
 type PropertyFormValues = z.infer<typeof propertyFormSchema>
 
 const FORM_DEFAULTS: PropertyFormValues = {
     name: '',
-    propertyType: '',
+    slug: '',
+    propertyType: 'HOTEL',
     description: '',
-    status: 'Active',
+    status: 'DRAFT',
     country: '',
     state: '',
     city: '',
@@ -185,50 +172,49 @@ const FORM_DEFAULTS: PropertyFormValues = {
     checkInTime: '',
     checkOutTime: '',
     amenities: [],
-    policies: { smokingAllowed: false, petsAllowed: false, childrenAllowed: false, partiesAllowed: false },
-    minGuestAge: 0,
-    securityDeposit: 0,
-    houseRules: '',
+    policy: { petsAllowed: false, minGuestAge: 0, securityDeposit: 0, houseRules: '' },
     addons: [],
-    gallery: [],
-    rating: 0,
-    reviewCount: 0,
+    images: [],
 }
 
 function valuesFromProperty(p: Property): PropertyFormValues {
     return {
-        name: p.property.name,
-        propertyType: p.property.propertyType,
-        description: p.property.description,
-        status: p.property.status === 'Inactive' ? 'Inactive' : 'Active',
-        country: p.property.country,
-        state: p.property.state,
-        city: p.property.city,
-        postalCode: p.property.postalCode,
-        address1: p.property.address1,
-        address2: p.property.address2 ?? '',
-        latitude: p.property.latitude,
-        longitude: p.property.longitude,
-        checkInTime: p.property.checkInTime,
-        checkOutTime: p.property.checkOutTime,
-        amenities: [...p.property.amenities],
-        policies: { ...p.property.policies },
-        minGuestAge: p.property.policies.minimumGuestAge,
-        securityDeposit: p.property.policies.securityDeposit,
-        houseRules: p.property.policies.houseRules,
-        addons: p.property.addons.map((a) => ({ ...a })),
-        gallery: (() => {
-            const items: GalleryImage[] = []
-            if (p.property.images.thumbnail) {
-                items.push({ url: p.property.images.thumbnail, thumbnail: true, sortOrder: 0 })
-            }
-            p.property.images.gallery.forEach((url) => {
-                items.push({ url, thumbnail: false, sortOrder: items.length })
-            })
-            return items
-        })(),
-        rating: p.property.rating,
-        reviewCount: p.property.reviewCount,
+        name: p.name,
+        slug: p.slug,
+        propertyType: p.propertyType,
+        description: p.description ?? '',
+        status: p.status,
+        country: p.country,
+        state: p.state ?? '',
+        city: p.city,
+        postalCode: p.postalCode ?? '',
+        address1: p.address1,
+        address2: p.address2 ?? '',
+        latitude: p.latitude ?? 0,
+        longitude: p.longitude ?? 0,
+        checkInTime: p.checkInTime,
+        checkOutTime: p.checkOutTime,
+        amenities: p.amenities.map((a) => a.amenity.id),
+        // Only petsAllowed has a backend home; the other toggles are UI-only.
+        policy: {
+            petsAllowed: p.policy?.petsAllowed ?? false,
+            minGuestAge: p.policy?.minimumGuestAge ?? 0,
+            securityDeposit: p.policy?.securityDeposit ?? 0,
+            houseRules: p.policy?.houseRules ?? '',
+        },
+        // Server-assigned ids reused as stable React keys for the Addons list.
+        addons: p.addons.map((a) => ({
+            id: a.id,
+            name: a.name,
+            description: a.description ?? '',
+            price: a.price,
+            state: a.state,
+        })),
+        images: p.images.map((image) => ({
+            url: image.url,
+            thumbnail: image.isCover || image.thumbnail,
+            sortOrder: image.sortOrder,
+        })),
     }
 }
 
@@ -256,16 +242,50 @@ function StatusBadge({ status }: { status: string }) {
     )
 }
 
-// ── Property omponent --
+// ─── Property component ──
 function PropertyComponent() {
     const { t } = useTranslation()
     const query = Route.useSearch()
     const mergeSearch = useSearchParams()
-    const navigate = useNavigate()
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<PropTab>('Basics')
     const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null)
     const isEditMode = editingPropertyId !== null
+
+    // ── List query ──
+    const { data, isLoading, refetch } = useQuery({
+        queryKey: ['properties', query],
+        queryFn: () => propertyApi.list(query),
+    })
+
+    // ── Full property for the edit dialog ──
+    const { data: editingData, isLoading: isLoadingEdit } = useQuery({
+        queryKey: ['property', editingPropertyId],
+        queryFn: () => propertyApi.get(editingPropertyId as string),
+        enabled: !!editingPropertyId,
+    })
+    const editingProperty = editingData?.data
+
+    // ── Mutations ──
+    const createMutation = useMutation({
+        mutationFn: (payload: CreatePropertyPayload) => propertyApi.create(payload),
+        onSuccess: () => {
+            refetch()
+            toast.success(t('properties.createdSuccess', 'Property created successfully!'))
+            closeDialog()
+        },
+        onError: (error) => toast.error(error.message),
+    })
+
+    const updateMutation = useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: UpdatePropertyPayload }) => propertyApi.update(id, payload),
+        onSuccess: () => {
+            refetch()
+            toast.success(t('properties.updatedSuccess', 'Property updated successfully!'))
+            closeDialog()
+        },
+        onError: (error) => toast.error(error.message),
+    })
 
     const openAdd = () => {
         setEditingPropertyId(null)
@@ -274,7 +294,6 @@ function PropertyComponent() {
     }
 
     const openEdit = (property: PropertyCard) => {
-        if (!getPropertyById(property.id)) return
         setEditingPropertyId(property.id)
         setActiveTab('Basics')
         setIsAddOpen(true)
@@ -285,20 +304,18 @@ function PropertyComponent() {
         setEditingPropertyId(null)
     }
 
-    const editingCard = editingPropertyId ? (PROPERTY_CARDS.find((p) => p.id === editingPropertyId) ?? null) : null
+    const formDefaults: PropertyFormValues = editingProperty ? valuesFromProperty(editingProperty) : FORM_DEFAULTS
 
-    const formDefaults: PropertyFormValues = editingCard
-        ? (() => {
-              const full = getPropertyById(editingCard.id)
-              return full ? valuesFromProperty(full) : FORM_DEFAULTS
-          })()
-        : FORM_DEFAULTS
-
-    const handleSave = (values: PropertyFormValues) => {
-        console.log('Submitted:', values)
-        toast.success(isEditMode ? 'Property updated successfully!' : 'Property created successfully!')
-        closeDialog()
+    const handleSave = async (values: PropertyFormValues) => {
+        if (isEditMode && editingPropertyId) {
+            await updateMutation.mutateAsync({ id: editingPropertyId, payload: values })
+        } else {
+            await createMutation.mutateAsync(values)
+        }
     }
+
+    const isSaving = createMutation.isPending || updateMutation.isPending
+    const items = data?.data ?? []
 
     return (
         <>
@@ -319,149 +336,27 @@ function PropertyComponent() {
             </div>
 
             {/* ── Grid + pagination ── */}
+            <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(18rem,1fr))]">
+                {isLoading ? (
+                    Array.from({ length: 6 }).map((_, i) => <PropertyCardSkeleton key={i} />)
+                ) : items.length === 0 ? (
+                    <div className="col-span-full text-center py-16 text-muted-foreground">
+                        {t('properties.empty', 'No properties found.')}
+                    </div>
+                ) : (
+                    items.map((item) => <PropertyCardItem key={item.id} item={item} onEdit={openEdit} />)
+                )}
+            </div>
 
-            {(() => {
-                const filtered = PROPERTY_CARDS.filter((p) => {
-                    const q = (query.search ?? '').toLowerCase()
-                    return p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q) || p.type.toLowerCase().includes(q)
-                })
-                const paginated = filtered.slice((query.page - 1) * query.limit, query.page * query.limit)
-                return (
-                    <>
-                        <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(18rem,1fr))]">
-                            {paginated.map((property) => (
-                                <div
-                                    key={property.id}
-                                    onClick={() =>
-                                        navigate({ to: '/property/$propertySlug', params: { propertySlug: slugify(property.title) } })
-                                    }
-                                    className="group h-full flex flex-col bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_6px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.1),0_12px_28px_rgba(0,0,0,0.08)] border border-border transition-all duration-300 ease-out hover:-translate-y-1 cursor-pointer overflow-hidden"
-                                >
-                                    {/* Image */}
-                                    <div className="relative w-full overflow-hidden bg-muted shrink-0" style={{ paddingTop: '66%' }}>
-                                        <img
-                                            src={property.imageUrl}
-                                            alt={property.title}
-                                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
-                                        />
-
-                                        {/* Property type badge (top-left, Guest-Panel style) */}
-                                        <span className="absolute top-3 left-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[0.7rem] font-bold uppercase tracking-wide shadow-sm">
-                                            {property.type}
-                                        </span>
-
-                                        {/* Status badge (top-right) — admin affordance */}
-                                        <div className="absolute top-3 right-3">
-                                            <StatusBadge status={property.status} />
-                                        </div>
-                                    </div>
-
-                                    {/* Body */}
-                                    <div className="p-4 flex flex-col gap-2 grow bg-card">
-                                        {/* Title row with rating */}
-                                        <div className="flex justify-between items-center gap-3">
-                                            <h3 className="text-[1.05rem] font-semibold text-foreground leading-snug line-clamp-1 m-0 group-hover:text-primary transition-colors duration-300">
-                                                {property.title}
-                                            </h3>
-                                            <div
-                                                className="inline-flex items-center gap-1 bg-accent text-foreground px-2 py-0.5 rounded-full text-[0.75rem] font-semibold whitespace-nowrap shrink-0"
-                                                aria-label={`Rated ${property.rating} out of 5 from ${property.reviewCount} reviews`}
-                                            >
-                                                <Star className="size-3 fill-amber-400 text-amber-400" />
-                                                {property.rating.toFixed(1)}
-                                                <span className="text-muted-foreground font-normal ml-0.5">({property.reviewCount})</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Location + view type */}
-                                        <div className="flex justify-between items-center gap-2 flex-wrap">
-                                            <p className="text-muted-foreground m-0 text-[0.875rem] flex items-center gap-1">
-                                                <MapPin className="size-3.5" />
-                                                {property.city}, {property.country}
-                                            </p>
-                                            {property.viewType && (
-                                                <span className="text-[0.75rem] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground">
-                                                    {property.viewType}
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {/* Meta: beds / baths / guests */}
-                                        <div className="flex justify-between items-center gap-2 flex-wrap border-t pt-2 text-sm text-muted-foreground">
-                                            <span className="inline-flex items-center gap-1">
-                                                🛏 {property.totalBeds} {t('properties.beds')}
-                                            </span>
-                                            <span className="inline-flex items-center gap-1">
-                                                🚿 {property.totalBaths} {t('properties.baths')}
-                                            </span>
-                                            <span className="inline-flex items-center gap-1">
-                                                👥 {property.maxGuests} {t('properties.guests')}
-                                            </span>
-                                        </div>
-
-                                        {/* Admin info chips (secondary info) */}
-                                        <div className="flex justify-between items-center gap-1.5 flex-wrap border-y border-border py-2">
-                                            <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                                                <span
-                                                    className={cn(
-                                                        'size-1.5 rounded-full',
-                                                        property.occupancy > 80
-                                                            ? 'bg-emerald-500'
-                                                            : property.occupancy > 50
-                                                              ? 'bg-amber-500'
-                                                              : 'bg-rose-500',
-                                                    )}
-                                                />
-                                                {property.occupancy}% {t('properties.occ')}
-                                            </span>
-                                            <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                                                {property.totalRooms} {t('properties.units')}
-                                            </span>
-                                            <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                                                {property.todayCheckIns} {t('properties.arrivals')}
-                                            </span>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-2 mt-1">
-                                            <Button
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    openEdit(property)
-                                                }}
-                                                variant="outline"
-                                            >
-                                                <Edit className="size-3.5" />
-                                                {t('properties.edit')}
-                                            </Button>
-                                            <Button
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    navigate({
-                                                        to: '/property/$propertySlug',
-                                                        params: { propertySlug: slugify(property.title) },
-                                                    })
-                                                }}
-                                            >
-                                                <Eye className="size-3.5" />
-                                                {t('properties.view')}
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <DataTableFooter
-                            page={query.page}
-                            limit={query.limit}
-                            total={PROPERTY_CARDS.length}
-                            onPageChange={(page) => mergeSearch({ page })}
-                            onLimitChange={(limit) => mergeSearch({ page: 1, limit })}
-                            limitOptions={[12, 24]}
-                            noun={t('properties.noun')}
-                        />
-                    </>
-                )
-            })()}
+            <DataTableFooter
+                page={query.page}
+                limit={query.limit}
+                total={data?.meta.total ?? 0}
+                onPageChange={(page) => mergeSearch({ page })}
+                onLimitChange={(limit) => mergeSearch({ page: 1, limit })}
+                limitOptions={[12, 24]}
+                noun={t('properties.noun')}
+            />
 
             {/* ══════════════════════════════════════════════════
                 CREATE / EDIT PROPERTY DIALOG
@@ -476,22 +371,183 @@ function PropertyComponent() {
                     <DialogHeader>
                         <DialogTitle>{isEditMode ? t('properties.editProperty') : t('properties.createProperty')}</DialogTitle>
                         <DialogDescription>
-                            {isEditMode ? `Editing "${editingCard?.title ?? ''}"` : t('properties.addDesc')}
+                            {isEditMode
+                                ? t('properties.editing', `Editing "{{name}}"`, { name: editingProperty?.name ?? '' })
+                                : t('properties.addDesc')}
                         </DialogDescription>
                     </DialogHeader>
 
-                    <PropertyForm
-                        key={editingPropertyId ?? 'add'}
-                        defaultValues={formDefaults}
-                        activeTab={activeTab}
-                        onActiveTabChange={setActiveTab}
-                        onSubmit={handleSave}
-                        onCancel={closeDialog}
-                        submitLabel={isEditMode ? t('properties.saveChanges') : t('properties.saveProperty')}
-                    />
+                    {isEditMode && (isLoadingEdit || !editingProperty) ? (
+                        <div className="flex justify-center py-12">
+                            <Spinner className="size-6" />
+                        </div>
+                    ) : (
+                        <PropertyForm
+                            key={editingPropertyId ?? 'add'}
+                            defaultValues={formDefaults}
+                            activeTab={activeTab}
+                            onActiveTabChange={setActiveTab}
+                            onSubmit={handleSave}
+                            onCancel={closeDialog}
+                            submitLabel={
+                                isSaving
+                                    ? t('properties.saving', 'Saving...')
+                                    : isEditMode
+                                      ? t('properties.saveChanges')
+                                      : t('properties.saveProperty')
+                            }
+                        />
+                    )}
                 </DialogContent>
             </Dialog>
         </>
+    )
+}
+
+// ─── Property card (rich render needs the full property from GET /:id) ──
+function PropertyCardItem({ item, onEdit }: { item: PropertyListItem; onEdit: (property: PropertyCard) => void }) {
+    const { data, isLoading } = useQuery({
+        queryKey: ['property', item.id],
+        queryFn: () => propertyApi.get(item.id),
+    })
+
+    if (isLoading || !data) return <PropertyCardSkeleton />
+
+    return <PropertyCardView property={mapPropertyToCard(data.data)} onEdit={onEdit} />
+}
+
+function PropertyCardView({ property, onEdit }: { property: PropertyCard; onEdit: (property: PropertyCard) => void }) {
+    const { t } = useTranslation()
+    const navigate = useNavigate()
+
+    return (
+        <div
+            onClick={() => navigate({ to: '/property/$propertySlug', params: { propertySlug: slugify(property.title) } })}
+            className="group h-full flex flex-col bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_6px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.1),0_12px_28px_rgba(0,0,0,0.08)] border border-border transition-all duration-300 ease-out hover:-translate-y-1 cursor-pointer overflow-hidden"
+        >
+            {/* Image */}
+            <div className="relative w-full overflow-hidden bg-muted shrink-0" style={{ paddingTop: '66%' }}>
+                <img
+                    src={property.imageUrl}
+                    alt={property.title}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+                />
+
+                {/* Property type badge (top-left, Guest-Panel style) */}
+                <span className="absolute top-3 left-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[0.7rem] font-bold uppercase tracking-wide shadow-sm">
+                    {property.type}
+                </span>
+
+                {/* Status badge (top-right) — admin affordance */}
+                <div className="absolute top-3 right-3">
+                    <StatusBadge status={property.status} />
+                </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-4 flex flex-col gap-2 grow bg-card">
+                {/* Title row with rating */}
+                <div className="flex justify-between items-center gap-3">
+                    <h3 className="text-[1.05rem] font-semibold text-foreground leading-snug line-clamp-1 m-0 group-hover:text-primary transition-colors duration-300">
+                        {property.title}
+                    </h3>
+                    <div
+                        className="inline-flex items-center gap-1 bg-accent text-foreground px-2 py-0.5 rounded-full text-[0.75rem] font-semibold whitespace-nowrap shrink-0"
+                        aria-label={`Rated ${property.rating} out of 5 from ${property.reviewCount} reviews`}
+                    >
+                        <Star className="size-3 fill-amber-400 text-amber-400" />
+                        {property.rating.toFixed(1)}
+                        <span className="text-muted-foreground font-normal ml-0.5">({property.reviewCount})</span>
+                    </div>
+                </div>
+
+                {/* Location + view type */}
+                <div className="flex justify-between items-center gap-2 flex-wrap">
+                    <p className="text-muted-foreground m-0 text-[0.875rem] flex items-center gap-1">
+                        <MapPin className="size-3.5" />
+                        {property.city}, {property.country}
+                    </p>
+                    {property.viewType && (
+                        <span className="text-[0.75rem] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground">
+                            {property.viewType}
+                        </span>
+                    )}
+                </div>
+
+                {/* Meta: beds / baths / guests */}
+                <div className="flex justify-between items-center gap-2 flex-wrap border-t pt-2 text-sm text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                        🛏 {property.totalBeds} {t('properties.beds')}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                        🚿 {property.totalBaths} {t('properties.baths')}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                        👥 {property.maxGuests} {t('properties.guests')}
+                    </span>
+                </div>
+
+                {/* Admin info chips (secondary info) */}
+                <div className="flex justify-between items-center gap-1.5 flex-wrap border-y border-border py-2">
+                    <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                        <span
+                            className={cn(
+                                'size-1.5 rounded-full',
+                                property.occupancy > 80 ? 'bg-emerald-500' : property.occupancy > 50 ? 'bg-amber-500' : 'bg-rose-500',
+                            )}
+                        />
+                        {property.occupancy}% {t('properties.occ')}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                        {property.totalRooms} {t('properties.units')}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                        {property.todayCheckIns} {t('properties.arrivals')}
+                    </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                    <Button
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            onEdit(property)
+                        }}
+                        variant="outline"
+                    >
+                        <Edit className="size-3.5" />
+                        {t('properties.edit')}
+                    </Button>
+                    <Button
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            navigate({
+                                to: '/property/$propertySlug',
+                                params: { propertySlug: slugify(property.title) },
+                            })
+                        }}
+                    >
+                        <Eye className="size-3.5" />
+                        {t('properties.view')}
+                    </Button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function PropertyCardSkeleton() {
+    return (
+        <div className="h-full flex flex-col bg-card rounded-xl border border-border overflow-hidden">
+            <div className="w-full bg-muted shrink-0 animate-pulse" style={{ paddingTop: '66%' }} />
+            <div className="p-4 flex flex-col gap-3 grow">
+                <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
+                <div className="h-3 w-1/2 rounded bg-muted animate-pulse" />
+                <div className="h-3 w-full rounded bg-muted animate-pulse" />
+                <div className="grid grid-cols-2 gap-2 mt-auto">
+                    <div className="h-8 rounded bg-muted animate-pulse" />
+                    <div className="h-8 rounded bg-muted animate-pulse" />
+                </div>
+            </div>
+        </div>
     )
 }
 
@@ -507,7 +563,7 @@ function PropertyForm({
     defaultValues: PropertyFormValues
     activeTab: PropTab
     onActiveTabChange: (tab: PropTab) => void
-    onSubmit: (values: PropertyFormValues) => void
+    onSubmit: (values: PropertyFormValues) => Promise<void>
     onCancel: () => void
     submitLabel: string
 }) {
@@ -516,7 +572,7 @@ function PropertyForm({
     const form = useAppForm({
         defaultValues,
         validators: { onChange: propertyFormSchema },
-        onSubmit: async ({ value }) => onSubmit(value),
+        onSubmit: async ({ value }) => await onSubmit(value),
     })
 
     return (
@@ -552,21 +608,30 @@ function PropertyForm({
                             <form.AppField name="name">
                                 {(field) => <field.FormInput label="Property name" placeholder="e.g. Seaside Villa Bali" />}
                             </form.AppField>
+                            <form.AppField name="slug">
+                                {(field) => <field.FormInput label="Slug" placeholder="e.g. seaside-villa-bali" />}
+                            </form.AppField>
                             <div className="grid grid-cols-2 gap-3">
                                 <form.AppField name="propertyType">
                                     {(field) => (
                                         <field.FormSelect
                                             label="Property type"
                                             placeholder="Select type"
-                                            options={[...PROP_TYPE_OPTIONS]}
+                                            options={PropertyTypeOptions.map((option) => ({
+                                                value: option,
+                                                label: capitalize(option),
+                                            }))}
                                         />
                                     )}
                                 </form.AppField>
                                 <form.AppField name="status">
                                     {(field) => (
-                                        <field.FormRadio
+                                        <field.FormSelect
                                             label="Status"
-                                            options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                                            options={PropertyStatusOptions.map((option) => ({
+                                                value: option,
+                                                label: capitalize(option),
+                                            }))}
                                         />
                                     )}
                                 </form.AppField>
@@ -658,47 +723,35 @@ function PropertyForm({
                         <Section>
                             <SectionLabel>Guest Policies</SectionLabel>
                             <div className="rounded-lg border overflow-hidden divide-y">
-                                {(
-                                    [
-                                        {
-                                            name: 'policies.smokingAllowed' as const,
-                                            label: 'Smoking allowed',
-                                            sub: 'Guests may smoke on premises',
-                                        },
-                                        { name: 'policies.petsAllowed' as const, label: 'Pets allowed', sub: 'Guests may bring animals' },
-                                        {
-                                            name: 'policies.partiesAllowed' as const,
-                                            label: 'Parties / events allowed',
-                                            sub: 'Guests may host gatherings',
-                                        },
-                                    ] as const
-                                ).map((policy) => (
-                                    <form.AppField key={policy.name} name={policy.name}>
-                                        {(f) => (
-                                            <div className="flex items-center justify-between px-3 py-2">
-                                                <div>
-                                                    <p className="text-sm font-semibold text-foreground">{policy.label}</p>
-                                                    <p className="text-xs text-muted-foreground mt-0.5">{policy.sub}</p>
+                                {[{ name: 'policy.petsAllowed' as const, label: 'Pets allowed', sub: 'Guests may bring animals' }].map(
+                                    (policy) => (
+                                        <form.AppField key={policy.name} name={policy.name}>
+                                            {(f) => (
+                                                <div className="flex items-center justify-between px-3 py-2">
+                                                    <div>
+                                                        <p className="text-sm font-semibold text-foreground">{policy.label}</p>
+                                                        <p className="text-xs text-muted-foreground mt-0.5">{policy.sub}</p>
+                                                    </div>
+                                                    <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
                                                 </div>
-                                                <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
-                                            </div>
-                                        )}
-                                    </form.AppField>
-                                ))}
+                                            )}
+                                        </form.AppField>
+                                    ),
+                                )}
                             </div>
                         </Section>
 
                         <Section>
                             <SectionLabel>Fees &amp; Rules</SectionLabel>
                             <div className="grid grid-cols-2 gap-3">
-                                <form.AppField name="minGuestAge">
+                                <form.AppField name="policy.minGuestAge">
                                     {(field) => <field.FormInput type="number" label="Minimum guest age" placeholder="18" />}
                                 </form.AppField>
-                                <form.AppField name="securityDeposit">
+                                <form.AppField name="policy.securityDeposit">
                                     {(field) => <field.FormInput type="number" label="Security deposit" placeholder="0.00" />}
                                 </form.AppField>
                             </div>
-                            <form.AppField name="houseRules">
+                            <form.AppField name="policy.houseRules">
                                 {(field) => <field.FormTextarea label="House rules" placeholder="e.g. No loud music after 10pm..." />}
                             </form.AppField>
                         </Section>
@@ -707,92 +760,86 @@ function PropertyForm({
 
                 {/* ════════ ADDONS ════════ */}
                 {activeTab === 'Addons' && (
-                    <div className="flex flex-col gap-6">
-                        <Section>
-                            <SectionLabel>Booking Addons</SectionLabel>
-                            <p className="text-xs text-muted-foreground -mt-1.5">
-                                Optional extras guests can add to their booking for a small fee.
-                            </p>
-                            <form.AppField name="addons">
-                                {(field) => (
-                                    <div className="flex flex-col gap-3">
-                                        {field.state.value.length === 0 && (
-                                            <div className="rounded-lg border border-dashed p-8 text-center bg-muted">
-                                                <Package className="size-8 mx-auto mb-2" />
-                                                <p className="text-sm font-semibold">No addons yet</p>
-                                                <p className="text-xs mt-1">Add extras like breakfast, airport pickup, or late checkout.</p>
-                                            </div>
-                                        )}
-                                        {field.state.value.map((_, index) => (
-                                            <div className="rounded-lg border p-4 flex flex-col gap-4">
-                                                <form.AppField name={`addons[${index}].name`}>
-                                                    {(field) => <field.FormInput label="Addon name" placeholder="e.g. Daily Breakfast" />}
-                                                </form.AppField>
+                    <Section>
+                        <SectionLabel>Booking Addons</SectionLabel>
+                        <p className="text-xs text-muted-foreground -mt-1.5">
+                            Optional extras guests can add to their booking for a small fee.
+                        </p>
+                        <form.AppField name="addons">
+                            {(field) => (
+                                <div className="flex flex-col gap-3">
+                                    {field.state.value.length === 0 && (
+                                        <div className="rounded-lg border border-dashed p-8 text-center bg-muted">
+                                            <Package className="size-8 mx-auto mb-2" />
+                                            <p className="text-sm font-semibold">No addons yet</p>
+                                            <p className="text-xs mt-1">Add extras like breakfast, airport pickup, or late checkout.</p>
+                                        </div>
+                                    )}
+                                    {field.state.value.map((_, index) => (
+                                        <div key={index} className="rounded-lg border p-4 flex flex-col gap-4">
+                                            <form.AppField name={`addons[${index}].name`}>
+                                                {(field) => <field.FormInput label="Addon name" placeholder="e.g. Daily Breakfast" />}
+                                            </form.AppField>
 
-                                                <form.AppField name={`addons[${index}].description`}>
+                                            <form.AppField name={`addons[${index}].description`}>
+                                                {(field) => (
+                                                    <field.FormTextarea
+                                                        label="Description"
+                                                        placeholder="Short description shown to guests at checkout..."
+                                                    />
+                                                )}
+                                            </form.AppField>
+
+                                            <div className="flex items-end gap-4">
+                                                <form.AppField name={`addons[${index}].price`}>
+                                                    {(field) => <field.FormInput type="number" label="Price" placeholder="0.00" />}
+                                                </form.AppField>
+                                                <form.AppField name={`addons[${index}].state`}>
                                                     {(field) => (
-                                                        <field.FormTextarea
-                                                            label="Description"
-                                                            placeholder="Short description shown to guests at checkout..."
+                                                        <field.FormRadio
+                                                            label="State"
+                                                            options={AddonStateOptions.map((value) => ({
+                                                                value,
+                                                                label: capitalize(value),
+                                                            }))}
                                                         />
                                                     )}
                                                 </form.AppField>
-
-                                                <div className="flex items-end gap-4">
-                                                    <form.AppField name={`addons[${index}].price`}>
-                                                        {(field) => <field.FormInput type="number" label="Price" placeholder="0.00" />}
-                                                    </form.AppField>
-                                                    <form.AppField name={`addons[${index}].state`}>
-                                                        {(field) => (
-                                                            <field.FormRadio
-                                                                label="State"
-                                                                options={ADDON_STATE_OPTIONS.map((o) => ({
-                                                                    value: o.value,
-                                                                    label: o.label,
-                                                                }))}
-                                                            />
-                                                        )}
-                                                    </form.AppField>
-                                                    <Button type="button" variant="destructive" onClick={() => field.removeValue(index)}>
-                                                        <Trash2 className="size-4" />
-                                                    </Button>
-                                                </div>
+                                                <Button type="button" variant="destructive" onClick={() => field.removeValue(index)}>
+                                                    <Trash2 className="size-4" />
+                                                </Button>
                                             </div>
-                                        ))}
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() => {
-                                                const newAddon: Addon = {
-                                                    id: `addon_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-                                                    name: '',
-                                                    description: '',
-                                                    price: 0,
-                                                    state: 'active',
-                                                }
-                                                field.pushValue(newAddon)
-                                            }}
-                                            className="self-start"
-                                        >
-                                            <Plus className="size-4" />
-                                            Add Addon
-                                        </Button>
-                                    </div>
-                                )}
-                            </form.AppField>
-                        </Section>
-                    </div>
+                                        </div>
+                                    ))}
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            const newAddon = {
+                                                name: '',
+                                                description: '',
+                                                price: 0,
+                                                state: 'ACTIVE' as const,
+                                            }
+                                            field.pushValue(newAddon)
+                                        }}
+                                        className="self-start"
+                                    >
+                                        <Plus className="size-4" />
+                                        Add Addon
+                                    </Button>
+                                </div>
+                            )}
+                        </form.AppField>
+                    </Section>
                 )}
 
                 {/* ════════ PHOTOS ════════ */}
                 {activeTab === 'Photos' && (
-                    <div className="flex flex-col gap-6">
-                        <Section>
-                            <form.AppField name="gallery">
-                                {(field) => <field.FormGallery label="Property Photos" folder="properties" />}
-                            </form.AppField>
-                        </Section>
-                    </div>
+                    <Section>
+                        <SectionLabel>Property Photos</SectionLabel>
+                        <form.AppField name="images">{(field) => <field.FormGallery folder="properties" />}</form.AppField>
+                    </Section>
                 )}
 
                 <Separator className="mt-5 mb-4" />
@@ -837,8 +884,3 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
         </div>
     )
 }
-
-// ─── AddonRow sub-component for the Addons tab ─────────────────────
-// The form prop is typed as `any` because TanStack Form's deeply generic
-// `AppField` return type can't be expressed inline; passing the form down
-// still preserves runtime behavior and form-component integration.

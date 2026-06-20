@@ -7,6 +7,14 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
 
+export function capitalize(word: string): string {
+    return word
+        .toLowerCase()
+        .split('_')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
+}
+
 export function GetPropertyAmenities() {
     const { data } = useQuery({
         queryKey: ['amenities', { category: 'property' }],

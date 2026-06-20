@@ -1,6 +1,6 @@
 import { useFieldContext } from '@/components/form/form-context'
 import { Button } from '@/components/ui/button'
-import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { Field, FieldError } from '@/components/ui/field'
 import { Spinner } from '@/components/ui/spinner'
 import { baseURL, deleteImage, deleteImages, uploadImages } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -17,7 +17,6 @@ export type GalleryImage = {
 
 // ─── Props ────────────────────────────────────────────────────────
 type FormGalleryProps = {
-    label: string
     folder?: string
     disabled?: boolean
     accept?: string
@@ -25,13 +24,7 @@ type FormGalleryProps = {
 }
 
 // ─── Main Component ───────────────────────────────────────────────
-export function FormGallery({
-    label,
-    folder,
-    disabled,
-    accept = 'image/png,image/jpeg,image/jpg,image/webp',
-    maxFiles = 10,
-}: FormGalleryProps) {
+export function FormGallery({ folder, disabled, accept = 'image/png,image/jpeg,image/jpg,image/webp', maxFiles = 10 }: FormGalleryProps) {
     const field = useFieldContext<GalleryImage[]>()
     const inputRef = useRef<HTMLInputElement>(null)
     const [isUploading, startUpload] = useTransition()
@@ -201,8 +194,6 @@ export function FormGallery({
     // ─── Render ───────────────────────────────────────────────────
     return (
         <Field data-invalid={isInvalid}>
-            <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
-
             <input
                 ref={inputRef}
                 id={field.name}

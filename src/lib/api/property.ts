@@ -3,8 +3,27 @@ import type { Paginated } from './base'
 import { request, toQuery } from './base'
 
 // ── Enums (mirror Prisma generated enums) ───────────────
-export type PropertyStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
-export type PropertyType = 'HOTEL' | 'RESORT' | 'APARTMENT' | 'VILLA' | 'HOSTEL' | 'GUESTHOUSE' | 'BUNGALOW' | 'CAMP' | 'OTHER'
+export const PropertyStatusOptions = ['DRAFT', 'ACTIVE', 'INACTIVE', 'ARCHIVED'] as const
+export type PropertyStatus = (typeof PropertyStatusOptions)[number]
+
+export const AddonStateOptions = ['ACTIVE', 'INACTIVE'] as const
+export type AddonState = (typeof AddonStateOptions)[number]
+
+export const PropertyTypeOptions = [
+    'HOTEL',
+    'RESORT',
+    'BOUTIQUE_HOTEL',
+    'SERVICED_APARTMENT',
+    'HOSTEL',
+    'GUEST_HOUSE',
+    'VACATION_RENTAL',
+    'APARTMENT',
+    'VILLA',
+    'BED_AND_BREAKFAST',
+    'MOTEL',
+    'OTHER',
+] as const
+export type PropertyType = (typeof PropertyTypeOptions)[number]
 
 // ── Nested entities ─────────────────────────────────────
 export interface PropertyPolicy {
@@ -23,6 +42,17 @@ export interface PropertyImage {
     thumbnail: boolean
     sortOrder: number
     isCover: boolean
+}
+
+export interface PropertyAddon {
+    id: string
+    propertyId: string
+    name: string
+    description: string | null
+    price: number
+    state: AddonState
+    createdAt: string
+    updatedAt: string
 }
 
 export interface RoomTypeBed {
@@ -82,15 +112,17 @@ export interface Property {
     policy: PropertyPolicy | null
     amenities: { amenity: Amenity }[]
     images: PropertyImage[]
+    addons: PropertyAddon[]
     roomTypes: RoomType[]
 }
 
 /** Slimmer property returned by list (with counts). */
-export interface PropertyListItem extends Omit<Property, 'amenities' | 'images' | 'roomTypes'> {
+export interface PropertyListItem extends Omit<Property, 'amenities' | 'images' | 'addons' | 'roomTypes'> {
     _count: {
         roomTypes: number
         images: number
         amenities: number
+        addons: number
     }
 }
 
@@ -116,6 +148,13 @@ export interface PropertyImagePayload {
     sortOrder?: number
 }
 
+export interface PropertyAddonPayload {
+    name: string
+    description?: string
+    price: number
+    state?: AddonState
+}
+
 export interface CreatePropertyPayload {
     name: string
     slug: string
@@ -136,6 +175,7 @@ export interface CreatePropertyPayload {
     policy?: PropertyPolicyPayload
     images?: PropertyImagePayload[]
     amenities?: string[]
+    addons?: PropertyAddonPayload[]
 }
 
 /**
