@@ -2,17 +2,27 @@ import { useAppForm } from '@/components/form/form-context'
 import { Button } from '@/components/ui/button'
 import { DataTableFooter } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
 import { Separator } from '@/components/ui/separator'
+import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
 import { useSearchParams } from '@/hooks/use-search-params'
-import { getPropertyBySlug, slugify, type Property } from '@/lib/properties'
-import { cn, GetRoomAmenities } from '@/lib/utils'
+import {
+    BathroomTypeOptions,
+    BedTypeOptions,
+    roomTypeApi,
+    type BathroomType,
+    type BedType,
+    type CreateRoomTypePayload,
+    type RoomType,
+    type UpdateRoomTypePayload,
+} from '@/lib/api'
+import { resolveImage } from '@/lib/api/base'
+import { propertyApi } from '@/lib/api/property'
+import { capitalize, cn, GetRoomAmenities } from '@/lib/utils'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Edit, Eye, MapPin, Plus, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Edit, Eye, MapPin, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import * as z from 'zod'
@@ -28,9 +38,10 @@ export const Route = createFileRoute('/__main/property_/$propertySlug')({
     component: RouteComponent,
 })
 
-// ─── Card shape derived from PROPERTIES roomTypes ──────────────────
+// ─── Card shape used by the grid ────────────────────────────────────
 type RoomTypeCard = {
     id: string
+    propertyId: string
     title: string
     location: string
     details: string
@@ -40,68 +51,32 @@ type RoomTypeCard = {
     status: 'Active' | 'Maintenance'
     imageUrl: string
     units: string[]
-    propertyId: string
     viewType: string
     bedsCount: number
-    bathsCount: number
+    bathroomType: BathroomType
     maxGuests: number
     roomSizeLabel: string
-    privateBathroom: boolean
 }
 
-function buildRoomTypeCards(property: Property | undefined): RoomTypeCard[] {
-    if (!property) return []
-    return property.roomTypes.map((rt) => {
-        const bedsCount = rt.beds.reduce((s, b) => s + b.quantity, 0)
-        const floorLabel = rt.units.length > 0 ? Array.from(new Set(rt.units.map((u) => u.floor))).join(', ') : '—'
-        return {
-            id: rt.id,
-            title: rt.name,
-            location: `Floor ${floorLabel}`,
-            details: `${bedsCount} Bed${bedsCount === 1 ? '' : 's'} • 1 Bath • ${rt.roomSize}${rt.roomSizeUnit}`,
-            basePrice: rt.basePrice,
-            totalUnits: rt.units.length,
-            capacity: `${rt.maxAdults} Adult${rt.maxAdults === 1 ? '' : 's'}${rt.maxChildren > 0 ? `, ${rt.maxChildren} Child${rt.maxChildren === 1 ? '' : 'ren'}` : ''}`,
-            status: 'Active' as const,
-            imageUrl: rt.images.thumbnail,
-            units: rt.units.map((u) => u.roomNumber),
-            propertyId: rt.propertyId,
-            viewType: rt.viewType,
-            bedsCount,
-            bathsCount: rt.privateBathroom ? 1 : 0,
-            maxGuests: rt.maxOccupancy,
-            roomSizeLabel: `${rt.roomSize} ${rt.roomSizeUnit}`,
-            privateBathroom: rt.privateBathroom,
-        }
-    })
-}
-
-const BED_TYPES = ['King', 'Queen', 'Double', 'Twin', 'Single', 'Bunk', 'Sofa Bed', 'Murphy Bed', 'Futon']
-const VIEW_TYPES = ['Ocean view', 'Garden view', 'Pool view', 'Mountain view', 'City view', 'Courtyard view']
 const ROOM_TABS = ['Details', 'Capacity', 'Policies', 'Photos'] as const
 type RoomTab = (typeof ROOM_TABS)[number]
 
-// ─── Zod schema mirroring the lib roomTypes shape ──────────────────
+// ─── Zod schema mirroring the create/update payload ─────────────────
 const roomTypeFormSchema = z.object({
-    id: z.string(),
-    propertyId: z.string(),
-    name: z.string().min(1, 'Name is required'),
-    internalCode: z.string().min(1, 'Internal code is required'),
-    description: z.string().min(1, 'Description is required'),
-    maxAdults: z.number().min(1),
-    maxChildren: z.number().min(0),
-    maxOccupancy: z.number().min(1),
+    name: z.string().min(2, 'Name must be at least 2 characters').max(128),
+    internalCode: z.string().max(64).optional().or(z.literal('')),
+    description: z.string().max(5000).optional().or(z.literal('')),
+    maxAdults: z.number().int().min(1).max(50),
+    maxChildren: z.number().int().min(0).max(50),
+    maxOccupancy: z.number().int().min(1).max(100),
     basePrice: z.number().min(0),
-    roomSize: z.number().min(1),
-    roomSizeUnit: z.enum(['sqm', 'sqft']),
-    beds: z.array(z.object({ id: z.string(), bedType: z.string(), quantity: z.number().min(1) })),
-    amenities: z.array(z.string()),
-    units: z.array(z.object({ id: z.string(), roomNumber: z.string(), floor: z.string() })),
+    roomSize: z.number().min(0).optional().or(z.nan()),
     smokingRoom: z.boolean(),
     accessibleRoom: z.boolean(),
-    privateBathroom: z.boolean(),
-    sharedBathroom: z.boolean(),
-    viewType: z.string(),
+    bathroomType: z.enum(BathroomTypeOptions),
+    viewType: z.string().max(64).optional().or(z.literal('')),
+    beds: z.array(z.object({ bedType: z.enum(BedTypeOptions), quantity: z.number().int().min(1).max(20) })),
+    amenities: z.array(z.string()),
     images: z.array(
         z.object({
             url: z.string(),
@@ -114,8 +89,6 @@ const roomTypeFormSchema = z.object({
 type RoomTypeFormValues = z.infer<typeof roomTypeFormSchema>
 
 const ROOM_FORM_DEFAULTS: RoomTypeFormValues = {
-    id: '',
-    propertyId: '',
     name: '',
     internalCode: '',
     description: '',
@@ -124,45 +97,60 @@ const ROOM_FORM_DEFAULTS: RoomTypeFormValues = {
     maxOccupancy: 2,
     basePrice: 100,
     roomSize: 28,
-    roomSizeUnit: 'sqm',
-    beds: [{ id: 'bed_init_1', bedType: 'King', quantity: 1 }],
-    amenities: [],
-    units: [{ id: 'unit_init_1', roomNumber: '101', floor: '1' }],
     smokingRoom: false,
     accessibleRoom: false,
-    privateBathroom: true,
-    sharedBathroom: false,
+    bathroomType: 'PRIVATE',
     viewType: '',
+    beds: [{ bedType: 'KING', quantity: 1 }],
+    amenities: [],
     images: [],
 }
 
-function valuesFromRoomType(rt: Property['roomTypes'][number]): RoomTypeFormValues {
+// ─── API value → form value ─────────────────────────────────────────
+function valuesFromRoomType(rt: RoomType): RoomTypeFormValues {
     return {
-        id: rt.id,
-        propertyId: rt.propertyId,
         name: rt.name,
-        internalCode: rt.internalCode,
-        description: rt.description,
+        internalCode: rt.internalCode ?? '',
+        description: rt.description ?? '',
         maxAdults: rt.maxAdults,
         maxChildren: rt.maxChildren,
         maxOccupancy: rt.maxOccupancy,
-        basePrice: rt.basePrice,
-        roomSize: rt.roomSize,
-        roomSizeUnit: rt.roomSizeUnit,
-        beds: rt.beds.map((b) => ({ ...b })),
-        amenities: [...rt.amenities],
-        units: rt.units.map((u) => ({ ...u })),
+        basePrice: Number(rt.basePrice),
+        roomSize: rt.roomSize ?? NaN,
         smokingRoom: rt.smokingRoom,
         accessibleRoom: rt.accessibleRoom,
-        privateBathroom: rt.privateBathroom,
-        sharedBathroom: rt.sharedBathroom,
-        viewType: rt.viewType,
-        images: [],
+        bathroomType: rt.bathroomType,
+        viewType: rt.viewType ?? '',
+        beds: rt.beds.map((b) => ({ bedType: b.bedType, quantity: b.quantity })),
+        amenities: rt.amenities.map((a) => a.amenity.id),
+        images: rt.images.map((img) => ({
+            url: img.url,
+            thumbnail: img.thumbnail,
+            sortOrder: img.sortOrder,
+        })),
     }
 }
 
-function newId(prefix: string) {
-    return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`
+// ─── Form value → create/update payload ─────────────────────────────
+function payloadFromValues(values: RoomTypeFormValues): CreateRoomTypePayload {
+    const viewType = values.viewType?.trim() || undefined
+    return {
+        name: values.name.trim(),
+        internalCode: values.internalCode?.trim() || undefined,
+        description: values.description?.trim() || undefined,
+        maxAdults: values.maxAdults,
+        maxChildren: values.maxChildren,
+        maxOccupancy: values.maxOccupancy,
+        basePrice: values.basePrice,
+        roomSize: typeof values.roomSize === 'number' && !Number.isNaN(values.roomSize) ? values.roomSize : undefined,
+        smokingRoom: values.smokingRoom,
+        accessibleRoom: values.accessibleRoom,
+        bathroomType: values.bathroomType,
+        viewType,
+        beds: values.beds,
+        amenities: values.amenities,
+        images: values.images,
+    }
 }
 
 // ─── Component ───────────────────────────────────────────────────────
@@ -171,14 +159,62 @@ function RouteComponent() {
     const query = Route.useSearch()
     const mergeSearch = useSearchParams()
     const { propertySlug } = Route.useParams()
-    const property = getPropertyBySlug(propertySlug)
-    const roomCards = buildRoomTypeCards(property)
+
+    // ── Resolve slug → property (slug is the route param; the room-type
+    //    endpoints are scoped by propertyId). ──
+    const { data: propertyData, isLoading: isLoadingProperty } = useQuery({
+        queryKey: ['property-by-slug', propertySlug],
+        queryFn: async () => {
+            // propertyApi.list search matches against name / slug, so a slug
+            // search returns the right property as the first hit.
+            const res = await propertyApi.list({ search: propertySlug, limit: 1 })
+            return res.data[0]
+        },
+    })
+    const propertyId = propertyData?.id
+    const propertyName = propertyData?.name
 
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<RoomTab>('Details')
     const [editingRoomId, setEditingRoomId] = useState<string | null>(null)
-
     const isEditMode = editingRoomId !== null
+
+    // ── Room-type list query ──
+    const { data, isLoading, refetch } = useQuery({
+        queryKey: ['room-types', propertyId, query],
+        queryFn: () => roomTypeApi.list(propertyId as string, query),
+        enabled: !!propertyId,
+    })
+
+    // ── Full room type for the edit dialog ──
+    const { data: editingData, isLoading: isLoadingEdit } = useQuery({
+        queryKey: ['room-type', propertyId, editingRoomId],
+        queryFn: () => roomTypeApi.get(propertyId as string, editingRoomId as string),
+        enabled: !!propertyId && !!editingRoomId,
+    })
+    const editingRoomType = editingData?.data
+
+    // ── Mutations ──
+    const createMutation = useMutation({
+        mutationFn: (payload: CreateRoomTypePayload) => roomTypeApi.create(propertyId as string, payload),
+        onSuccess: () => {
+            refetch()
+            toast.success('Room type created successfully!')
+            closeDialog()
+        },
+        onError: (error) => toast.error(error.message),
+    })
+
+    const updateMutation = useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: UpdateRoomTypePayload }) =>
+            roomTypeApi.update(propertyId as string, id, payload),
+        onSuccess: () => {
+            refetch()
+            toast.success('Room type updated successfully!')
+            closeDialog()
+        },
+        onError: (error) => toast.error(error.message),
+    })
 
     const openAdd = () => {
         setEditingRoomId(null)
@@ -187,7 +223,6 @@ function RouteComponent() {
     }
 
     const openEdit = (room: RoomTypeCard) => {
-        if (!property?.roomTypes.find((rt) => rt.id === room.id)) return
         setEditingRoomId(room.id)
         setActiveTab('Details')
         setIsAddOpen(true)
@@ -198,23 +233,19 @@ function RouteComponent() {
         setEditingRoomId(null)
     }
 
-    const editingCard = editingRoomId ? (roomCards.find((r) => r.id === editingRoomId) ?? null) : null
+    const formDefaults: RoomTypeFormValues = editingRoomType ? valuesFromRoomType(editingRoomType) : ROOM_FORM_DEFAULTS
 
-    const formDefaults: RoomTypeFormValues = editingCard
-        ? (() => {
-              const full = property?.roomTypes.find((rt) => rt.id === editingCard.id)
-              return full ? valuesFromRoomType(full) : ROOM_FORM_DEFAULTS
-          })()
-        : ROOM_FORM_DEFAULTS
-
-    const handleSave = (values: RoomTypeFormValues) => {
-        console.log('Submitted room:', values)
-        toast.success(isEditMode ? 'Room type updated successfully!' : 'Room type created successfully!')
-        closeDialog()
+    const handleSave = async (values: RoomTypeFormValues) => {
+        if (isEditMode && editingRoomId) {
+            await updateMutation.mutateAsync({ id: editingRoomId, payload: payloadFromValues(values) })
+        } else {
+            await createMutation.mutateAsync(payloadFromValues(values))
+        }
     }
 
-    const pageTitle = property
-        ? `Room Types — ${property.property.name}`
+    const isSaving = createMutation.isPending || updateMutation.isPending
+    const pageTitle = propertyName
+        ? `Room Types — ${propertyName}`
         : `Room Types — ${propertySlug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}`
 
     return (
@@ -225,174 +256,54 @@ function RouteComponent() {
                         <ArrowLeft className="mr-2 w-4" />
                         Back to Properties
                     </Button>
-                    <PageHeader title={pageTitle} description="Manage room types for this property" />
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">{pageTitle}</h1>
+                        <p className="text-muted-foreground text-sm mt-1">Manage room types for this property</p>
+                    </div>
                 </div>
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                     <SearchInput value={query.search ?? ''} placeholder="Search rooms..." className="w-full sm:w-80" />
-                    <Button onClick={openAdd}>
+                    <Button onClick={openAdd} disabled={!propertyId}>
                         <Plus className="size-4" />
                         Add Room Type
                     </Button>
                 </div>
             </div>
-            {(() => {
-                const filteredRooms = roomCards.filter((room) => {
-                    const search = query.search?.toLowerCase() || ''
-                    return (
-                        room.title.toLowerCase().includes(search) ||
-                        room.location.toLowerCase().includes(search) ||
-                        room.details.toLowerCase().includes(search)
-                    )
-                })
-                const paginatedRooms = filteredRooms.slice((query.page - 1) * query.limit, query.page * query.limit)
 
-                if (paginatedRooms.length === 0) {
-                    return (
-                        <div className="rounded-lg border border-dashed border-slate-200 p-10 text-center text-slate-500">
-                            {property ? 'No room types match your search.' : `Property "${propertySlug}" not found.`}
-                        </div>
-                    )
-                }
+            {/* ── Grid + pagination ── */}
+            {isLoadingProperty || isLoading ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4.5 mt-6">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <RoomTypeCardSkeleton key={i} />
+                    ))}
+                </div>
+            ) : !propertyId ? (
+                <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground mt-6">
+                    {`Property "${propertySlug}" not found.`}
+                </div>
+            ) : (data?.data ?? []).length === 0 ? (
+                <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground mt-6">
+                    No room types yet. Click “Add Room Type” to create one.
+                </div>
+            ) : (
+                <>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4.5 mt-6">
+                        {(data?.data ?? []).map((item) => (
+                            <RoomTypeCardItem key={item.id} propertyId={propertyId} item={item} onEdit={openEdit} />
+                        ))}
+                    </div>
 
-                return (
-                    <>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4.5">
-                            {paginatedRooms.map((room) => (
-                                <div
-                                    key={room.id}
-                                    className="group cursor-pointer h-full flex flex-col bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_6px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.1),0_12px_28px_rgba(0,0,0,0.08)] border border-border transition-all duration-300 ease-out hover:-translate-y-1 overflow-hidden"
-                                    onClick={() =>
-                                        navigate({
-                                            to: '/property/$propertySlug/room/$roomSlug',
-                                            params: { propertySlug, roomSlug: slugify(room.title) },
-                                        })
-                                    }
-                                >
-                                    {/* Image */}
-                                    <div className="relative w-full overflow-hidden bg-muted shrink-0" style={{ paddingTop: '66%' }}>
-                                        <img
-                                            src={room.imageUrl}
-                                            alt={room.title}
-                                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
-                                        />
-
-                                        {/* View type badge (top-left, Guest-Panel style) */}
-                                        {room.viewType && (
-                                            <span className="absolute top-3 left-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[0.7rem] font-bold uppercase tracking-wide shadow-sm">
-                                                {room.viewType}
-                                            </span>
-                                        )}
-
-                                        {/* Status badge (top-right) — admin affordance */}
-                                        <div className="absolute top-3 right-3">
-                                            <span
-                                                className={cn(
-                                                    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border backdrop-blur-md',
-                                                    room.status === 'Active'
-                                                        ? 'bg-emerald-500/90 text-white border-white/20'
-                                                        : 'bg-amber-500/90 text-white border-white/20',
-                                                )}
-                                            >
-                                                <span className="relative inline-flex rounded-full size-1.5 bg-white" />
-                                                {room.status}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Body */}
-                                    <div className="p-4 flex flex-col gap-2 grow bg-card">
-                                        {/* Title row with viewType chip (mirrors property card rating) */}
-                                        <div className="flex justify-between items-center gap-3">
-                                            <h3 className="text-[1.05rem] font-semibold text-foreground leading-snug line-clamp-1 m-0 group-hover:text-primary transition-colors duration-300">
-                                                {room.title}
-                                            </h3>
-                                            {room.viewType && (
-                                                <span className="inline-flex items-center gap-1 text-[0.7rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent text-foreground whitespace-nowrap shrink-0">
-                                                    {room.viewType}
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {/* Subtitle: floor / beds chip */}
-                                        <div className="flex justify-between items-center gap-2 text-muted-foreground text-[0.875rem]">
-                                            <span className="inline-flex items-center gap-1">
-                                                <MapPin className="size-3.5" />
-                                                {room.location}
-                                            </span>
-                                            {room.bedsCount > 0 && (
-                                                <span className="text-[0.75rem] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground">
-                                                    🛏 {room.bedsCount} bed{room.bedsCount === 1 ? '' : 's'}
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {/* Meta: guests / baths / size (border-t) */}
-                                        <div className="flex justify-between items-center gap-2 flex-wrap border-t border-border pt-2 text-[0.875rem] text-muted-foreground">
-                                            <span className="inline-flex items-center gap-1">
-                                                👥 {room.maxGuests} Guest{room.maxGuests === 1 ? '' : 's'}
-                                            </span>
-                                            <span className="inline-flex items-center gap-1">
-                                                🚿 {room.privateBathroom ? 'Private' : 'Shared'}
-                                            </span>
-                                            <span className="inline-flex items-center gap-1">📐 {room.roomSizeLabel}</span>
-                                        </div>
-
-                                        {/* Admin info chips (border-y py-2 — matches property card style) */}
-                                        <div className="flex justify-between items-center gap-1.5 flex-wrap border-y border-border py-2">
-                                            <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                                                {room.totalUnits} unit{room.totalUnits === 1 ? '' : 's'}
-                                            </span>
-                                            <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                                                {room.units.length > 0 ? `${room.units.length} room#` : 'No rooms'}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center gap-1.5 flex-wrap">
-                                            <span className="text-[0.7rem] text-muted-foreground">{room.capacity}</span>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <Button
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    openEdit(room)
-                                                }}
-                                                variant="outline"
-                                            >
-                                                <Edit className="size-3.5" />
-                                                Edit
-                                            </Button>
-                                            <Button
-                                                variant="default"
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    navigate({
-                                                        to: '/property/$propertySlug/room/$roomSlug',
-                                                        params: { propertySlug, roomSlug: slugify(room.title) },
-                                                    })
-                                                }}
-                                            >
-                                                <Eye className="size-3.5" />
-                                                View
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <DataTableFooter
-                            page={query.page}
-                            limit={query.limit}
-                            total={property?.roomTypes.length ?? 0}
-                            onPageChange={(page) => mergeSearch({ page })}
-                            onLimitChange={(limit) => mergeSearch({ page: 1, limit })}
-                            limitOptions={[12, 24]}
-                            noun="rooms"
-                        />
-                    </>
-                )
-            })()}
+                    <DataTableFooter
+                        page={query.page}
+                        limit={query.limit}
+                        total={data?.meta.total ?? 0}
+                        onPageChange={(page) => mergeSearch({ page })}
+                        onLimitChange={(limit) => mergeSearch({ page: 1, limit })}
+                        limitOptions={[12, 24]}
+                        noun="rooms"
+                    />
+                </>
+            )}
 
             {/* ══════════════════════════════════════════════════
                 CREATE / EDIT ROOM TYPE DIALOG
@@ -407,21 +318,229 @@ function RouteComponent() {
                     <DialogHeader>
                         <DialogTitle>{isEditMode ? 'Edit room type' : 'Create room type'}</DialogTitle>
                         <DialogDescription>
-                            {isEditMode ? `Editing "${editingCard?.title ?? ''}"` : 'Add a new room type to this property'}
+                            {isEditMode ? `Editing "${editingRoomType?.name ?? ''}"` : 'Add a new room type to this property'}
                         </DialogDescription>
                     </DialogHeader>
-                    <RoomTypeForm
-                        key={editingRoomId ?? 'add'}
-                        defaultValues={formDefaults}
-                        activeTab={activeTab}
-                        onActiveTabChange={setActiveTab}
-                        onSubmit={handleSave}
-                        onCancel={closeDialog}
-                        submitLabel={isEditMode ? 'Save changes' : 'Save room type'}
-                    />
+
+                    {isEditMode && (isLoadingEdit || !editingRoomType) ? (
+                        <div className="flex justify-center py-12">
+                            <Spinner className="size-6" />
+                        </div>
+                    ) : (
+                        <RoomTypeForm
+                            key={editingRoomId ?? 'add'}
+                            defaultValues={formDefaults}
+                            activeTab={activeTab}
+                            onActiveTabChange={setActiveTab}
+                            onSubmit={handleSave}
+                            onCancel={closeDialog}
+                            submitLabel={isSaving ? 'Saving...' : isEditMode ? 'Save changes' : 'Save room type'}
+                        />
+                    )}
                 </DialogContent>
             </Dialog>
         </>
+    )
+}
+
+// ─── Room-type card (rich render needs the full room type from GET /:id) ──
+function RoomTypeCardItem({
+    propertyId,
+    item,
+    onEdit,
+}: {
+    propertyId: string
+    item: import('@/lib/api/room-type').RoomTypeListItem
+    onEdit: (room: RoomTypeCard) => void
+}) {
+    const { data, isLoading } = useQuery({
+        queryKey: ['room-type', propertyId, item.id],
+        queryFn: () => roomTypeApi.get(propertyId, item.id),
+    })
+
+    if (isLoading || !data) return <RoomTypeCardSkeleton />
+
+    return <RoomTypeCardView room={data.data} onEdit={onEdit} />
+}
+
+function RoomTypeCardView({ room, onEdit }: { room: RoomType; onEdit: (room: RoomTypeCard) => void }) {
+    const navigate = useNavigate()
+
+    const card = mapRoomTypeToCard(room)
+
+    return (
+        <div
+            className="group cursor-pointer h-full flex flex-col bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_6px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.1),0_12px_28px_rgba(0,0,0,0.08)] border border-border transition-all duration-300 ease-out hover:-translate-y-1 overflow-hidden"
+            onClick={() =>
+                navigate({
+                    to: '/property/$propertySlug/room/$roomSlug',
+                    params: { propertySlug: room.propertyId, roomSlug: slugifyRoom(card.title) },
+                })
+            }
+        >
+            {/* Image */}
+            <div className="relative w-full overflow-hidden bg-muted shrink-0" style={{ paddingTop: '66%' }}>
+                <img
+                    src={card.imageUrl}
+                    alt={card.title}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+                />
+
+                {/* View type badge (top-left, Guest-Panel style) */}
+                {card.viewType && (
+                    <span className="absolute top-3 left-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[0.7rem] font-bold uppercase tracking-wide shadow-sm">
+                        {card.viewType}
+                    </span>
+                )}
+
+                {/* Status badge (top-right) — admin affordance */}
+                <div className="absolute top-3 right-3">
+                    <span
+                        className={cn(
+                            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border backdrop-blur-md',
+                            card.status === 'Active'
+                                ? 'bg-emerald-500/90 text-white border-white/20'
+                                : 'bg-amber-500/90 text-white border-white/20',
+                        )}
+                    >
+                        <span className="relative inline-flex rounded-full size-1.5 bg-white" />
+                        {card.status}
+                    </span>
+                </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-4 flex flex-col gap-2 grow bg-card">
+                {/* Title row with viewType chip (mirrors property card rating) */}
+                <div className="flex justify-between items-center gap-3">
+                    <h3 className="text-[1.05rem] font-semibold text-foreground leading-snug line-clamp-1 m-0 group-hover:text-primary transition-colors duration-300">
+                        {card.title}
+                    </h3>
+                    {card.viewType && (
+                        <span className="inline-flex items-center gap-1 text-[0.7rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent text-foreground whitespace-nowrap shrink-0">
+                            {card.viewType}
+                        </span>
+                    )}
+                </div>
+
+                {/* Subtitle: floor / beds chip */}
+                <div className="flex justify-between items-center gap-2 text-muted-foreground text-[0.875rem]">
+                    <span className="inline-flex items-center gap-1">
+                        <MapPin className="size-3.5" />
+                        {card.location}
+                    </span>
+                    {card.bedsCount > 0 && (
+                        <span className="text-[0.75rem] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground">
+                            🛏 {card.bedsCount} bed{card.bedsCount === 1 ? '' : 's'}
+                        </span>
+                    )}
+                </div>
+
+                {/* Meta: guests / baths / size (border-t) */}
+                <div className="flex justify-between items-center gap-2 flex-wrap border-t border-border pt-2 text-[0.875rem] text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                        👥 {card.maxGuests} Guest{card.maxGuests === 1 ? '' : 's'}
+                    </span>
+                    <span className="inline-flex items-center gap-1">🚿 {card.bathroomType === 'PRIVATE' ? 'Private' : 'Shared'}</span>
+                    <span className="inline-flex items-center gap-1">📐 {card.roomSizeLabel}</span>
+                </div>
+
+                {/* Admin info chips (border-y py-2 — matches property card style) */}
+                <div className="flex justify-between items-center gap-1.5 flex-wrap border-y border-border py-2">
+                    <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                        {card.totalUnits} unit{card.totalUnits === 1 ? '' : 's'}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                        {card.units.length > 0 ? `${card.units.length} room#` : 'No rooms'}
+                    </span>
+                </div>
+
+                <div className="flex justify-between items-center gap-1.5 flex-wrap">
+                    <span className="text-[0.7rem] text-muted-foreground">{card.capacity}</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                    <Button
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            onEdit(card)
+                        }}
+                        variant="outline"
+                    >
+                        <Edit className="size-3.5" />
+                        Edit
+                    </Button>
+                    <Button
+                        variant="default"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            navigate({
+                                to: '/property/$propertySlug/room/$roomSlug',
+                                params: { propertySlug: room.propertyId, roomSlug: slugifyRoom(card.title) },
+                            })
+                        }}
+                    >
+                        <Eye className="size-3.5" />
+                        View
+                    </Button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ─── API → card mapping ─────────────────────────────────────────────
+function mapRoomTypeToCard(rt: RoomType): RoomTypeCard {
+    const bedsCount = rt.beds.reduce((s, b) => s + b.quantity, 0)
+    const floorLabel = rt.units.length > 0 ? Array.from(new Set(rt.units.map((u) => u.floor).filter(Boolean))).join(', ') : '—'
+    const cover = rt.images.find((i) => i.thumbnail) ?? rt.images[0]
+    const roomSizeLabel = rt.roomSize != null ? `${rt.roomSize} sqm` : '—'
+
+    return {
+        id: rt.id,
+        propertyId: rt.propertyId,
+        title: rt.name,
+        location: `Floor ${floorLabel}`,
+        details: `${bedsCount} Bed${bedsCount === 1 ? '' : 's'} • ${roomSizeLabel}`,
+        basePrice: Number(rt.basePrice),
+        totalUnits: rt.units.length,
+        capacity: `${rt.maxAdults} Adult${rt.maxAdults === 1 ? '' : 's'}${rt.maxChildren > 0 ? `, ${rt.maxChildren} Child${rt.maxChildren === 1 ? '' : 'ren'}` : ''}`,
+        status: 'Active',
+        imageUrl: resolveImage(cover?.url),
+        units: rt.units.map((u) => u.roomNumber),
+        viewType: rt.viewType ?? '',
+        bedsCount,
+        bathroomType: rt.bathroomType,
+        maxGuests: rt.maxOccupancy,
+        roomSizeLabel,
+    }
+}
+
+function slugifyRoom(text: string): string {
+    return text
+        .toString()
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w-]+/g, '')
+        .replace(/--+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '')
+}
+
+function RoomTypeCardSkeleton() {
+    return (
+        <div className="h-full flex flex-col bg-card rounded-xl border border-border overflow-hidden">
+            <div className="w-full bg-muted shrink-0 animate-pulse" style={{ paddingTop: '66%' }} />
+            <div className="p-4 flex flex-col gap-3 grow">
+                <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
+                <div className="h-3 w-1/2 rounded bg-muted animate-pulse" />
+                <div className="h-3 w-full rounded bg-muted animate-pulse" />
+                <div className="grid grid-cols-2 gap-2 mt-auto">
+                    <div className="h-8 rounded bg-muted animate-pulse" />
+                    <div className="h-8 rounded bg-muted animate-pulse" />
+                </div>
+            </div>
+        </div>
     )
 }
 
@@ -437,38 +556,29 @@ function RoomTypeForm({
     defaultValues: RoomTypeFormValues
     activeTab: RoomTab
     onActiveTabChange: (tab: RoomTab) => void
-    onSubmit: (values: RoomTypeFormValues) => void
+    onSubmit: (values: RoomTypeFormValues) => Promise<void>
     onCancel: () => void
     submitLabel: string
 }) {
     const amenities = GetRoomAmenities()
 
-    // Unit management local state (input fields, bulk generator)
-    const [unitInput, setUnitInput] = useState('')
-    const [unitFloor, setUnitFloor] = useState('1')
-    const [genCount, setGenCount] = useState(10)
-    const [genStart, setGenStart] = useState(201)
-    const [genFloor, setGenFloor] = useState('2')
-
     const form = useAppForm({
         defaultValues,
         validators: { onChange: roomTypeFormSchema },
-        onSubmit: async ({ value }) => onSubmit(value),
+        onSubmit: async ({ value }) => await onSubmit(value),
     })
 
     return (
         <>
-            <div className="flex border-b border-slate-100 bg-slate-50/60 overflow-x-auto shrink-0">
+            <div className="flex border-b bg-muted overflow-x-auto shrink-0">
                 {ROOM_TABS.map((tab) => (
                     <button
                         key={tab}
                         type="button"
                         onClick={() => onActiveTabChange(tab)}
                         className={cn(
-                            'flex-1 min-w-17 px-4 py-3 text-[12.5px] font-semibold whitespace-nowrap border-b-2 transition-all duration-200',
-                            activeTab === tab
-                                ? 'border-primary text-primary bg-white'
-                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-white/60',
+                            'flex-1 min-w-18 px-3 py-2 text-sm font-semibold whitespace-nowrap border-b-2 transition-all duration-200',
+                            activeTab === tab ? 'border-primary text-primary' : 'border-transparent',
                         )}
                     >
                         {tab}
@@ -496,7 +606,7 @@ function RoomTypeForm({
                                 {(field) => <field.FormInput label="Internal code" placeholder="e.g. DLX-KNG-01" />}
                             </form.AppField>
                             <form.AppField name="roomSize">
-                                {(field) => <field.FormInput type="number" label="Room size" placeholder="28" />}
+                                {(field) => <field.FormInput type="number" label="Room size (sqm)" placeholder="28" />}
                             </form.AppField>
                             <form.AppField name="description">
                                 {(field) => (
@@ -544,9 +654,9 @@ function RoomTypeForm({
                                                             <field.FormSelect
                                                                 label="Bed type"
                                                                 placeholder="Select bed type"
-                                                                options={BED_TYPES.map((b) => ({
-                                                                    label: b,
-                                                                    value: b,
+                                                                options={BedTypeOptions.map((value) => ({
+                                                                    value,
+                                                                    label: capitalize(value),
                                                                 }))}
                                                             />
                                                         )}
@@ -567,138 +677,12 @@ function RoomTypeForm({
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={() => field.pushValue({ id: newId('bed'), bedType: 'King', quantity: 1 })}
+                                            onClick={() => field.pushValue({ bedType: 'KING' as BedType, quantity: 1 })}
                                             className="self-start"
                                         >
                                             <Plus className="size-3.5" />
                                             Add bed type
                                         </Button>
-                                    </div>
-                                )}
-                            </form.AppField>
-                        </Section>
-
-                        <Section>
-                            <SectionLabel>Physical Units</SectionLabel>
-                            <form.AppField name="units">
-                                {(field) => (
-                                    <div className="flex flex-col gap-4">
-                                        <div className="flex flex-wrap gap-2 min-h-9">
-                                            {field.state.value.map((unit, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="flex items-center gap-1.5 px-3 py-1 bg-muted border rounded-full text-xs font-semibold"
-                                                >
-                                                    <span>{unit.roomNumber}</span>
-                                                    <span className="text-muted-foreground text-xs">· F{unit.floor}</span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => field.removeValue(i)}
-                                                        className="text-muted-foreground hover:text-red-500 transition-colors"
-                                                    >
-                                                        <X className="size-3" />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                            {field.state.value.length === 0 && (
-                                                <p className="text-xs text-muted italic">No units added yet</p>
-                                            )}
-                                        </div>
-
-                                        <div className="flex flex-col gap-1.5">
-                                            <Label>Add single unit</Label>
-                                            <div className="grid grid-cols-[1fr_80px_auto] gap-2 items-end max-w-sm">
-                                                <Input
-                                                    placeholder="e.g. 104"
-                                                    value={unitInput}
-                                                    onChange={(e) => setUnitInput(e.target.value)}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter' && unitInput.trim()) {
-                                                            e.preventDefault()
-                                                            field.pushValue({
-                                                                id: newId('unit'),
-                                                                roomNumber: unitInput.trim(),
-                                                                floor: unitFloor || '1',
-                                                            })
-                                                            setUnitInput('')
-                                                        }
-                                                    }}
-                                                />
-                                                <Input
-                                                    placeholder="Floor"
-                                                    value={unitFloor}
-                                                    onChange={(e) => setUnitFloor(e.target.value)}
-                                                />
-                                                <Button
-                                                    size="sm"
-                                                    type="button"
-                                                    onClick={() => {
-                                                        if (unitInput.trim()) {
-                                                            field.pushValue({
-                                                                id: newId('unit'),
-                                                                roomNumber: unitInput.trim(),
-                                                                floor: unitFloor || '1',
-                                                            })
-                                                            setUnitInput('')
-                                                        }
-                                                    }}
-                                                >
-                                                    Add unit
-                                                </Button>
-                                            </div>
-                                        </div>
-                                        <div
-                                            data-slot="field-separator"
-                                            className="relative -my-2 h-5 text-sm group-data-[variant=outline]/field-group:-mb-2"
-                                        >
-                                            <Separator className="absolute inset-0 top-1/2" />
-                                            <span
-                                                className="relative mx-auto block w-fit bg-background px-2 text-muted-foreground"
-                                                data-slot="field-separator-content"
-                                            >
-                                                OR
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <div className="grid grid-cols-[1fr_1fr_80px_auto] gap-2 items-end max-w-md">
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label>Count</Label>
-                                                    <Input
-                                                        type="number"
-                                                        min="1"
-                                                        max="200"
-                                                        value={genCount}
-                                                        onChange={(e) => setGenCount(parseInt(e.target.value) || 10)}
-                                                    />
-                                                </div>
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label>Start number</Label>
-                                                    <Input
-                                                        type="number"
-                                                        value={genStart}
-                                                        onChange={(e) => setGenStart(parseInt(e.target.value) || 201)}
-                                                    />
-                                                </div>
-                                                <div className="flex flex-col gap-1.5">
-                                                    <Label>Floor</Label>
-                                                    <Input value={genFloor} onChange={(e) => setGenFloor(e.target.value)} />
-                                                </div>
-                                                <Button
-                                                    size="sm"
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const newUnits = Array.from({ length: Math.min(genCount, 200) }, (_, i) => ({
-                                                            id: newId('unit'),
-                                                            roomNumber: String(genStart + i),
-                                                            floor: genFloor || '2',
-                                                        }))
-                                                        newUnits.forEach((u) => field.pushValue(u))
-                                                    }}
-                                                >
-                                                    Generate
-                                                </Button>
-                                            </div>
-                                        </div>
                                     </div>
                                 )}
                             </form.AppField>
@@ -735,16 +719,6 @@ function RoomTypeForm({
                                             label: 'Accessible room',
                                             sub: 'Wheelchair / mobility accessible',
                                         },
-                                        {
-                                            name: 'privateBathroom' as const,
-                                            label: 'Private bathroom',
-                                            sub: 'Ensuite or attached bathroom',
-                                        },
-                                        {
-                                            name: 'sharedBathroom' as const,
-                                            label: 'Shared bathroom',
-                                            sub: 'Bathroom shared with other guests',
-                                        },
                                     ] as const
                                 ).map((policy) => (
                                     <form.AppField key={policy.name} name={policy.name}>
@@ -761,6 +735,21 @@ function RoomTypeForm({
                                 ))}
                             </div>
                         </Section>
+
+                        <Section>
+                            <SectionLabel>Bathroom</SectionLabel>
+                            <form.AppField name="bathroomType">
+                                {(field) => (
+                                    <field.FormSelect
+                                        label="Bathroom type"
+                                        options={BathroomTypeOptions.map((value) => ({
+                                            value,
+                                            label: capitalize(value),
+                                        }))}
+                                    />
+                                )}
+                            </form.AppField>
+                        </Section>
                     </div>
                 )}
 
@@ -770,15 +759,7 @@ function RoomTypeForm({
                         <Section>
                             <SectionLabel>View Type</SectionLabel>
                             <form.AppField name="viewType">
-                                {(field) => (
-                                    <field.FormTags
-                                        label=""
-                                        options={VIEW_TYPES.map((view) => ({
-                                            value: view,
-                                            label: view,
-                                        }))}
-                                    />
-                                )}
+                                {(field) => <field.FormInput label="View type" placeholder="e.g. Ocean view" />}
                             </form.AppField>
                         </Section>
 

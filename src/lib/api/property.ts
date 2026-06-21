@@ -1,6 +1,7 @@
 import type { Amenity } from './amenity'
 import type { Paginated } from './base'
 import { request, toQuery } from './base'
+import type { RoomType } from './room-type'
 
 // ── Enums (mirror Prisma generated enums) ───────────────
 export const PropertyStatusOptions = ['DRAFT', 'ACTIVE', 'INACTIVE', 'ARCHIVED'] as const
@@ -52,36 +53,6 @@ export interface PropertyAddon {
     state: AddonState
     createdAt: string
     updatedAt: string
-}
-
-export interface RoomTypeBed {
-    id: string
-    roomTypeId: string
-    bedType: string
-    quantity: number
-}
-
-export interface RoomTypeUnit {
-    id: string
-    roomTypeId: string
-    roomNumber: string
-    floor: number | null
-    status: string
-}
-
-export interface RoomType {
-    id: string
-    propertyId: string
-    name: string
-    description: string | null
-    maxOccupancy: number
-    basePrice: number
-    currency: string
-    totalUnits: number
-    beds: RoomTypeBed[]
-    amenities: { amenity: Amenity }[]
-    images: PropertyImage[]
-    units: RoomTypeUnit[]
 }
 
 // ── Top-level property shapes ───────────────────────────
