@@ -44,10 +44,9 @@ export function FormTags({ label, options, disabled }: FormTagsProps) {
                                     : 'bg-background text-foreground border-border hover:bg-muted hover:border-primary/50',
                             )}
                         >
-                            <span
-                                className="[&_svg:not([class*='size-'])]:size-4"
-                                dangerouslySetInnerHTML={{ __html: option.icon ?? '' }}
-                            />
+                            {option.icon ? (
+                                <span className="[&_svg:not([class*='size-'])]:size-4" dangerouslySetInnerHTML={{ __html: option.icon }} />
+                            ) : null}
                             <span>{option.label}</span>
                         </button>
                     )

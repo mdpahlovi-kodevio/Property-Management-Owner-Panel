@@ -30,7 +30,7 @@ export interface PropertyPolicy {
     propertyId: string
     petsAllowed: boolean
     minimumGuestAge: number
-    securityDeposit: number | null
+    securityDeposit: string | number | null
     houseRules: string | null
 }
 
@@ -38,10 +38,9 @@ export interface PropertyImage {
     id: string
     propertyId: string
     url: string
-    alt: string | null
     thumbnail: boolean
     sortOrder: number
-    isCover: boolean
+    createdAt: string
 }
 
 export interface PropertyAddon {
@@ -49,7 +48,7 @@ export interface PropertyAddon {
     propertyId: string
     name: string
     description: string | null
-    price: number
+    price: string | number
     state: AddonState
     createdAt: string
     updatedAt: string

@@ -37,7 +37,7 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute('/__main/property')({
     validateSearch: searchSchema,
-    component: PropertyComponent,
+    component: RouteComponent,
 })
 
 // ─── Card shape used by the grid ────────────────────────────────────
@@ -83,7 +83,7 @@ function mapPropertyToCard(p: Property): PropertyCard {
     const totalRooms = p.roomTypes.reduce((sum, rt) => sum + rt.units.length, 0)
     const totalBeds = p.roomTypes.reduce((sum, rt) => sum + rt.beds.reduce((s, b) => s + b.quantity, 0), 0)
     const maxGuests = p.roomTypes.length ? Math.max(...p.roomTypes.map((rt) => rt.maxOccupancy)) : 0
-    const cover = p.images.find((i) => i.isCover) ?? p.images[0]
+    const cover = p.images.find((i) => i.thumbnail) ?? p.images[0]
 
     return {
         id: p.id,
@@ -132,7 +132,7 @@ const propertyFormSchema = z.object({
     amenities: z.array(z.string()),
     policy: z.object({
         petsAllowed: z.boolean(),
-        minGuestAge: z.number(),
+        minimumGuestAge: z.number(),
         securityDeposit: z.number(),
         houseRules: z.string(),
     }),
@@ -172,7 +172,7 @@ const FORM_DEFAULTS: PropertyFormValues = {
     checkInTime: '',
     checkOutTime: '',
     amenities: [],
-    policy: { petsAllowed: false, minGuestAge: 0, securityDeposit: 0, houseRules: '' },
+    policy: { petsAllowed: false, minimumGuestAge: 0, securityDeposit: 0, houseRules: '' },
     addons: [],
     images: [],
 }
@@ -198,21 +198,19 @@ function valuesFromProperty(p: Property): PropertyFormValues {
         // Only petsAllowed has a backend home; the other toggles are UI-only.
         policy: {
             petsAllowed: p.policy?.petsAllowed ?? false,
-            minGuestAge: p.policy?.minimumGuestAge ?? 0,
-            securityDeposit: p.policy?.securityDeposit ?? 0,
+            minimumGuestAge: p.policy?.minimumGuestAge ?? 0,
+            securityDeposit: p.policy?.securityDeposit != null ? Number(p.policy.securityDeposit) : 0,
             houseRules: p.policy?.houseRules ?? '',
         },
-        // Server-assigned ids reused as stable React keys for the Addons list.
         addons: p.addons.map((a) => ({
-            id: a.id,
             name: a.name,
             description: a.description ?? '',
-            price: a.price,
+            price: Number(a.price),
             state: a.state,
         })),
         images: p.images.map((image) => ({
             url: image.url,
-            thumbnail: image.isCover || image.thumbnail,
+            thumbnail: image.thumbnail,
             sortOrder: image.sortOrder,
         })),
     }
@@ -243,7 +241,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 // ─── Property component ──
-function PropertyComponent() {
+function RouteComponent() {
     const { t } = useTranslation()
     const query = Route.useSearch()
     const mergeSearch = useSearchParams()
@@ -744,7 +742,7 @@ function PropertyForm({
                         <Section>
                             <SectionLabel>Fees &amp; Rules</SectionLabel>
                             <div className="grid grid-cols-2 gap-3">
-                                <form.AppField name="policy.minGuestAge">
+                                <form.AppField name="policy.minimumGuestAge">
                                     {(field) => <field.FormInput type="number" label="Minimum guest age" placeholder="18" />}
                                 </form.AppField>
                                 <form.AppField name="policy.securityDeposit">

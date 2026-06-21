@@ -6,36 +6,26 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import { useSearchParams } from '@/hooks/use-search-params'
 import { getPropertyBySlug, slugify, type Property } from '@/lib/properties'
-import { cn } from '@/lib/utils'
+import { cn, GetRoomAmenities } from '@/lib/utils'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import {
-    Accessibility,
-    ArrowLeft,
-    Car,
-    Clock,
-    Dumbbell,
-    Edit,
-    Eye,
-    MapPin,
-    ParkingCircle,
-    Plus,
-    Star,
-    Trash2,
-    UtensilsCrossed,
-    Waves,
-    Wifi,
-    X,
-} from 'lucide-react'
+import { ArrowLeft, Edit, Eye, MapPin, Plus, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import * as z from 'zod'
 
+const searchSchema = z.object({
+    page: z.number().default(1),
+    limit: z.number().default(12),
+    search: z.string().optional(),
+})
+
 export const Route = createFileRoute('/__main/property_/$propertySlug')({
-    component: PropertyUnitComponent,
+    validateSearch: searchSchema,
+    component: RouteComponent,
 })
 
 // ─── Card shape derived from PROPERTIES roomTypes ──────────────────
@@ -45,7 +35,6 @@ type RoomTypeCard = {
     location: string
     details: string
     basePrice: number
-    currency: string
     totalUnits: number
     capacity: string
     status: 'Active' | 'Maintenance'
@@ -62,7 +51,6 @@ type RoomTypeCard = {
 
 function buildRoomTypeCards(property: Property | undefined): RoomTypeCard[] {
     if (!property) return []
-    const currency = property.property.currency
     return property.roomTypes.map((rt) => {
         const bedsCount = rt.beds.reduce((s, b) => s + b.quantity, 0)
         const floorLabel = rt.units.length > 0 ? Array.from(new Set(rt.units.map((u) => u.floor))).join(', ') : '—'
@@ -72,7 +60,6 @@ function buildRoomTypeCards(property: Property | undefined): RoomTypeCard[] {
             location: `Floor ${floorLabel}`,
             details: `${bedsCount} Bed${bedsCount === 1 ? '' : 's'} • 1 Bath • ${rt.roomSize}${rt.roomSizeUnit}`,
             basePrice: rt.basePrice,
-            currency,
             totalUnits: rt.units.length,
             capacity: `${rt.maxAdults} Adult${rt.maxAdults === 1 ? '' : 's'}${rt.maxChildren > 0 ? `, ${rt.maxChildren} Child${rt.maxChildren === 1 ? '' : 'ren'}` : ''}`,
             status: 'Active' as const,
@@ -90,29 +77,6 @@ function buildRoomTypeCards(property: Property | undefined): RoomTypeCard[] {
 }
 
 const BED_TYPES = ['King', 'Queen', 'Double', 'Twin', 'Single', 'Bunk', 'Sofa Bed', 'Murphy Bed', 'Futon']
-const ROOM_AMENITIES = [
-    { label: 'Air conditioning', icon: null },
-    { label: 'TV', icon: null },
-    { label: 'Mini bar', icon: null },
-    { label: 'Coffee machine', icon: null },
-    { label: 'Desk', icon: null },
-    { label: 'Balcony', icon: null },
-    { label: 'Kitchen', icon: null },
-    { label: 'Microwave', icon: null },
-    { label: 'Refrigerator', icon: null },
-    { label: 'Safe', icon: null },
-    { label: 'Hair dryer', icon: null },
-    { label: 'Bathtub', icon: null },
-    { label: 'WiFi', icon: Wifi },
-    { label: 'Parking', icon: ParkingCircle },
-    { label: 'Pool access', icon: Waves },
-    { label: 'Gym access', icon: Dumbbell },
-    { label: 'Breakfast', icon: UtensilsCrossed },
-    { label: 'Airport shuttle', icon: Car },
-    { label: 'Wheelchair accessible', icon: Accessibility },
-    { label: '24-hr service', icon: Clock },
-    { label: 'Concierge', icon: Star },
-]
 const VIEW_TYPES = ['Ocean view', 'Garden view', 'Pool view', 'Mountain view', 'City view', 'Courtyard view']
 const ROOM_TABS = ['Details', 'Capacity', 'Policies', 'Photos'] as const
 type RoomTab = (typeof ROOM_TABS)[number]
@@ -138,8 +102,13 @@ const roomTypeFormSchema = z.object({
     privateBathroom: z.boolean(),
     sharedBathroom: z.boolean(),
     viewType: z.string(),
-    thumbnail: z.string(),
-    gallery: z.array(z.string()),
+    images: z.array(
+        z.object({
+            url: z.string(),
+            thumbnail: z.boolean(),
+            sortOrder: z.number(),
+        }),
+    ),
 })
 
 type RoomTypeFormValues = z.infer<typeof roomTypeFormSchema>
@@ -164,8 +133,7 @@ const ROOM_FORM_DEFAULTS: RoomTypeFormValues = {
     privateBathroom: true,
     sharedBathroom: false,
     viewType: '',
-    thumbnail: '',
-    gallery: [],
+    images: [],
 }
 
 function valuesFromRoomType(rt: Property['roomTypes'][number]): RoomTypeFormValues {
@@ -189,8 +157,7 @@ function valuesFromRoomType(rt: Property['roomTypes'][number]): RoomTypeFormValu
         privateBathroom: rt.privateBathroom,
         sharedBathroom: rt.sharedBathroom,
         viewType: rt.viewType,
-        thumbnail: rt.images.thumbnail,
-        gallery: [...rt.images.gallery],
+        images: [],
     }
 }
 
@@ -199,15 +166,14 @@ function newId(prefix: string) {
 }
 
 // ─── Component ───────────────────────────────────────────────────────
-function PropertyUnitComponent() {
+function RouteComponent() {
     const navigate = useNavigate()
+    const query = Route.useSearch()
+    const mergeSearch = useSearchParams()
     const { propertySlug } = Route.useParams()
     const property = getPropertyBySlug(propertySlug)
     const roomCards = buildRoomTypeCards(property)
 
-    const [searchQuery, setSearchQuery] = useState('')
-    const [currentPage, setCurrentPage] = useState(1)
-    const [itemsPerPage, setItemsPerPage] = useState(4)
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<RoomTab>('Details')
     const [editingRoomId, setEditingRoomId] = useState<string | null>(null)
@@ -262,15 +228,7 @@ function PropertyUnitComponent() {
                     <PageHeader title={pageTitle} description="Manage room types for this property" />
                 </div>
                 <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <SearchInput
-                        placeholder="Search rooms..."
-                        value={searchQuery}
-                        onValueChange={(val) => {
-                            setSearchQuery(val)
-                            setCurrentPage(1)
-                        }}
-                        className="w-full sm:w-80"
-                    />
+                    <SearchInput value={query.search ?? ''} placeholder="Search rooms..." className="w-full sm:w-80" />
                     <Button onClick={openAdd}>
                         <Plus className="size-4" />
                         Add Room Type
@@ -279,14 +237,14 @@ function PropertyUnitComponent() {
             </div>
             {(() => {
                 const filteredRooms = roomCards.filter((room) => {
-                    const query = searchQuery.toLowerCase()
+                    const search = query.search?.toLowerCase() || ''
                     return (
-                        room.title.toLowerCase().includes(query) ||
-                        room.location.toLowerCase().includes(query) ||
-                        room.details.toLowerCase().includes(query)
+                        room.title.toLowerCase().includes(search) ||
+                        room.location.toLowerCase().includes(search) ||
+                        room.details.toLowerCase().includes(search)
                     )
                 })
-                const paginatedRooms = filteredRooms.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                const paginatedRooms = filteredRooms.slice((query.page - 1) * query.limit, query.page * query.limit)
 
                 if (paginatedRooms.length === 0) {
                     return (
@@ -424,15 +382,12 @@ function PropertyUnitComponent() {
                         </div>
 
                         <DataTableFooter
-                            page={currentPage}
-                            limit={itemsPerPage}
-                            total={filteredRooms.length}
-                            onPageChange={setCurrentPage}
-                            onLimitChange={(limit) => {
-                                setItemsPerPage(limit)
-                                setCurrentPage(1)
-                            }}
-                            limitOptions={[4, 8, 12, 24]}
+                            page={query.page}
+                            limit={query.limit}
+                            total={property?.roomTypes.length ?? 0}
+                            onPageChange={(page) => mergeSearch({ page })}
+                            onLimitChange={(limit) => mergeSearch({ page: 1, limit })}
+                            limitOptions={[12, 24]}
                             noun="rooms"
                         />
                     </>
@@ -463,7 +418,6 @@ function PropertyUnitComponent() {
                         onSubmit={handleSave}
                         onCancel={closeDialog}
                         submitLabel={isEditMode ? 'Save changes' : 'Save room type'}
-                        propertyCurrency={property?.property.currency ?? null}
                     />
                 </DialogContent>
             </Dialog>
@@ -479,7 +433,6 @@ function RoomTypeForm({
     onSubmit,
     onCancel,
     submitLabel,
-    propertyCurrency,
 }: {
     defaultValues: RoomTypeFormValues
     activeTab: RoomTab
@@ -487,8 +440,9 @@ function RoomTypeForm({
     onSubmit: (values: RoomTypeFormValues) => void
     onCancel: () => void
     submitLabel: string
-    propertyCurrency: string | null
 }) {
+    const amenities = GetRoomAmenities()
+
     // Unit management local state (input fields, bulk generator)
     const [unitInput, setUnitInput] = useState('')
     const [unitFloor, setUnitFloor] = useState('1')
@@ -501,8 +455,6 @@ function RoomTypeForm({
         validators: { onChange: roomTypeFormSchema },
         onSubmit: async ({ value }) => onSubmit(value),
     })
-
-    const currencySymbol = propertyCurrency === 'USD' ? '$' : propertyCurrency === 'EUR' ? '€' : propertyCurrency === 'GBP' ? '£' : '$'
 
     return (
         <>
@@ -543,23 +495,9 @@ function RoomTypeForm({
                             <form.AppField name="internalCode">
                                 {(field) => <field.FormInput label="Internal code" placeholder="e.g. DLX-KNG-01" />}
                             </form.AppField>
-                            <div className="grid grid-cols-2 gap-3">
-                                <form.AppField name="roomSize">
-                                    {(field) => <field.FormInput type="number" label="Room size" placeholder="28" />}
-                                </form.AppField>
-                                <form.AppField name="roomSizeUnit">
-                                    {(field) => (
-                                        <field.FormSelect
-                                            label="Unit"
-                                            placeholder="Select unit"
-                                            options={[
-                                                { label: 'sqm', value: 'sqm' },
-                                                { label: 'sqft', value: 'sqft' },
-                                            ]}
-                                        />
-                                    )}
-                                </form.AppField>
-                            </div>
+                            <form.AppField name="roomSize">
+                                {(field) => <field.FormInput type="number" label="Room size" placeholder="28" />}
+                            </form.AppField>
                             <form.AppField name="description">
                                 {(field) => (
                                     <field.FormTextarea label="Description" placeholder="Describe the room type for OTA listings..." />
@@ -569,35 +507,9 @@ function RoomTypeForm({
 
                         <Section>
                             <SectionLabel>Pricing</SectionLabel>
-                            <div className="grid grid-cols-2 gap-3">
-                                <form.AppField name="basePrice">
-                                    {(field) => (
-                                        <div className="flex flex-col gap-1.5">
-                                            <Label>Base price / night</Label>
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[13px]">
-                                                    {currencySymbol}
-                                                </span>
-                                                <Input
-                                                    type="number"
-                                                    min="0"
-                                                    className="h-9 pl-7 rounded-lg border-slate-200 text-[13px]"
-                                                    value={field.state.value}
-                                                    onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
-                                                    onBlur={field.handleBlur}
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-                                </form.AppField>
-                                <div className="flex flex-col gap-1.5">
-                                    <Label>Property currency</Label>
-                                    <div className="h-9 px-3 flex items-center rounded-lg border border-slate-200 bg-slate-50 text-[13px] text-slate-600">
-                                        {propertyCurrency ?? '—'}
-                                        <span className="text-slate-400 ml-1">(inherited from property)</span>
-                                    </div>
-                                </div>
-                            </div>
+                            <form.AppField name="basePrice">
+                                {(field) => <field.FormInput type="number" label="Base price / night" placeholder="e.g. 100" />}
+                            </form.AppField>
                         </Section>
                     </div>
                 )}
@@ -623,53 +535,40 @@ function RoomTypeForm({
                             <SectionLabel>Bed Configuration</SectionLabel>
                             <form.AppField name="beds">
                                 {(field) => (
-                                    <div className="flex flex-col">
-                                        <div className="grid grid-cols-[1fr_80px_36px] gap-2 mb-1.5">
-                                            <Label>Bed type</Label>
-                                            <Label>Qty</Label>
-                                            <span />
-                                        </div>
+                                    <div className="flex flex-col gap-3">
                                         {field.state.value.map((_, i) => (
-                                            <div key={i} className="grid grid-cols-[1fr_80px_36px] gap-2 items-center">
-                                                <form.AppField name={`beds[${i}].bedType`}>
-                                                    {(subField) => (
-                                                        <Select value={subField.state.value} onValueChange={subField.handleChange}>
-                                                            <SelectTrigger className="h-9 rounded-lg border-slate-200 text-[13px] bg-white">
-                                                                <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {BED_TYPES.map((b) => (
-                                                                    <SelectItem key={b} value={b}>
-                                                                        {b}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    )}
-                                                </form.AppField>
-                                                <form.AppField name={`beds[${i}].quantity`}>
-                                                    {(subField) => (
-                                                        <Input
-                                                            type="number"
-                                                            min="1"
-                                                            max="10"
-                                                            className="h-9 rounded-lg border-slate-200 text-[13px] text-center"
-                                                            value={subField.state.value}
-                                                            onChange={(e) => subField.handleChange(parseInt(e.target.value) || 1)}
-                                                            onBlur={subField.handleBlur}
-                                                        />
-                                                    )}
-                                                </form.AppField>
-                                                <Button size="icon-sm" variant="destructive" onClick={() => field.removeValue(i)}>
-                                                    <Trash2 className="size-3.5" />
-                                                </Button>
+                                            <div key={i} className="grid grid-cols-3 gap-3">
+                                                <div className="col-span-2">
+                                                    <form.AppField name={`beds[${i}].bedType`}>
+                                                        {(field) => (
+                                                            <field.FormSelect
+                                                                label="Bed type"
+                                                                placeholder="Select bed type"
+                                                                options={BED_TYPES.map((b) => ({
+                                                                    label: b,
+                                                                    value: b,
+                                                                }))}
+                                                            />
+                                                        )}
+                                                    </form.AppField>
+                                                </div>
+                                                <div className="flex items-end gap-3">
+                                                    <form.AppField name={`beds[${i}].quantity`}>
+                                                        {(field) => (
+                                                            <field.FormInput type="number" label="Quantity" placeholder="Quantity" />
+                                                        )}
+                                                    </form.AppField>
+                                                    <Button size="icon" variant="destructive" onClick={() => field.removeValue(i)}>
+                                                        <Trash2 className="size-3.5" />
+                                                    </Button>
+                                                </div>
                                             </div>
                                         ))}
                                         <Button
                                             size="sm"
                                             variant="outline"
                                             onClick={() => field.pushValue({ id: newId('bed'), bedType: 'King', quantity: 1 })}
-                                            className="mt-3 w-max"
+                                            className="self-start"
                                         >
                                             <Plus className="size-3.5" />
                                             Add bed type
@@ -813,37 +712,21 @@ function RoomTypeForm({
                             <SectionLabel>Room Amenities</SectionLabel>
                             <form.AppField name="amenities">
                                 {(field) => (
-                                    <div className="flex flex-wrap gap-2">
-                                        {ROOM_AMENITIES.map(({ label, icon: Icon }) => {
-                                            const isOn = field.state.value.includes(label)
-                                            return (
-                                                <button
-                                                    key={label}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const cur = field.state.value
-                                                        field.handleChange(isOn ? cur.filter((a) => a !== label) : [...cur, label])
-                                                    }}
-                                                    className={cn(
-                                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] font-medium transition-all duration-200',
-                                                        isOn
-                                                            ? 'border-primary bg-primary text-white shadow-sm shadow-primary/20'
-                                                            : 'border-slate-200 text-slate-600 bg-white hover:border-slate-300 hover:bg-slate-50',
-                                                    )}
-                                                >
-                                                    {Icon && <Icon className="size-3.5" />}
-                                                    {label}
-                                                </button>
-                                            )
-                                        })}
-                                    </div>
+                                    <field.FormTags
+                                        label=""
+                                        options={amenities.map((amenity) => ({
+                                            value: amenity.id,
+                                            label: amenity.name,
+                                            icon: amenity.icon ?? undefined,
+                                        }))}
+                                    />
                                 )}
                             </form.AppField>
                         </Section>
 
                         <Section>
                             <SectionLabel>Room Policies</SectionLabel>
-                            <div className="rounded-lg border border-slate-100 overflow-hidden divide-y divide-slate-100">
+                            <div className="rounded-lg border overflow-hidden divide-y">
                                 {(
                                     [
                                         { name: 'smokingRoom' as const, label: 'Smoking room', sub: 'Room permits smoking' },
@@ -863,13 +746,13 @@ function RoomTypeForm({
                                             sub: 'Bathroom shared with other guests',
                                         },
                                     ] as const
-                                ).map((attr) => (
-                                    <form.AppField key={attr.name} name={attr.name}>
+                                ).map((policy) => (
+                                    <form.AppField key={policy.name} name={policy.name}>
                                         {(f) => (
-                                            <div className="flex items-center justify-between px-4 py-3.5 bg-white hover:bg-slate-50/70 transition-colors">
+                                            <div className="flex items-center justify-between px-3 py-2">
                                                 <div>
-                                                    <p className="text-[13px] font-semibold text-slate-800">{attr.label}</p>
-                                                    <p className="text-[11.5px] text-slate-400 mt-0.5">{attr.sub}</p>
+                                                    <p className="text-sm font-semibold text-foreground">{policy.label}</p>
+                                                    <p className="text-xs text-muted-foreground mt-0.5">{policy.sub}</p>
                                                 </div>
                                                 <Switch checked={f.state.value} onCheckedChange={f.handleChange} />
                                             </div>
@@ -888,60 +771,20 @@ function RoomTypeForm({
                             <SectionLabel>View Type</SectionLabel>
                             <form.AppField name="viewType">
                                 {(field) => (
-                                    <div className="flex flex-wrap gap-2">
-                                        {VIEW_TYPES.map((view) => {
-                                            const isOn = field.state.value === view
-                                            return (
-                                                <button
-                                                    key={view}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        field.handleChange(isOn ? '' : view)
-                                                    }}
-                                                    className={cn(
-                                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] font-medium transition-all duration-200',
-                                                        isOn
-                                                            ? 'border-primary bg-primary text-white shadow-sm shadow-primary/20'
-                                                            : 'border-slate-200 text-slate-600 bg-white hover:border-slate-300 hover:bg-slate-50',
-                                                    )}
-                                                >
-                                                    {view}
-                                                </button>
-                                            )
-                                        })}
-                                    </div>
+                                    <field.FormTags
+                                        label=""
+                                        options={VIEW_TYPES.map((view) => ({
+                                            value: view,
+                                            label: view,
+                                        }))}
+                                    />
                                 )}
                             </form.AppField>
                         </Section>
 
                         <Section>
                             <SectionLabel>Room Photos</SectionLabel>
-                            <div className="flex flex-col gap-3">
-                                <form.AppField name="thumbnail">
-                                    {(field) => <field.FormInput label="Thumbnail URL" type="url" placeholder="https://..." />}
-                                </form.AppField>
-                                <form.AppField name="gallery">
-                                    {(field) => (
-                                        <div className="flex flex-col gap-1">
-                                            <Label className="text-sm">Gallery URLs (comma separated)</Label>
-                                            <Input
-                                                type="text"
-                                                placeholder="https://a..., https://b..."
-                                                value={field.state.value.join(', ')}
-                                                onChange={(e) =>
-                                                    field.handleChange(
-                                                        e.target.value
-                                                            .split(',')
-                                                            .map((s) => s.trim())
-                                                            .filter(Boolean),
-                                                    )
-                                                }
-                                                onBlur={field.handleBlur}
-                                            />
-                                        </div>
-                                    )}
-                                </form.AppField>
-                            </div>
+                            <form.AppField name="images">{(field) => <field.FormGallery folder="properties" />}</form.AppField>
                         </Section>
                     </div>
                 )}

@@ -2,7 +2,7 @@ import { useFieldContext } from '@/components/form/form-context'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError } from '@/components/ui/field'
 import { Spinner } from '@/components/ui/spinner'
-import { baseURL, deleteImage, deleteImages, uploadImages } from '@/lib/api'
+import { deleteImage, deleteImages, resolveImage, uploadImages } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { Crown, GripVertical, Trash2, Upload, X } from 'lucide-react'
 import { useCallback, useRef, useState, useTransition } from 'react'
@@ -259,7 +259,7 @@ export function FormGallery({ folder, disabled, accept = 'image/png,image/jpeg,i
                             <ImageCard
                                 key={img.url}
                                 image={img}
-                                previewUrl={`${baseURL}${img.url}`}
+                                previewUrl={resolveImage(img.url)}
                                 disabled={disabled || isDeleting || isUploading}
                                 isDragging={draggedIndex === index}
                                 isDragOver={dragOverIndex === index}
