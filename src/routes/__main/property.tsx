@@ -705,10 +705,10 @@ function PropertyForm({
                             <SectionLabel>Coordinates</SectionLabel>
                             <div className="grid grid-cols-2 gap-3">
                                 <form.AppField name="latitude">
-                                    {(field) => <field.FormInput type="number" label="Latitude" placeholder="-8.691195" />}
+                                    {(field) => <field.FormInputNumber label="Latitude" placeholder="-8.691195" step="any" />}
                                 </form.AppField>
                                 <form.AppField name="longitude">
-                                    {(field) => <field.FormInput type="number" label="Longitude" placeholder="115.167820" />}
+                                    {(field) => <field.FormInputNumber label="Longitude" placeholder="115.167820" step="any" />}
                                 </form.AppField>
                             </div>
                         </Section>
@@ -743,10 +743,10 @@ function PropertyForm({
                             <SectionLabel>Fees &amp; Rules</SectionLabel>
                             <div className="grid grid-cols-2 gap-3">
                                 <form.AppField name="policy.minimumGuestAge">
-                                    {(field) => <field.FormInput type="number" label="Minimum guest age" placeholder="18" />}
+                                    {(field) => <field.FormInputNumber label="Minimum guest age" placeholder="18" min={0} />}
                                 </form.AppField>
                                 <form.AppField name="policy.securityDeposit">
-                                    {(field) => <field.FormInput type="number" label="Security deposit" placeholder="0.00" />}
+                                    {(field) => <field.FormInputNumber label="Security deposit" placeholder="0.00" min={0} step="0.01" />}
                                 </form.AppField>
                             </div>
                             <form.AppField name="policy.houseRules">
@@ -790,7 +790,9 @@ function PropertyForm({
 
                                             <div className="flex items-end gap-4">
                                                 <form.AppField name={`addons[${index}].price`}>
-                                                    {(field) => <field.FormInput type="number" label="Price" placeholder="0.00" />}
+                                                    {(field) => (
+                                                        <field.FormInputNumber label="Price" placeholder="0.00" min={0} step="0.01" />
+                                                    )}
                                                 </form.AppField>
                                                 <form.AppField name={`addons[${index}].state`}>
                                                     {(field) => (
