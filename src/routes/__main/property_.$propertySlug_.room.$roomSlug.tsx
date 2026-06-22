@@ -1,37 +1,33 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatPrice, getPropertyBySlug, getRoomBySlug, slugify } from '@/lib/properties'
-import { getRoomMetrics, getUnitStatus, UNIT_STATUS_COLORS } from '@/lib/property-rooms'
+import { Spinner } from '@/components/ui/spinner'
+import { propertyApi, roomTypeApi, type RoomType, type RoomTypeStatus } from '@/lib/api'
+import { resolveImage } from '@/lib/api/base'
+import { formatPrice } from '@/lib/properties'
+import { capitalize, cn } from '@/lib/utils'
 import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
-import {
-    Activity,
-    ArrowLeft,
-    Baby,
-    Bath,
-    BedDouble,
-    Calendar,
-    CheckCircle2,
-    Cigarette,
-    CreditCard,
-    Key,
-    Maximize2,
-    Plus,
-    Shield,
-    Users,
-} from 'lucide-react'
+import { ArrowLeft, Bath, BedDouble, Calendar, CheckCircle2, CreditCard, Key, Maximize2, Plus, Shield, Users } from 'lucide-react'
 import { useState } from 'react'
-
-import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/__main/property_/$propertySlug_/room/$roomSlug')({
     loader: async ({ params }) => {
-        const propSlug = (params as any).propertySlug_ || (params as any).propertySlug
-        const property = getPropertyBySlug(propSlug)
-        if (!property) throw notFound()
-        const roomType = getRoomBySlug(property, params.roomSlug)
-        if (!roomType) throw notFound()
-        return { property, roomType }
+        const propertySlug = (params as any).propertySlug_ || (params as any).propertySlug
+        const roomSlug = params.roomSlug
+
+        try {
+            const propertyRes = await propertyApi.getBySlug(propertySlug)
+            const property = propertyRes.data
+            if (!property) throw notFound()
+
+            const roomTypeRes = await roomTypeApi.getBySlug(property.id, roomSlug)
+            const roomType = roomTypeRes.data
+            if (!roomType) throw notFound()
+
+            return { property, roomType }
+        } catch {
+            throw notFound()
+        }
     },
     notFoundComponent: () => (
         <div className="mx-auto max-w-xl px-4 py-24 text-center">
@@ -50,6 +46,11 @@ export const Route = createFileRoute('/__main/property_/$propertySlug_/room/$roo
             </Link>
         </div>
     ),
+    pendingComponent: () => (
+        <div className="flex justify-center py-24">
+            <Spinner className="size-6" />
+        </div>
+    ),
     component: RoomAdminDashboardComponent,
 })
 
@@ -58,20 +59,30 @@ function RoomAdminDashboardComponent() {
     return <RoomTypeAdminDetails property={property} roomType={roomType} />
 }
 
-type Property = NonNullable<ReturnType<typeof getPropertyBySlug>>
-type RoomType = Property['roomTypes'][number]
+// Status badge styling per RoomTypeStatus
+const ROOM_STATUS_BADGE: Record<RoomTypeStatus, string> = {
+    ACTIVE: 'bg-emerald-500 hover:bg-emerald-600',
+    DRAFT: 'bg-amber-500 hover:bg-amber-600',
+    INACTIVE: 'bg-slate-500 hover:bg-slate-600',
+    ARCHIVED: 'bg-rose-500 hover:bg-rose-600',
+}
 
-function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; roomType: RoomType }) {
-    const p = property.property
-    const currency = p.currency
+function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomType: RoomType }) {
     const navigate = useNavigate()
 
-    const allImages = [rt.images.thumbnail, ...rt.images.gallery]
-    const [activeImage, setActiveImage] = useState(0)
+    // Images come back as a flat array with a `thumbnail` flag.
+    const sortedImages = [...rt.images].sort((a, b) => a.sortOrder - b.sortOrder)
+    const allImages = sortedImages.map((i) => resolveImage(i.url))
+    const thumbnailIndex = Math.max(
+        0,
+        sortedImages.findIndex((i) => i.thumbnail),
+    )
+    const [activeImage, setActiveImage] = useState(thumbnailIndex)
 
     const bedsCount = rt.beds.reduce((s, b) => s + b.quantity, 0)
-    const floors = rt.units.length > 0 ? Array.from(new Set(rt.units.map((u) => u.floor))).join(', ') : '—'
-    const metrics = getRoomMetrics(rt.id, rt.basePrice)
+    const floors = rt.units.length > 0 ? Array.from(new Set(rt.units.map((u) => u.floor).filter(Boolean))).join(', ') : '—'
+    const basePrice = Number(rt.basePrice)
+    const roomSizeLabel = rt.roomSize != null ? `${rt.roomSize} sqm` : '—'
 
     return (
         <>
@@ -80,7 +91,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                 <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => navigate({ to: '/property/$propertySlug', params: { propertySlug: slugify(p.name) } })}
+                    onClick={() => navigate({ to: '/property/$propertySlug', params: { propertySlug: property.slug } })}
                 >
                     <ArrowLeft className="mr-2 size-4" />
                     Back to Room Types
@@ -88,10 +99,10 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
             </div>
 
             {/* ── Key Metrics ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
                 <MetricCard
                     title="Base Price"
-                    value={formatPrice(rt.basePrice, currency)}
+                    value={formatPrice(basePrice)}
                     subtitle="Per night rate"
                     icon={<CreditCard className="size-4 text-[#243E8B]" />}
                 />
@@ -103,29 +114,39 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                 />
                 <MetricCard
                     title="Avg. Occupancy"
-                    value={`${metrics.occupancy}%`}
-                    subtitle="Last 30 days"
-                    icon={<Activity className="size-4 text-[#243E8B]" />}
-                    trend={metrics.trendOccupancy}
+                    value="—"
+                    subtitle="Analytics coming soon"
+                    icon={<Calendar className="size-4 text-[#243E8B]" />}
                 />
                 <MetricCard
                     title="Est. Revenue"
-                    value={formatPrice(metrics.revenue, currency)}
-                    subtitle="Last 30 days"
+                    value="—"
+                    subtitle="Analytics coming soon"
                     icon={<Calendar className="size-4 text-[#243E8B]" />}
-                    trend={metrics.trendRevenue}
                 />
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mt-8">
                 {/* ── Left Column: Configuration & Setup ── */}
                 <div className="xl:col-span-2 space-y-8">
                     {/* Gallery & Quick Info */}
                     <Card className="overflow-hidden border-slate-200 shadow-sm">
                         <div className="flex flex-col md:flex-row">
                             <div className="md:w-1/3 bg-slate-100 relative min-h-64">
-                                <img src={allImages[activeImage]} alt={rt.name} className="absolute inset-0 w-full h-full object-cover" />
-                                <Badge className="absolute top-3 left-3 bg-emerald-500 hover:bg-emerald-600">Active</Badge>
+                                {allImages.length > 0 ? (
+                                    <img
+                                        src={allImages[activeImage] ?? allImages[0]}
+                                        alt={rt.name}
+                                        className="absolute inset-0 w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="absolute inset-0 flex items-center justify-center text-slate-400">
+                                        <BedDouble className="size-10" />
+                                    </div>
+                                )}
+                                <Badge className={cn('absolute top-3 left-3 text-white', ROOM_STATUS_BADGE[rt.status])}>
+                                    {capitalize(rt.status)}
+                                </Badge>
                                 {allImages.length > 1 && (
                                     <div className="absolute bottom-3 left-3 right-3 flex gap-2 overflow-x-auto snap-x scrollbar-hide py-1">
                                         {allImages.map((src, i) => (
@@ -146,20 +167,24 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                             </div>
                             <div className="md:w-2/3 p-6 flex flex-col justify-center">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <Badge variant="outline" className="text-xs font-mono font-bold text-slate-500 bg-slate-50">
-                                        {rt.internalCode}
-                                    </Badge>
+                                    {rt.internalCode && (
+                                        <Badge variant="outline" className="text-xs font-mono font-bold text-slate-500 bg-slate-50">
+                                            {rt.internalCode}
+                                        </Badge>
+                                    )}
                                     <Badge variant="secondary" className="text-xs">
                                         {rt.viewType || 'Standard View'}
                                     </Badge>
                                 </div>
                                 <h3 className="text-xl font-bold text-slate-900 mb-2">{rt.name}</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed mb-6">{rt.description}</p>
+                                <p className="text-slate-500 text-sm leading-relaxed mb-6">
+                                    {rt.description || 'No description provided.'}
+                                </p>
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                    <MiniStat icon={<Maximize2 />} label="Size" value={`${rt.roomSize} ${rt.roomSizeUnit}`} />
+                                    <MiniStat icon={<Maximize2 />} label="Size" value={roomSizeLabel} />
                                     <MiniStat icon={<Users />} label="Capacity" value={`${rt.maxOccupancy} Max`} />
                                     <MiniStat icon={<BedDouble />} label="Beds" value={`${bedsCount}`} />
-                                    <MiniStat icon={<Bath />} label="Bath" value={rt.privateBathroom ? 'Private' : 'Shared'} />
+                                    <MiniStat icon={<Bath />} label="Bath" value={rt.bathroomType === 'PRIVATE' ? 'Private' : 'Shared'} />
                                 </div>
                             </div>
                         </div>
@@ -175,17 +200,21 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="pt-4">
-                                <div className="flex flex-wrap gap-2">
-                                    {rt.amenities.map((amenity) => (
-                                        <Badge
-                                            key={amenity}
-                                            variant="secondary"
-                                            className="bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium px-3 py-1.5"
-                                        >
-                                            {amenity}
-                                        </Badge>
-                                    ))}
-                                </div>
+                                {rt.amenities.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {rt.amenities.map(({ amenity }) => (
+                                            <Badge
+                                                key={amenity.id}
+                                                variant="secondary"
+                                                className="bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium px-3 py-1.5"
+                                            >
+                                                {amenity.name}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-slate-400">No amenities assigned.</p>
+                                )}
                             </CardContent>
                         </Card>
 
@@ -198,16 +227,16 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                             </CardHeader>
                             <CardContent className="pt-4">
                                 <div className="space-y-3">
-                                    {rt.beds.map((bed, i) => (
+                                    {rt.beds.map((bed) => (
                                         <div
-                                            key={i}
+                                            key={bed.id}
                                             className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50"
                                         >
                                             <div className="flex items-center gap-3">
                                                 <div className="bg-white p-2 rounded-md shadow-sm border border-slate-100">
                                                     <BedDouble className="size-4 text-[#243E8B]" />
                                                 </div>
-                                                <span className="font-semibold text-slate-700 text-sm">{bed.bedType}</span>
+                                                <span className="font-semibold text-slate-700 text-sm">{capitalize(bed.bedType)}</span>
                                             </div>
                                             <Badge variant="outline" className="font-mono bg-white">
                                                 x{bed.quantity}
@@ -229,10 +258,10 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                         </CardHeader>
                         <CardContent className="pt-6">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                                <StatusToggle label="Smoking Allowed" active={rt.smokingRoom} icon={<Cigarette />} />
+                                <StatusToggle label="Smoking Allowed" active={rt.smokingRoom} icon={<Bath />} />
                                 <StatusToggle label="Accessible" active={rt.accessibleRoom} icon={<Shield />} />
-                                <StatusToggle label="Private Bath" active={rt.privateBathroom} icon={<Bath />} />
-                                <StatusToggle label="Extra Beds" active={rt.maxOccupancy > rt.maxAdults} icon={<Baby />} />
+                                <StatusToggle label="Private Bath" active={rt.bathroomType === 'PRIVATE'} icon={<Bath />} />
+                                <StatusToggle label="Extra Beds" active={rt.maxOccupancy > rt.maxAdults} icon={<Users />} />
                             </div>
                         </CardContent>
                     </Card>
@@ -253,50 +282,63 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
                         <CardContent className="p-0 flex-1 overflow-hidden">
                             {rt.units.length > 0 ? (
                                 <div className="divide-y divide-slate-100">
-                                    {rt.units.map((unit) => {
-                                        const status = getUnitStatus(unit.id)
-
-                                        return (
-                                            <div
-                                                key={unit.id}
-                                                className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className="size-10 rounded-xl bg-[#EEF3FF] text-[#243E8B] flex items-center justify-center font-bold text-sm border border-[#243E8B]/10">
-                                                        {unit.roomNumber}
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-sm font-semibold text-slate-900">Room {unit.roomNumber}</div>
-                                                        <div className="text-xs text-slate-500">Floor {unit.floor}</div>
-                                                    </div>
+                                    {rt.units.map((unit) => (
+                                        <div
+                                            key={unit.id}
+                                            className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="size-10 rounded-xl bg-[#EEF3FF] text-[#243E8B] flex items-center justify-center font-bold text-sm border border-[#243E8B]/10">
+                                                    {unit.roomNumber}
                                                 </div>
-                                                <Badge
-                                                    variant="outline"
-                                                    className={cn(
-                                                        'text-[10px] uppercase font-bold tracking-wider',
-                                                        UNIT_STATUS_COLORS[status],
-                                                    )}
-                                                >
-                                                    {status}
-                                                </Badge>
+                                                <div>
+                                                    <div className="text-sm font-semibold text-slate-900">Room {unit.roomNumber}</div>
+                                                    <div className="text-xs text-slate-500">{unit.floor ? `Floor ${unit.floor}` : '—'}</div>
+                                                </div>
                                             </div>
-                                        )
-                                    })}
+                                            {/* Unit status is a future schema field; no real data yet. */}
+                                            <Badge
+                                                variant="outline"
+                                                className="text-[10px] uppercase font-bold tracking-wider bg-slate-50 text-slate-500 border-slate-200"
+                                            >
+                                                Managed via room type
+                                            </Badge>
+                                        </div>
+                                    ))}
                                 </div>
                             ) : (
                                 <div className="p-8 text-center flex flex-col items-center justify-center h-full text-slate-500">
                                     <Key className="size-12 text-slate-200 mb-3" />
                                     <p className="font-medium text-slate-900">No units assigned</p>
-                                    <p className="text-sm mt-1 mb-4">Create physical rooms for this type.</p>
-                                    <Button size="sm" variant="outline" className="gap-2">
+                                    <p className="text-sm mt-1 mb-4">Add physical rooms from the room type editor.</p>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="gap-2"
+                                        onClick={() =>
+                                            navigate({
+                                                to: '/property/$propertySlug',
+                                                params: { propertySlug: property.slug },
+                                            })
+                                        }
+                                    >
                                         <Plus className="size-4" />
-                                        Add Unit
+                                        Edit room type
                                     </Button>
                                 </div>
                             )}
                         </CardContent>
                         <CardFooter className="p-4 border-t border-slate-100 bg-slate-50/50">
-                            <Button className="w-full gap-2 bg-white text-slate-700 border-slate-200 hover:bg-slate-100" variant="outline">
+                            <Button
+                                className="w-full gap-2 bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                                variant="outline"
+                                onClick={() =>
+                                    navigate({
+                                        to: '/property/$propertySlug',
+                                        params: { propertySlug: property.slug },
+                                    })
+                                }
+                            >
                                 <Plus className="size-4" />
                                 Manage Units
                             </Button>
@@ -310,20 +352,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: Property; 
 
 // ─── Sub-components ─────────────────────────────────────────────────
 
-function MetricCard({
-    title,
-    value,
-    subtitle,
-    icon,
-    trend,
-}: {
-    title: string
-    value: string
-    subtitle: string
-    icon: React.ReactNode
-    trend?: string
-}) {
-    const isPositive = trend?.startsWith('+')
+function MetricCard({ title, value, subtitle, icon }: { title: string; value: string; subtitle: string; icon: React.ReactNode }) {
     return (
         <Card className="border-slate-200 shadow-sm">
             <CardContent className="p-6">
@@ -336,11 +365,6 @@ function MetricCard({
                         <div className="text-3xl font-black text-slate-900 tracking-tight">{value}</div>
                         <div className="text-sm text-slate-400 font-medium mt-1">{subtitle}</div>
                     </div>
-                    {trend && (
-                        <div className={cn('text-sm font-bold flex items-center gap-1', isPositive ? 'text-emerald-600' : 'text-rose-600')}>
-                            {trend}
-                        </div>
-                    )}
                 </div>
             </CardContent>
         </Card>

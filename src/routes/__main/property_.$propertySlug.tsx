@@ -1,7 +1,9 @@
-import { useAppForm } from '@/components/form/form-context'
+import { useAppForm, useFieldContext } from '@/components/form/form-context'
 import { Button } from '@/components/ui/button'
 import { DataTableFooter } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { FieldLabel, FieldSeparator } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
 import { SearchInput } from '@/components/ui/search-input'
 import { Separator } from '@/components/ui/separator'
 import { Spinner } from '@/components/ui/spinner'
@@ -10,11 +12,13 @@ import { useSearchParams } from '@/hooks/use-search-params'
 import {
     BathroomTypeOptions,
     BedTypeOptions,
+    RoomTypeStatusOptions,
     roomTypeApi,
     type BathroomType,
     type BedType,
     type CreateRoomTypePayload,
     type RoomType,
+    type RoomTypeStatus,
     type UpdateRoomTypePayload,
 } from '@/lib/api'
 import { resolveImage } from '@/lib/api/base'
@@ -22,7 +26,7 @@ import { propertyApi } from '@/lib/api/property'
 import { capitalize, cn, GetRoomAmenities } from '@/lib/utils'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Edit, Eye, MapPin, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Edit, Eye, MapPin, Plus, RotateCw, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import * as z from 'zod'
@@ -48,7 +52,7 @@ type RoomTypeCard = {
     basePrice: number
     totalUnits: number
     capacity: string
-    status: 'Active' | 'Maintenance'
+    status: RoomTypeStatus
     imageUrl: string
     units: string[]
     viewType: string
@@ -64,18 +68,25 @@ type RoomTab = (typeof ROOM_TABS)[number]
 // ─── Zod schema mirroring the create/update payload ─────────────────
 const roomTypeFormSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters').max(128),
-    internalCode: z.string().max(64).optional().or(z.literal('')),
-    description: z.string().max(5000).optional().or(z.literal('')),
+    internalCode: z.string().max(64),
+    description: z.string().max(5000),
     maxAdults: z.number().int().min(1).max(50),
     maxChildren: z.number().int().min(0).max(50),
     maxOccupancy: z.number().int().min(1).max(100),
     basePrice: z.number().min(0),
-    roomSize: z.number().min(0).optional().or(z.nan()),
+    roomSize: z.number().min(0),
     smokingRoom: z.boolean(),
     accessibleRoom: z.boolean(),
     bathroomType: z.enum(BathroomTypeOptions),
-    viewType: z.string().max(64).optional().or(z.literal('')),
+    viewType: z.string().max(64),
+    status: z.enum(RoomTypeStatusOptions),
     beds: z.array(z.object({ bedType: z.enum(BedTypeOptions), quantity: z.number().int().min(1).max(20) })),
+    units: z.array(
+        z.object({
+            roomNumber: z.string().min(1, 'Room number is required').max(64),
+            floor: z.string().max(64),
+        }),
+    ),
     amenities: z.array(z.string()),
     images: z.array(
         z.object({
@@ -87,6 +98,20 @@ const roomTypeFormSchema = z.object({
 })
 
 type RoomTypeFormValues = z.infer<typeof roomTypeFormSchema>
+
+// ─── Room units helpers ─────────────────────────────────────────────
+/** Shape of a single unit in the form's `units` array. */
+type RoomUnitValue = { roomNumber: string; floor: string }
+
+/**
+ * Guess the floor from a room number's leading digit(s) — the common hotel
+ * convention is that room 201–210 are on floor 2, 301–310 on floor 3, etc.
+ * Returns '' for non-numeric room numbers (e.g. "Basement-A").
+ */
+function deriveFloor(roomNumber: string): string {
+    const match = roomNumber.trim().match(/^(\d+)/)
+    return match ? match[1].charAt(0) : ''
+}
 
 const ROOM_FORM_DEFAULTS: RoomTypeFormValues = {
     name: '',
@@ -101,7 +126,9 @@ const ROOM_FORM_DEFAULTS: RoomTypeFormValues = {
     accessibleRoom: false,
     bathroomType: 'PRIVATE',
     viewType: '',
+    status: 'DRAFT',
     beds: [{ bedType: 'KING', quantity: 1 }],
+    units: [],
     amenities: [],
     images: [],
 }
@@ -110,46 +137,26 @@ const ROOM_FORM_DEFAULTS: RoomTypeFormValues = {
 function valuesFromRoomType(rt: RoomType): RoomTypeFormValues {
     return {
         name: rt.name,
-        internalCode: rt.internalCode ?? '',
+        internalCode: rt.internalCode,
         description: rt.description ?? '',
         maxAdults: rt.maxAdults,
         maxChildren: rt.maxChildren,
         maxOccupancy: rt.maxOccupancy,
         basePrice: Number(rt.basePrice),
-        roomSize: rt.roomSize ?? NaN,
+        roomSize: rt.roomSize ?? 0,
         smokingRoom: rt.smokingRoom,
         accessibleRoom: rt.accessibleRoom,
         bathroomType: rt.bathroomType,
         viewType: rt.viewType ?? '',
+        status: rt.status,
         beds: rt.beds.map((b) => ({ bedType: b.bedType, quantity: b.quantity })),
+        units: rt.units.map((u) => ({ roomNumber: u.roomNumber, floor: u.floor ?? '' })),
         amenities: rt.amenities.map((a) => a.amenity.id),
         images: rt.images.map((img) => ({
             url: img.url,
             thumbnail: img.thumbnail,
             sortOrder: img.sortOrder,
         })),
-    }
-}
-
-// ─── Form value → create/update payload ─────────────────────────────
-function payloadFromValues(values: RoomTypeFormValues): CreateRoomTypePayload {
-    const viewType = values.viewType?.trim() || undefined
-    return {
-        name: values.name.trim(),
-        internalCode: values.internalCode?.trim() || undefined,
-        description: values.description?.trim() || undefined,
-        maxAdults: values.maxAdults,
-        maxChildren: values.maxChildren,
-        maxOccupancy: values.maxOccupancy,
-        basePrice: values.basePrice,
-        roomSize: typeof values.roomSize === 'number' && !Number.isNaN(values.roomSize) ? values.roomSize : undefined,
-        smokingRoom: values.smokingRoom,
-        accessibleRoom: values.accessibleRoom,
-        bathroomType: values.bathroomType,
-        viewType,
-        beds: values.beds,
-        amenities: values.amenities,
-        images: values.images,
     }
 }
 
@@ -160,18 +167,16 @@ function RouteComponent() {
     const mergeSearch = useSearchParams()
     const { propertySlug } = Route.useParams()
 
-    // ── Resolve slug → property (slug is the route param; the room-type
-    //    endpoints are scoped by propertyId). ──
+    // ── Resolve slug → property via the dedicated slug endpoint. ──
     const { data: propertyData, isLoading: isLoadingProperty } = useQuery({
         queryKey: ['property-by-slug', propertySlug],
         queryFn: async () => {
-            // propertyApi.list search matches against name / slug, so a slug
-            // search returns the right property as the first hit.
-            const res = await propertyApi.list({ search: propertySlug, limit: 1 })
-            return res.data[0]
+            const res = await propertyApi.getBySlug(propertySlug)
+            return res.data
         },
     })
     const propertyId = propertyData?.id
+    const propertySlugResolved = propertyData?.slug ?? propertySlug
     const propertyName = propertyData?.name
 
     const [isAddOpen, setIsAddOpen] = useState(false)
@@ -236,10 +241,17 @@ function RouteComponent() {
     const formDefaults: RoomTypeFormValues = editingRoomType ? valuesFromRoomType(editingRoomType) : ROOM_FORM_DEFAULTS
 
     const handleSave = async (values: RoomTypeFormValues) => {
+        // Strip empty optional strings so the backend treats them as omitted.
+        const payload: CreateRoomTypePayload = {
+            ...values,
+            internalCode: values.internalCode.trim() || undefined,
+            viewType: values.viewType.trim() || undefined,
+        }
+
         if (isEditMode && editingRoomId) {
-            await updateMutation.mutateAsync({ id: editingRoomId, payload: payloadFromValues(values) })
+            await updateMutation.mutateAsync({ id: editingRoomId, payload })
         } else {
-            await createMutation.mutateAsync(payloadFromValues(values))
+            await createMutation.mutateAsync(payload)
         }
     }
 
@@ -289,7 +301,13 @@ function RouteComponent() {
                 <>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4.5 mt-6">
                         {(data?.data ?? []).map((item) => (
-                            <RoomTypeCardItem key={item.id} propertyId={propertyId} item={item} onEdit={openEdit} />
+                            <RoomTypeCardItem
+                                key={item.id}
+                                propertyId={propertyId}
+                                propertySlug={propertySlugResolved}
+                                item={item}
+                                onEdit={openEdit}
+                            />
                         ))}
                     </div>
 
@@ -346,10 +364,12 @@ function RouteComponent() {
 // ─── Room-type card (rich render needs the full room type from GET /:id) ──
 function RoomTypeCardItem({
     propertyId,
+    propertySlug,
     item,
     onEdit,
 }: {
     propertyId: string
+    propertySlug: string
     item: import('@/lib/api/room-type').RoomTypeListItem
     onEdit: (room: RoomTypeCard) => void
 }) {
@@ -360,10 +380,10 @@ function RoomTypeCardItem({
 
     if (isLoading || !data) return <RoomTypeCardSkeleton />
 
-    return <RoomTypeCardView room={data.data} onEdit={onEdit} />
+    return <RoomTypeCardView room={data.data} propertySlug={propertySlug} onEdit={onEdit} />
 }
 
-function RoomTypeCardView({ room, onEdit }: { room: RoomType; onEdit: (room: RoomTypeCard) => void }) {
+function RoomTypeCardView({ room, propertySlug, onEdit }: { room: RoomType; propertySlug: string; onEdit: (room: RoomTypeCard) => void }) {
     const navigate = useNavigate()
 
     const card = mapRoomTypeToCard(room)
@@ -374,7 +394,7 @@ function RoomTypeCardView({ room, onEdit }: { room: RoomType; onEdit: (room: Roo
             onClick={() =>
                 navigate({
                     to: '/property/$propertySlug/room/$roomSlug',
-                    params: { propertySlug: room.propertyId, roomSlug: slugifyRoom(card.title) },
+                    params: { propertySlug, roomSlug: slugifyRoom(card.title) },
                 })
             }
         >
@@ -393,14 +413,12 @@ function RoomTypeCardView({ room, onEdit }: { room: RoomType; onEdit: (room: Roo
                     </span>
                 )}
 
-                {/* Status badge (top-right) — admin affordance */}
+                {/* Status badge (top-right) — reflects the real RoomTypeStatus. */}
                 <div className="absolute top-3 right-3">
                     <span
                         className={cn(
                             'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border backdrop-blur-md',
-                            card.status === 'Active'
-                                ? 'bg-emerald-500/90 text-white border-white/20'
-                                : 'bg-amber-500/90 text-white border-white/20',
+                            ROOM_STATUS_BADGE[card.status],
                         )}
                     >
                         <span className="relative inline-flex rounded-full size-1.5 bg-white" />
@@ -476,7 +494,7 @@ function RoomTypeCardView({ room, onEdit }: { room: RoomType; onEdit: (room: Roo
                             e.stopPropagation()
                             navigate({
                                 to: '/property/$propertySlug/room/$roomSlug',
-                                params: { propertySlug: room.propertyId, roomSlug: slugifyRoom(card.title) },
+                                params: { propertySlug, roomSlug: slugifyRoom(card.title) },
                             })
                         }}
                     >
@@ -487,6 +505,14 @@ function RoomTypeCardView({ room, onEdit }: { room: RoomType; onEdit: (room: Roo
             </div>
         </div>
     )
+}
+
+// ─── Status badge styling per RoomTypeStatus ───────────────────────
+const ROOM_STATUS_BADGE: Record<RoomTypeStatus, string> = {
+    ACTIVE: 'bg-emerald-500/90 text-white border-white/20',
+    DRAFT: 'bg-amber-500/90 text-white border-white/20',
+    INACTIVE: 'bg-slate-500/90 text-white border-white/20',
+    ARCHIVED: 'bg-rose-500/90 text-white border-white/20',
 }
 
 // ─── API → card mapping ─────────────────────────────────────────────
@@ -505,7 +531,7 @@ function mapRoomTypeToCard(rt: RoomType): RoomTypeCard {
         basePrice: Number(rt.basePrice),
         totalUnits: rt.units.length,
         capacity: `${rt.maxAdults} Adult${rt.maxAdults === 1 ? '' : 's'}${rt.maxChildren > 0 ? `, ${rt.maxChildren} Child${rt.maxChildren === 1 ? '' : 'ren'}` : ''}`,
-        status: 'Active',
+        status: rt.status,
         imageUrl: resolveImage(cover?.url),
         units: rt.units.map((u) => u.roomNumber),
         viewType: rt.viewType ?? '',
@@ -603,10 +629,16 @@ function RoomTypeForm({
                                 {(field) => <field.FormInput label="Room type name" placeholder="e.g. Deluxe King Room" />}
                             </form.AppField>
                             <form.AppField name="internalCode">
-                                {(field) => <field.FormInput label="Internal code" placeholder="e.g. DLX-KNG-01" />}
+                                {(field) => (
+                                    <field.FormInput
+                                        label="Internal code"
+                                        placeholder="e.g. DLX-KNG-01"
+                                        hint="Leave blank to auto-generate from the name."
+                                    />
+                                )}
                             </form.AppField>
                             <form.AppField name="roomSize">
-                                {(field) => <field.FormInput type="number" label="Room size (sqm)" placeholder="28" />}
+                                {(field) => <field.FormInputNumber label="Room size (sqm)" placeholder="28" min={0} step="any" />}
                             </form.AppField>
                             <form.AppField name="description">
                                 {(field) => (
@@ -618,11 +650,27 @@ function RoomTypeForm({
                         <Section>
                             <SectionLabel>Pricing</SectionLabel>
                             <form.AppField name="basePrice">
-                                {(field) => <field.FormInput type="number" label="Base price / night" placeholder="e.g. 100" />}
+                                {(field) => <field.FormInputNumber label="Base price / night" placeholder="e.g. 100" min={0} step="0.01" />}
+                            </form.AppField>
+                        </Section>
+
+                        <Section>
+                            <SectionLabel>Lifecycle</SectionLabel>
+                            <form.AppField name="status">
+                                {(field) => (
+                                    <field.FormSelect
+                                        label="Status"
+                                        options={RoomTypeStatusOptions.map((value) => ({
+                                            value,
+                                            label: capitalize(value),
+                                        }))}
+                                    />
+                                )}
                             </form.AppField>
                         </Section>
                     </div>
                 )}
+
                 {/* ════════ CAPACITY ════════ */}
                 {activeTab === 'Capacity' && (
                     <div className="flex flex-col gap-6">
@@ -630,13 +678,13 @@ function RoomTypeForm({
                             <SectionLabel>Guest Capacity</SectionLabel>
                             <div className="grid grid-cols-3 gap-3">
                                 <form.AppField name="maxAdults">
-                                    {(field) => <field.FormInput type="number" label="Max adults" placeholder="2" />}
+                                    {(field) => <field.FormInputNumber label="Max adults" placeholder="2" min={1} max={50} />}
                                 </form.AppField>
                                 <form.AppField name="maxChildren">
-                                    {(field) => <field.FormInput type="number" label="Max children" placeholder="0" />}
+                                    {(field) => <field.FormInputNumber label="Max children" placeholder="0" min={0} max={50} />}
                                 </form.AppField>
                                 <form.AppField name="maxOccupancy">
-                                    {(field) => <field.FormInput type="number" label="Max occupancy" placeholder="2" />}
+                                    {(field) => <field.FormInputNumber label="Max occupancy" placeholder="2" min={1} max={100} />}
                                 </form.AppField>
                             </div>
                         </Section>
@@ -665,11 +713,16 @@ function RoomTypeForm({
                                                 <div className="flex items-end gap-3">
                                                     <form.AppField name={`beds[${i}].quantity`}>
                                                         {(field) => (
-                                                            <field.FormInput type="number" label="Quantity" placeholder="Quantity" />
+                                                            <field.FormInputNumber
+                                                                label="Quantity"
+                                                                placeholder="Quantity"
+                                                                min={1}
+                                                                max={20}
+                                                            />
                                                         )}
                                                     </form.AppField>
                                                     <Button size="icon" variant="destructive" onClick={() => field.removeValue(i)}>
-                                                        <Trash2 className="size-3.5" />
+                                                        <Trash2 />
                                                     </Button>
                                                 </div>
                                             </div>
@@ -687,8 +740,14 @@ function RoomTypeForm({
                                 )}
                             </form.AppField>
                         </Section>
+
+                        <Section>
+                            <SectionLabel>Room Units</SectionLabel>
+                            <form.AppField name="units">{() => <RoomUnitsEditor />}</form.AppField>
+                        </Section>
                     </div>
                 )}
+
                 {/* ════════ POLICIES ════════ */}
                 {activeTab === 'Policies' && (
                     <div className="flex flex-col gap-6">
@@ -811,4 +870,164 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
             <div className="flex-1 h-px bg-border" />
         </div>
     )
+}
+
+function RoomUnitsEditor() {
+    const field = useFieldContext<RoomUnitValue[]>()
+    const units = field.state.value
+
+    // ── Local UI state for the three input modes ──
+    const [singleRoom, setSingleRoom] = useState('')
+    const [singleFloor, setSingleFloor] = useState('')
+    const [floorTouched, setFloorTouched] = useState(false)
+
+    const [genCount, setGenCount] = useState(10)
+    const [genStart, setGenStart] = useState(201)
+    const [genFloor, setGenFloor] = useState('')
+
+    // ── Helpers operating on the field value ──
+    const addUnique = (incoming: RoomUnitValue[]) => {
+        const existing = new Set(units.map((u) => u.roomNumber))
+        const fresh = incoming.filter((u) => !existing.has(u.roomNumber))
+        if (fresh.length === 0) return
+        const merged = [...units, ...fresh].sort(sortByRoomNumber)
+        field.handleChange(merged)
+    }
+
+    const removeAt = (i: number) => field.removeValue(i)
+
+    const clearAll = () => field.handleChange([])
+
+    // ── Single add ──
+    const commitSingle = () => {
+        const rn = singleRoom.trim()
+        if (!rn) return
+        addUnique([{ roomNumber: rn, floor: singleFloor.trim() }])
+        setSingleRoom('')
+        setSingleFloor('')
+        setFloorTouched(false)
+    }
+
+    // ── Bulk generate ──
+    const commitGenerate = () => {
+        const count = Math.min(Math.max(genCount, 1), 200)
+        const generated: RoomUnitValue[] = Array.from({ length: count }, (_, i) => ({
+            roomNumber: String(genStart + i),
+            floor: genFloor.trim() || deriveFloor(String(genStart + i)),
+        }))
+        addUnique(generated)
+    }
+
+    const genPreviewEnd = genStart + Math.min(Math.max(genCount, 1), 200) - 1
+
+    return (
+        <div className="flex flex-col gap-4">
+            {/* ═══ Existing units as chips ═══ */}
+            <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                    <p className="text-sm leading-none font-medium select-none">
+                        {units.length > 0 ? `${units.length} unit${units.length === 1 ? '' : 's'}` : 'Units'}
+                    </p>
+                    {units.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={clearAll}
+                            className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                            Clear all
+                        </button>
+                    )}
+                </div>
+                <div className="flex flex-wrap gap-2 min-h-9">
+                    {units.length === 0 ? (
+                        <p className="text-xs text-muted-foreground italic self-center">No units added yet</p>
+                    ) : (
+                        units.map((unit, i) => (
+                            <span
+                                key={`${unit.roomNumber}-${i}`}
+                                className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1 bg-muted border rounded-full text-xs font-semibold"
+                            >
+                                <span>{unit.roomNumber}</span>
+                                {unit.floor && <span className="text-muted-foreground font-normal">· F{unit.floor}</span>}
+                                <button
+                                    type="button"
+                                    onClick={() => removeAt(i)}
+                                    aria-label={`Remove unit ${unit.roomNumber}`}
+                                    className="text-muted-foreground hover:text-destructive transition-colors rounded-full p-0.5 hover:bg-background"
+                                >
+                                    <X className="size-3" />
+                                </button>
+                            </span>
+                        ))
+                    )}
+                </div>
+            </div>
+
+            {/* ═══ Single add ═══ */}
+            <div>
+                <FieldLabel>Add a unit</FieldLabel>
+                <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2">
+                        <Input
+                            placeholder="e.g. 104"
+                            value={singleRoom}
+                            onChange={(e) => {
+                                setSingleRoom(e.target.value)
+                                if (!floorTouched) setSingleFloor(deriveFloor(e.target.value))
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault()
+                                    commitSingle()
+                                }
+                            }}
+                        />
+                    </div>
+                    <div className="flex items-end gap-3">
+                        <Input
+                            placeholder="Floor"
+                            value={singleFloor}
+                            onChange={(e) => {
+                                setSingleFloor(e.target.value)
+                                setFloorTouched(true)
+                            }}
+                        />
+                        <Button size="icon" variant="secondary" onClick={commitSingle} disabled={!singleRoom.trim()}>
+                            <Plus />
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            <FieldSeparator>OR</FieldSeparator>
+
+            {/* ═══ Bulk generate ═══ */}
+            <div>
+                <FieldLabel>Generate a range</FieldLabel>
+                <div className="grid grid-cols-3 gap-3">
+                    <Input type="number" min={1} max={200} value={genCount} onChange={(e) => setGenCount(Number(e.target.value) || 1)} />
+                    <Input type="number" value={genStart} onChange={(e) => setGenStart(Number(e.target.value) || 1)} />
+                    <div className="flex items-end gap-3">
+                        <Input placeholder="Floor" value={genFloor} onChange={(e) => setGenFloor(e.target.value)} />
+                        <Button size="icon" variant="secondary" onClick={commitGenerate}>
+                            <RotateCw />
+                        </Button>
+                    </div>
+                </div>
+                <p className="pt-1 text-xs text-muted-foreground">
+                    Will create {genStart}–{genPreviewEnd} on floor {genFloor.trim() || deriveFloor(String(genStart)) || '—'}
+                </p>
+            </div>
+        </div>
+    )
+}
+
+/** Sort units by room number — numeric-prefix-first, then alphabetic. */
+function sortByRoomNumber(a: RoomUnitValue, b: RoomUnitValue): number {
+    const an = parseInt(a.roomNumber, 10)
+    const bn = parseInt(b.roomNumber, 10)
+    const aNum = Number.isNaN(an) ? Infinity : an
+    const bNum = Number.isNaN(bn) ? Infinity : bn
+    if (aNum !== bNum) return aNum - bNum
+    return a.roomNumber.localeCompare(b.roomNumber)
 }

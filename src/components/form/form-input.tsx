@@ -1,4 +1,4 @@
-import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { useFieldContext } from './form-context'
 
@@ -8,9 +8,10 @@ type FormInputProps = {
     placeholder?: string
     readOnly?: boolean
     disabled?: boolean
+    hint?: string
 }
 
-export function FormInput({ type = 'text', label, ...props }: FormInputProps) {
+export function FormInput({ type = 'text', label, hint, ...props }: FormInputProps) {
     const field = useFieldContext<string>()
     const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid
 
@@ -27,6 +28,7 @@ export function FormInput({ type = 'text', label, ...props }: FormInputProps) {
                 aria-invalid={isInvalid}
                 {...props}
             />
+            {hint && !isInvalid && <FieldDescription>{hint}</FieldDescription>}
             {isInvalid && <FieldError errors={field.state.meta.errors} />}
         </Field>
     )

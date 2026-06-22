@@ -164,6 +164,8 @@ export const propertyApi = {
 
     get: (id: string) => request<{ data: Property }>(`/owner/property/${id}`),
 
+    getBySlug: (slug: string) => request<{ data: Property }>(`/owner/property/slug/${slug}`),
+
     create: (payload: CreatePropertyPayload) =>
         request<{ data: Property }>(`/owner/property`, {
             method: 'POST',

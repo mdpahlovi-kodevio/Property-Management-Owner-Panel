@@ -19,7 +19,6 @@ import {
     type PropertyListItem,
     type UpdatePropertyPayload,
 } from '@/lib/api/property'
-import { slugify } from '@/lib/properties'
 import { capitalize, cn, GetPropertyAmenities } from '@/lib/utils'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
@@ -43,6 +42,7 @@ export const Route = createFileRoute('/__main/property')({
 // ─── Card shape used by the grid ────────────────────────────────────
 type PropertyCard = {
     id: string
+    slug: string
     title: string
     location: string
     type: string
@@ -87,6 +87,7 @@ function mapPropertyToCard(p: Property): PropertyCard {
 
     return {
         id: p.id,
+        slug: p.slug,
         title: p.name,
         location: [p.city, p.state, p.country].filter(Boolean).join(', '),
         type: capitalize(p.propertyType),
@@ -420,7 +421,7 @@ function PropertyCardView({ property, onEdit }: { property: PropertyCard; onEdit
 
     return (
         <div
-            onClick={() => navigate({ to: '/property/$propertySlug', params: { propertySlug: slugify(property.title) } })}
+            onClick={() => navigate({ to: '/property/$propertySlug', params: { propertySlug: property.slug } })}
             className="group h-full flex flex-col bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_6px_16px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.1),0_12px_28px_rgba(0,0,0,0.08)] border border-border transition-all duration-300 ease-out hover:-translate-y-1 cursor-pointer overflow-hidden"
         >
             {/* Image */}
@@ -519,7 +520,7 @@ function PropertyCardView({ property, onEdit }: { property: PropertyCard; onEdit
                             e.stopPropagation()
                             navigate({
                                 to: '/property/$propertySlug',
-                                params: { propertySlug: slugify(property.title) },
+                                params: { propertySlug: property.slug },
                             })
                         }}
                     >

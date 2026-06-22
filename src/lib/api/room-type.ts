@@ -9,6 +9,9 @@ export type BathroomType = (typeof BathroomTypeOptions)[number]
 export const BedTypeOptions = ['KING', 'QUEEN', 'DOUBLE', 'TWIN', 'SINGLE', 'BUNK', 'SOFA_BED', 'MURPHY', 'FUTON', 'ROLLAWAY'] as const
 export type BedType = (typeof BedTypeOptions)[number]
 
+export const RoomTypeStatusOptions = ['DRAFT', 'ACTIVE', 'INACTIVE', 'ARCHIVED'] as const
+export type RoomTypeStatus = (typeof RoomTypeStatusOptions)[number]
+
 // ── Nested entities ─────────────────────────────────────
 export interface RoomTypeBed {
     id: string
@@ -36,7 +39,7 @@ export interface RoomType {
     id: string
     propertyId: string
     name: string
-    internalCode: string | null
+    internalCode: string
     description: string | null
     maxAdults: number
     maxChildren: number
@@ -47,6 +50,7 @@ export interface RoomType {
     accessibleRoom: boolean
     bathroomType: BathroomType
     viewType: string | null
+    status: RoomTypeStatus
     createdAt: string
     beds: RoomTypeBed[]
     amenities: { amenity: Amenity }[]
@@ -59,7 +63,7 @@ export interface RoomTypeListItem {
     id: string
     propertyId: string
     name: string
-    internalCode: string | null
+    internalCode: string
     description: string | null
     maxAdults: number
     maxChildren: number
@@ -70,6 +74,7 @@ export interface RoomTypeListItem {
     accessibleRoom: boolean
     bathroomType: BathroomType
     viewType: string | null
+    status: RoomTypeStatus
     createdAt: string
     _count: {
         beds: number
@@ -85,6 +90,7 @@ export interface ListRoomTypeParams {
     limit?: number
     search?: string
     bathroomType?: BathroomType
+    status?: RoomTypeStatus
 }
 
 export interface RoomTypeBedPayload {
@@ -96,6 +102,11 @@ export interface RoomTypeImagePayload {
     url: string
     thumbnail?: boolean
     sortOrder?: number
+}
+
+export interface RoomTypeUnitPayload {
+    roomNumber: string
+    floor?: string
 }
 
 export interface CreateRoomTypePayload {
@@ -111,15 +122,17 @@ export interface CreateRoomTypePayload {
     accessibleRoom?: boolean
     bathroomType?: BathroomType
     viewType?: string
+    status?: RoomTypeStatus
     beds?: RoomTypeBedPayload[]
     amenities?: string[]
     images?: RoomTypeImagePayload[]
+    units?: RoomTypeUnitPayload[]
 }
 
 /**
  * Patch payload for PATCH /owner/property/:propertyId/room-type/:id.
- * Every field is optional. To update beds, amenities or images, send the FULL
- * new list — the backend will delete all existing rows and replace them with
+ * Every field is optional. To update beds, amenities, images or units, send the
+ * FULL new list — the backend will delete all existing rows and replace them with
  * the provided list. Omit a key to leave that relation untouched; send `[]` to
  * clear it.
  */
@@ -133,6 +146,8 @@ export const roomTypeApi = {
         ),
 
     get: (propertyId: string, id: string) => request<{ data: RoomType }>(`/owner/property/${propertyId}/room-type/${id}`),
+
+    getBySlug: (propertyId: string, slug: string) => request<{ data: RoomType }>(`/owner/property/${propertyId}/room-type/slug/${slug}`),
 
     create: (propertyId: string, payload: CreateRoomTypePayload) =>
         request<{ data: RoomType }>(`/owner/property/${propertyId}/room-type`, {
