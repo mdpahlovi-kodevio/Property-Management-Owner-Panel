@@ -99,7 +99,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
             </div>
 
             {/* ── Key Metrics ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <MetricCard
                     title="Base Price"
                     value={formatPrice(basePrice)}
@@ -126,11 +126,11 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                 />
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mt-8">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 {/* ── Left Column: Configuration & Setup ── */}
-                <div className="xl:col-span-2 space-y-8">
+                <div className="xl:col-span-2 space-y-6">
                     {/* Gallery & Quick Info */}
-                    <Card className="overflow-hidden border-slate-200 shadow-sm">
+                    <Card className="pb-0">
                         <div className="flex flex-col md:flex-row">
                             <div className="md:w-1/3 bg-slate-100 relative min-h-64">
                                 {allImages.length > 0 ? (
@@ -191,15 +191,15 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                     </Card>
 
                     {/* Features & Configuration */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <Card className="border-slate-200 shadow-sm">
-                            <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Card>
+                            <CardHeader>
                                 <CardTitle className="text-base font-bold flex items-center gap-2">
                                     <CheckCircle2 className="size-4 text-[#243E8B]" />
                                     Room Amenities
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="pt-4">
+                            <CardContent>
                                 {rt.amenities.length > 0 ? (
                                     <div className="flex flex-wrap gap-2">
                                         {rt.amenities.map(({ amenity }) => (
@@ -218,14 +218,14 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                             </CardContent>
                         </Card>
 
-                        <Card className="border-slate-200 shadow-sm">
-                            <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
+                        <Card>
+                            <CardHeader>
                                 <CardTitle className="text-base font-bold flex items-center gap-2">
                                     <BedDouble className="size-4 text-[#243E8B]" />
                                     Bed Configuration
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="pt-4">
+                            <CardContent>
                                 <div className="space-y-3">
                                     {rt.beds.map((bed) => (
                                         <div
@@ -249,14 +249,14 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                     </div>
 
                     {/* Operational Details */}
-                    <Card className="border-slate-200 shadow-sm">
-                        <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
+                    <Card>
+                        <CardHeader>
                             <CardTitle className="text-base font-bold flex items-center gap-2">
                                 <Shield className="size-4 text-[#243E8B]" />
                                 Policy Overrides & Features
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-6">
+                        <CardContent>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                                 <StatusToggle label="Smoking Allowed" active={rt.smokingRoom} icon={<Bath />} />
                                 <StatusToggle label="Accessible" active={rt.accessibleRoom} icon={<Shield />} />
@@ -268,9 +268,9 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                 </div>
 
                 {/* ── Right Column: Units Management ── */}
-                <div className="space-y-8">
-                    <Card className="border-slate-200 shadow-sm flex flex-col h-full">
-                        <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
+                <div className="space-y-6">
+                    <Card>
+                        <CardHeader>
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-base font-bold flex items-center gap-2">
                                     <Key className="size-4 text-[#243E8B]" />
@@ -279,7 +279,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                                 <Badge className="bg-[#243E8B] hover:bg-[#1D3270]">{rt.units.length} Total</Badge>
                             </div>
                         </CardHeader>
-                        <CardContent className="p-0 flex-1 overflow-hidden">
+                        <CardContent className="flex-1 overflow-hidden">
                             {rt.units.length > 0 ? (
                                 <div className="divide-y divide-slate-100">
                                     {rt.units.map((unit) => (
@@ -328,7 +328,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                                 </div>
                             )}
                         </CardContent>
-                        <CardFooter className="p-4 border-t border-slate-100 bg-slate-50/50">
+                        <CardFooter>
                             <Button
                                 className="w-full gap-2 bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
                                 variant="outline"
@@ -354,8 +354,8 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
 
 function MetricCard({ title, value, subtitle, icon }: { title: string; value: string; subtitle: string; icon: React.ReactNode }) {
     return (
-        <Card className="border-slate-200 shadow-sm">
-            <CardContent className="p-6">
+        <Card className="pt-5">
+            <CardContent>
                 <div className="flex items-center justify-between mb-4">
                     <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider">{title}</h4>
                     <div className="p-2 bg-[#EEF3FF] rounded-lg">{icon}</div>

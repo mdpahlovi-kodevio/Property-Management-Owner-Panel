@@ -14,7 +14,7 @@ function Card({
             data-slot="card"
             data-size={size}
             className={cn(
-                'group/card flex flex-col gap-5 overflow-hidden rounded-xl bg-card py-5 text-card-foreground',
+                'group/card flex flex-col gap-5 overflow-hidden border rounded-xl bg-card pb-5 text-card-foreground',
                 'has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0',
                 'data-[size=sm]:gap-4 data-[size=sm]:py-4',
                 'data-[size=sm]:has-data-[slot=card-footer]:pb-0',
@@ -31,7 +31,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
         <div
             data-slot="card-header"
             className={cn(
-                'group/card-header @container/card-header grid auto-rows-min items-start gap-1.5 rounded-t-xl px-5',
+                'group/card-header @container/card-header grid auto-rows-min items-start gap-1.5 border-b rounded-t-xl bg-muted py-4 px-5',
                 'group-data-[size=sm]/card:px-4',
                 'has-data-[slot=card-action]:grid-cols-[1fr_auto]',
                 'has-data-[slot=card-description]:grid-rows-[auto_auto]',

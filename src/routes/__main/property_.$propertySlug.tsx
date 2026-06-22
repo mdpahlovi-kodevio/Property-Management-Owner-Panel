@@ -284,7 +284,7 @@ function RouteComponent() {
 
             {/* ── Grid + pagination ── */}
             {isLoadingProperty || isLoading ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4.5 mt-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4.5">
                     {Array.from({ length: 8 }).map((_, i) => (
                         <RoomTypeCardSkeleton key={i} />
                     ))}
@@ -299,7 +299,7 @@ function RouteComponent() {
                 </div>
             ) : (
                 <>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4.5 mt-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4.5">
                         {(data?.data ?? []).map((item) => (
                             <RoomTypeCardItem
                                 key={item.id}
@@ -403,6 +403,7 @@ function RoomTypeCardView({ room, propertySlug, onEdit }: { room: RoomType; prop
                 <img
                     src={card.imageUrl}
                     alt={card.title}
+                    crossOrigin="anonymous"
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
                 />
 
@@ -721,13 +722,19 @@ function RoomTypeForm({
                                                             />
                                                         )}
                                                     </form.AppField>
-                                                    <Button size="icon" variant="destructive" onClick={() => field.removeValue(i)}>
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        variant="destructive"
+                                                        onClick={() => field.removeValue(i)}
+                                                    >
                                                         <Trash2 />
                                                     </Button>
                                                 </div>
                                             </div>
                                         ))}
                                         <Button
+                                            type="button"
                                             size="sm"
                                             variant="outline"
                                             onClick={() => field.pushValue({ bedType: 'KING' as BedType, quantity: 1 })}
@@ -992,7 +999,7 @@ function RoomUnitsEditor() {
                                 setFloorTouched(true)
                             }}
                         />
-                        <Button size="icon" variant="secondary" onClick={commitSingle} disabled={!singleRoom.trim()}>
+                        <Button type="button" size="icon" variant="secondary" onClick={commitSingle} disabled={!singleRoom.trim()}>
                             <Plus />
                         </Button>
                     </div>
@@ -1009,7 +1016,7 @@ function RoomUnitsEditor() {
                     <Input type="number" value={genStart} onChange={(e) => setGenStart(Number(e.target.value) || 1)} />
                     <div className="flex items-end gap-3">
                         <Input placeholder="Floor" value={genFloor} onChange={(e) => setGenFloor(e.target.value)} />
-                        <Button size="icon" variant="secondary" onClick={commitGenerate}>
+                        <Button type="button" size="icon" variant="secondary" onClick={commitGenerate}>
                             <RotateCw />
                         </Button>
                     </div>
