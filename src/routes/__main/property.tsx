@@ -19,7 +19,7 @@ import {
     type PropertyListItem,
     type UpdatePropertyPayload,
 } from '@/lib/api/property'
-import { capitalize, cn, GetPropertyAmenities } from '@/lib/utils'
+import { capitalize, cn, GetPropertyAmenities, GetWebsites } from '@/lib/utils'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Edit, Eye, MapPin, Package, Plus, Star, Trash2 } from 'lucide-react'
@@ -130,6 +130,7 @@ const propertyFormSchema = z.object({
     longitude: z.number(),
     checkInTime: z.string().min(1, 'Check-in time is required'),
     checkOutTime: z.string().min(1, 'Check-out time is required'),
+    websiteId: z.string().optional(),
     amenities: z.array(z.string()),
     policy: z.object({
         petsAllowed: z.boolean(),
@@ -195,6 +196,7 @@ function valuesFromProperty(p: Property): PropertyFormValues {
         longitude: p.longitude ?? 0,
         checkInTime: p.checkInTime,
         checkOutTime: p.checkOutTime,
+        ...(p.websiteId ? { websiteId: p.websiteId } : {}),
         amenities: p.amenities.map((a) => a.amenity.id),
         // Only petsAllowed has a backend home; the other toggles are UI-only.
         policy: {
@@ -567,6 +569,7 @@ function PropertyForm({
     onCancel: () => void
     submitLabel: string
 }) {
+    const websites = GetWebsites()
     const amenities = GetPropertyAmenities()
 
     const form = useAppForm({
@@ -608,9 +611,23 @@ function PropertyForm({
                             <form.AppField name="name">
                                 {(field) => <field.FormInput label="Property name" placeholder="e.g. Seaside Villa Bali" />}
                             </form.AppField>
-                            <form.AppField name="slug">
-                                {(field) => <field.FormInput label="Slug" placeholder="e.g. seaside-villa-bali" />}
-                            </form.AppField>
+                            <div className="grid grid-cols-2 gap-3">
+                                <form.AppField name="slug">
+                                    {(field) => <field.FormInput label="Slug" placeholder="e.g. seaside-villa-bali" />}
+                                </form.AppField>
+                                <form.AppField name="websiteId">
+                                    {(field) => (
+                                        <field.FormSelect
+                                            label="Website"
+                                            placeholder="Select website"
+                                            options={websites.map((website) => ({
+                                                value: website.id,
+                                                label: website.name,
+                                            }))}
+                                        />
+                                    )}
+                                </form.AppField>
+                            </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <form.AppField name="propertyType">
                                     {(field) => (

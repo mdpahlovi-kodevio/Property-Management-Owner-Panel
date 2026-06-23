@@ -1,4 +1,4 @@
-import { amenitiesApi } from '@/lib/api'
+import { amenitiesApi, websiteBuilderApi } from '@/lib/api'
 import { useQuery } from '@tanstack/react-query'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -13,6 +13,23 @@ export function capitalize(word: string): string {
         .split('_')
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ')
+}
+
+export function GetWebsites() {
+    const { data } = useQuery({
+        queryKey: ['websites-page-less'],
+        queryFn: () =>
+            websiteBuilderApi.listPageLess().catch((error) => {
+                console.error(error)
+                return null
+            }),
+    })
+
+    if (!data || !data.data) {
+        return []
+    }
+
+    return data.data
 }
 
 export function GetPropertyAmenities() {

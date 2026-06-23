@@ -629,18 +629,20 @@ function RoomTypeForm({
                             <form.AppField name="name">
                                 {(field) => <field.FormInput label="Room type name" placeholder="e.g. Deluxe King Room" />}
                             </form.AppField>
-                            <form.AppField name="internalCode">
-                                {(field) => (
-                                    <field.FormInput
-                                        label="Internal code"
-                                        placeholder="e.g. DLX-KNG-01"
-                                        hint="Leave blank to auto-generate from the name."
-                                    />
-                                )}
-                            </form.AppField>
-                            <form.AppField name="roomSize">
-                                {(field) => <field.FormInputNumber label="Room size (sqm)" placeholder="28" min={0} step="any" />}
-                            </form.AppField>
+                            <div className="grid grid-cols-2 gap-3">
+                                <form.AppField name="internalCode">
+                                    {(field) => (
+                                        <field.FormInput
+                                            label="Internal code"
+                                            placeholder="e.g. DLX-KNG-01"
+                                            hint="Leave blank to auto-generate from the name."
+                                        />
+                                    )}
+                                </form.AppField>
+                                <form.AppField name="roomSize">
+                                    {(field) => <field.FormInputNumber label="Room size (sqm)" placeholder="28" min={0} step="any" />}
+                                </form.AppField>
+                            </div>
                             <form.AppField name="description">
                                 {(field) => (
                                     <field.FormTextarea label="Description" placeholder="Describe the room type for OTA listings..." />
