@@ -172,29 +172,20 @@ function RouteComponent() {
                 key: 'modules',
                 header: t('role-management.moduleMapped', 'Module Mapped'),
                 render: (r) => {
-                    const permissions = r.permissions
-                    const activeModules = permissions.filter((entry) => entry.permissions.length > 0)
-
-                    if (activeModules.length === 0) {
-                        return <span className="text-muted-foreground text-xs">{t('role-management.noPermissions', 'No permissions')}</span>
-                    }
-
                     return (
                         <div className="flex flex-wrap gap-2">
-                            {activeModules.map((entry) => (
+                            {r.permissions.map((entry) => (
                                 <Tooltip key={entry.module}>
                                     <TooltipTrigger asChild>
                                         <span className="text-[10px] sm:text-xs font-semibold text-green-600 bg-green-500/10 px-2 py-1 rounded-sm cursor-help">
                                             {formatPermission(entry.module)}
                                         </span>
                                     </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p className="text-xs font-medium">
-                                            {entry.permissions.length > 0
-                                                ? entry.permissions.map(formatPermission).join(', ')
-                                                : t('role-management.noPermissions', 'No permissions')}
-                                        </p>
-                                    </TooltipContent>
+                                    {entry.permissions.length ? (
+                                        <TooltipContent>
+                                            <p className="text-xs font-medium">{entry.permissions.map(formatPermission).join(', ')}</p>
+                                        </TooltipContent>
+                                    ) : null}
                                 </Tooltip>
                             ))}
                         </div>
