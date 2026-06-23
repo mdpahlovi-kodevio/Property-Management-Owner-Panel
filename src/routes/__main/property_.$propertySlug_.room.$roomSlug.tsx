@@ -32,15 +32,15 @@ export const Route = createFileRoute('/__main/property_/$propertySlug_/room/$roo
     notFoundComponent: () => (
         <div className="mx-auto max-w-xl px-4 py-24 text-center">
             <div className="mb-6 flex justify-center">
-                <div className="flex size-16 items-center justify-center rounded-lg bg-slate-100">
-                    <BedDouble className="size-8 text-slate-400" />
+                <div className="flex size-16 items-center justify-center rounded-lg bg-muted">
+                    <BedDouble className="size-8 text-muted-foreground" />
                 </div>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Room type not found</h1>
-            <p className="mt-3 text-slate-500">The room type you're looking for doesn't exist or has been removed.</p>
+            <h1 className="text-2xl font-bold tracking-tight">Room type not found</h1>
+            <p className="mt-3 text-muted-foreground">The room type you're looking for doesn't exist or has been removed.</p>
             <Link
                 to="/property"
-                className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-[#243E8B] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#1D3270] transition-colors"
+                className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary transition-colors"
             >
                 Browse all properties
             </Link>
@@ -104,25 +104,25 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                     title="Base Price"
                     value={formatPrice(basePrice)}
                     subtitle="Per night rate"
-                    icon={<CreditCard className="size-4 text-[#243E8B]" />}
+                    icon={<CreditCard className="size-4 text-primary" />}
                 />
                 <MetricCard
                     title="Total Units"
                     value={rt.units.length.toString()}
                     subtitle={`Across floor(s) ${floors}`}
-                    icon={<Key className="size-4 text-[#243E8B]" />}
+                    icon={<Key className="size-4 text-primary" />}
                 />
                 <MetricCard
                     title="Avg. Occupancy"
                     value="—"
                     subtitle="Analytics coming soon"
-                    icon={<Calendar className="size-4 text-[#243E8B]" />}
+                    icon={<Calendar className="size-4 text-primary" />}
                 />
                 <MetricCard
                     title="Est. Revenue"
                     value="—"
                     subtitle="Analytics coming soon"
-                    icon={<Calendar className="size-4 text-[#243E8B]" />}
+                    icon={<Calendar className="size-4 text-primary" />}
                 />
             </div>
 
@@ -132,15 +132,16 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                     {/* Gallery & Quick Info */}
                     <Card className="pb-0">
                         <div className="flex flex-col md:flex-row">
-                            <div className="md:w-1/3 bg-slate-100 relative min-h-64">
+                            <div className="md:w-1/3 bg-muted relative min-h-64">
                                 {allImages.length > 0 ? (
                                     <img
                                         src={allImages[activeImage] ?? allImages[0]}
                                         alt={rt.name}
+                                        crossOrigin="anonymous"
                                         className="absolute inset-0 w-full h-full object-cover"
                                     />
                                 ) : (
-                                    <div className="absolute inset-0 flex items-center justify-center text-slate-400">
+                                    <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
                                         <BedDouble className="size-10" />
                                     </div>
                                 )}
@@ -168,7 +169,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                             <div className="md:w-2/3 p-6 flex flex-col justify-center">
                                 <div className="flex items-center gap-2 mb-2">
                                     {rt.internalCode && (
-                                        <Badge variant="outline" className="text-xs font-mono font-bold text-slate-500 bg-slate-50">
+                                        <Badge variant="outline" className="text-xs font-mono font-bold bg-muted text-muted-foreground">
                                             {rt.internalCode}
                                         </Badge>
                                     )}
@@ -176,8 +177,8 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                                         {rt.viewType || 'Standard View'}
                                     </Badge>
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-2">{rt.name}</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed mb-6">
+                                <h3 className="text-xl font-bold mb-2">{rt.name}</h3>
+                                <p className="text-sm text-muted-foreground leading-relaxed mb-6">
                                     {rt.description || 'No description provided.'}
                                 </p>
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -195,7 +196,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-base font-bold flex items-center gap-2">
-                                    <CheckCircle2 className="size-4 text-[#243E8B]" />
+                                    <CheckCircle2 className="size-4 text-primary" />
                                     Room Amenities
                                 </CardTitle>
                             </CardHeader>
@@ -213,7 +214,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-slate-400">No amenities assigned.</p>
+                                    <p className="text-sm text-muted-foreground">No amenities assigned.</p>
                                 )}
                             </CardContent>
                         </Card>
@@ -221,22 +222,19 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-base font-bold flex items-center gap-2">
-                                    <BedDouble className="size-4 text-[#243E8B]" />
+                                    <BedDouble className="size-4 text-primary" />
                                     Bed Configuration
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-3">
                                     {rt.beds.map((bed) => (
-                                        <div
-                                            key={bed.id}
-                                            className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50"
-                                        >
+                                        <div key={bed.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted">
                                             <div className="flex items-center gap-3">
-                                                <div className="bg-white p-2 rounded-md shadow-sm border border-slate-100">
-                                                    <BedDouble className="size-4 text-[#243E8B]" />
+                                                <div className="bg-white p-2 rounded-md shadow-sm border">
+                                                    <BedDouble className="size-4 text-primary" />
                                                 </div>
-                                                <span className="font-semibold text-slate-700 text-sm">{capitalize(bed.bedType)}</span>
+                                                <span className="font-semibold text-sm">{capitalize(bed.bedType)}</span>
                                             </div>
                                             <Badge variant="outline" className="font-mono bg-white">
                                                 x{bed.quantity}
@@ -252,7 +250,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-base font-bold flex items-center gap-2">
-                                <Shield className="size-4 text-[#243E8B]" />
+                                <Shield className="size-4 text-primary" />
                                 Policy Overrides & Features
                             </CardTitle>
                         </CardHeader>
@@ -273,33 +271,35 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                         <CardHeader>
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-base font-bold flex items-center gap-2">
-                                    <Key className="size-4 text-[#243E8B]" />
+                                    <Key className="size-4 text-primary" />
                                     Physical Units
                                 </CardTitle>
-                                <Badge className="bg-[#243E8B] hover:bg-[#1D3270]">{rt.units.length} Total</Badge>
+                                <Badge className="bg-primary hover:bg-primary">{rt.units.length} Total</Badge>
                             </div>
                         </CardHeader>
                         <CardContent className="flex-1 overflow-hidden">
                             {rt.units.length > 0 ? (
-                                <div className="divide-y divide-slate-100">
+                                <div className="divide-y">
                                     {rt.units.map((unit) => (
                                         <div
                                             key={unit.id}
-                                            className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                                            className="p-4 flex items-center justify-between hover:bg-muted transition-colors"
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className="size-10 rounded-xl bg-[#EEF3FF] text-[#243E8B] flex items-center justify-center font-bold text-sm border border-[#243E8B]/10">
+                                                <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm border border-primary/10">
                                                     {unit.roomNumber}
                                                 </div>
                                                 <div>
-                                                    <div className="text-sm font-semibold text-slate-900">Room {unit.roomNumber}</div>
-                                                    <div className="text-xs text-slate-500">{unit.floor ? `Floor ${unit.floor}` : '—'}</div>
+                                                    <div className="text-sm font-semibold">Room {unit.roomNumber}</div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {unit.floor ? `Floor ${unit.floor}` : '—'}
+                                                    </div>
                                                 </div>
                                             </div>
                                             {/* Unit status is a future schema field; no real data yet. */}
                                             <Badge
                                                 variant="outline"
-                                                className="text-[10px] uppercase font-bold tracking-wider bg-slate-50 text-slate-500 border-slate-200"
+                                                className="text-[10px] uppercase font-bold tracking-wider bg-muted text-muted-foreground"
                                             >
                                                 Managed via room type
                                             </Badge>
@@ -307,10 +307,10 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                                     ))}
                                 </div>
                             ) : (
-                                <div className="p-8 text-center flex flex-col items-center justify-center h-full text-slate-500">
-                                    <Key className="size-12 text-slate-200 mb-3" />
-                                    <p className="font-medium text-slate-900">No units assigned</p>
-                                    <p className="text-sm mt-1 mb-4">Add physical rooms from the room type editor.</p>
+                                <div className="p-8 text-center flex flex-col items-center justify-center h-full">
+                                    <Key className="size-12 text-muted-foreground mb-3" />
+                                    <p className="font-medium">No units assigned</p>
+                                    <p className="text-sm text-muted-foreground mt-1 mb-4">Add physical rooms from the room type editor.</p>
                                     <Button
                                         size="sm"
                                         variant="outline"
@@ -330,7 +330,6 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                         </CardContent>
                         <CardFooter>
                             <Button
-                                className="w-full gap-2 bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
                                 variant="outline"
                                 onClick={() =>
                                     navigate({
@@ -357,13 +356,13 @@ function MetricCard({ title, value, subtitle, icon }: { title: string; value: st
         <Card className="pt-5">
             <CardContent>
                 <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider">{title}</h4>
-                    <div className="p-2 bg-[#EEF3FF] rounded-lg">{icon}</div>
+                    <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">{title}</h4>
+                    <div className="p-2 bg-primary/10 rounded-lg">{icon}</div>
                 </div>
                 <div className="flex items-end justify-between">
                     <div>
-                        <div className="text-3xl font-black text-slate-900 tracking-tight">{value}</div>
-                        <div className="text-sm text-slate-400 font-medium mt-1">{subtitle}</div>
+                        <div className="text-3xl font-black tracking-tight">{value}</div>
+                        <div className="text-sm text-muted-foreground font-medium mt-1">{subtitle}</div>
                     </div>
                 </div>
             </CardContent>
@@ -374,11 +373,11 @@ function MetricCard({ title, value, subtitle, icon }: { title: string; value: st
 function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
     return (
         <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-1.5 text-slate-400 text-xs uppercase font-bold tracking-wider">
+            <div className="flex items-center gap-1.5 text-muted-foreground text-xs uppercase font-bold tracking-wider">
                 <div className="[&>svg]:size-3.5">{icon}</div>
                 {label}
             </div>
-            <div className="text-sm font-bold text-slate-800">{value}</div>
+            <div className="text-sm font-bold">{value}</div>
         </div>
     )
 }
@@ -386,7 +385,7 @@ function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string
 function StatusToggle({ label, active, icon }: { label: string; active: boolean; icon: React.ReactNode }) {
     return (
         <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-slate-500">
+            <div className="flex items-center gap-2 text-muted-foreground">
                 <div className="[&>svg]:size-4">{icon}</div>
                 <span className="text-xs font-bold uppercase tracking-wider">{label}</span>
             </div>

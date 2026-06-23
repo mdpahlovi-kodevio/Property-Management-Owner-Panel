@@ -130,8 +130,8 @@ function RouteComponent() {
             {/* Charts & Activity Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
                 {/* Booking Chart   - Explicit Padding of 4 */}
-                <Card className="lg:col-span-2 border border-border/50 shadow-sm p-4 flex flex-col gap-4">
-                    <CardHeader className="p-0 flex flex-row items-center justify-between pb-4 border-b">
+                <Card className="col-span-2">
+                    <CardHeader className="flex justify-between items-center gap-4">
                         <div>
                             <CardTitle className="text-lg font-semibold tracking-tight">
                                 {t('dashboard.charts.bookingChartTitle')}
@@ -149,7 +149,7 @@ function RouteComponent() {
                             </SelectContent>
                         </Select>
                     </CardHeader>
-                    <CardContent className="h-88 p-0">
+                    <CardContent className="h-88">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>
@@ -192,18 +192,17 @@ function RouteComponent() {
                 </Card>
 
                 {/* Recent Bookings & Activities - Explicit Padding of 4 */}
-                <Card className="border border-border/50 shadow-sm flex flex-col h-full p-4 gap-4">
-                    <CardHeader className="p-0 flex flex-row items-center justify-between pb-4 border-b">
+                <Card>
+                    <CardHeader className="flex justify-between items-center gap-4">
                         <div>
                             <CardTitle className="text-lg font-semibold tracking-tight">
                                 {t('dashboard.charts.recentBookingsTitle')}
                             </CardTitle>
-
                             <CardDescription>{t('dashboard.charts.recentBookingsDesc')}</CardDescription>
                         </div>
                     </CardHeader>
 
-                    <CardContent className="flex flex-col items-center justify-center flex-1 p-0">
+                    <CardContent>
                         <div className="h-65 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <RechartsPieChart>
