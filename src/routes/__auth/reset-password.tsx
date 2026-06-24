@@ -1,6 +1,6 @@
 import { useAppForm } from '@/components/form/form-context'
 import { Button } from '@/components/ui/button'
-import { authApi } from '@/lib/api/auth'
+import { authApi } from '@/lib/api'
 import { useMutation } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'

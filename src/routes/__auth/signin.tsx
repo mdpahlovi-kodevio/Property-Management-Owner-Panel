@@ -1,6 +1,6 @@
 import { useAppForm } from '@/components/form/form-context'
-import type { SignInPayload } from '@/lib/api/auth'
-import { authApi, SessionKey } from '@/lib/api/auth'
+import type { SignInPayload } from '@/lib/api'
+import { authApi, SessionKey } from '@/lib/api'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'

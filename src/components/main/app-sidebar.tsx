@@ -3,7 +3,7 @@
 import { NavMain } from '@/components/main/nav-main'
 import { NavUser } from '@/components/main/nav-user'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
-import type { Session } from '@/lib/api/auth'
+import type { Session } from '@/lib/api'
 import { MODULES, MODULE_KEYS } from '@/lib/module'
 import { MODULE_ICONS } from '@/lib/module-icons'
 import * as React from 'react'

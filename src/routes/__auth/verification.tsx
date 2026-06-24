@@ -1,6 +1,6 @@
 import { useAppForm } from '@/components/form/form-context'
 import { Button } from '@/components/ui/button'
-import { authApi, SessionKey } from '@/lib/api/auth'
+import { authApi, SessionKey } from '@/lib/api'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'

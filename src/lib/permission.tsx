@@ -1,4 +1,4 @@
-import type { Session } from '@/lib/api/auth'
+import type { Session } from '@/lib/api'
 import { redirect } from '@tanstack/react-router'
 import type { ModuleKey } from './module'
 import { getModuleByPath, MODULES } from './module'

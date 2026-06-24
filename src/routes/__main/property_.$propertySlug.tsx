@@ -12,6 +12,8 @@ import { useSearchParams } from '@/hooks/use-search-params'
 import {
     BathroomTypeOptions,
     BedTypeOptions,
+    propertyApi,
+    resolveImage,
     RoomTypeStatusOptions,
     roomTypeApi,
     type BathroomType,
@@ -21,8 +23,6 @@ import {
     type RoomTypeStatus,
     type UpdateRoomTypePayload,
 } from '@/lib/api'
-import { resolveImage } from '@/lib/api/base'
-import { propertyApi } from '@/lib/api/property'
 import { capitalize, cn, GetRoomAmenities } from '@/lib/utils'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'

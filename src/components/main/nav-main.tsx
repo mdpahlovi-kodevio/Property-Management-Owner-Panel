@@ -1,5 +1,5 @@
 import { SidebarGroup, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar'
-import type { Session } from '@/lib/api/auth'
+import type { Session } from '@/lib/api'
 import { hasRoutePermission } from '@/lib/permission'
 import { Link, useRouterState } from '@tanstack/react-router'
 import * as React from 'react'

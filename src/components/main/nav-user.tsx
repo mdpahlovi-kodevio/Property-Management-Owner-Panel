@@ -20,8 +20,8 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar'
-import type { Session } from '@/lib/api/auth'
-import { authApi, SessionKey } from '@/lib/api/auth'
+import type { Session } from '@/lib/api'
+import { authApi, SessionKey } from '@/lib/api'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { BadgeCheckIcon, ChevronsUpDownIcon, LogOutIcon } from 'lucide-react'

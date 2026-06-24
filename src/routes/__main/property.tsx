@@ -8,17 +8,17 @@ import { Separator } from '@/components/ui/separator'
 import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
 import { useSearchParams } from '@/hooks/use-search-params'
-import { resolveImage } from '@/lib/api/base'
 import {
     AddonStateOptions,
     propertyApi,
     PropertyStatusOptions,
     PropertyTypeOptions,
+    resolveImage,
     type CreatePropertyPayload,
     type Property,
     type PropertyListItem,
     type UpdatePropertyPayload,
-} from '@/lib/api/property'
+} from '@/lib/api'
 import { capitalize, cn, GetPropertyAmenities, GetWebsites } from '@/lib/utils'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'

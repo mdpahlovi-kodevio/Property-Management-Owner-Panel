@@ -3,7 +3,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { authApi, SessionKey } from '@/lib/api/auth'
+import { authApi, SessionKey } from '@/lib/api'
 import { getModuleByPath, MODULE_KEYS, MODULES } from '@/lib/module'
 import { checkRoutePermission } from '@/lib/permission'
 import { queryClient } from '@/main'
