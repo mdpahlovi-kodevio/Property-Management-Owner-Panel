@@ -6,7 +6,6 @@ import { FieldLabel, FieldSeparator } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { SearchInput } from '@/components/ui/search-input'
 import { Separator } from '@/components/ui/separator'
-import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
 import { useSearchParams } from '@/hooks/use-search-params'
 import {
@@ -14,8 +13,8 @@ import {
     BedTypeOptions,
     propertyApi,
     resolveImage,
-    RoomTypeStatusOptions,
     roomTypeApi,
+    RoomTypeStatusOptions,
     type BathroomType,
     type BedType,
     type CreateRoomTypePayload,
@@ -181,8 +180,7 @@ function RouteComponent() {
 
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<RoomTab>('Details')
-    const [editingRoomId, setEditingRoomId] = useState<string | null>(null)
-    const isEditMode = editingRoomId !== null
+    const [editingRoom, setEditingRoom] = useState<RoomType | null>(null)
 
     // ── Room-type list query ──
     const { data, isLoading, refetch } = useQuery({
@@ -190,14 +188,6 @@ function RouteComponent() {
         queryFn: () => roomTypeApi.list(propertyId as string, query),
         enabled: !!propertyId,
     })
-
-    // ── Full room type for the edit dialog ──
-    const { data: editingData, isLoading: isLoadingEdit } = useQuery({
-        queryKey: ['room-type', propertyId, editingRoomId],
-        queryFn: () => roomTypeApi.get(propertyId as string, editingRoomId as string),
-        enabled: !!propertyId && !!editingRoomId,
-    })
-    const editingRoomType = editingData?.data
 
     // ── Mutations ──
     const createMutation = useMutation({
@@ -222,23 +212,23 @@ function RouteComponent() {
     })
 
     const openAdd = () => {
-        setEditingRoomId(null)
+        setEditingRoom(null)
         setActiveTab('Details')
         setIsAddOpen(true)
     }
 
-    const openEdit = (room: RoomTypeCard) => {
-        setEditingRoomId(room.id)
+    const openEdit = (room: RoomType) => {
+        setEditingRoom(room)
         setActiveTab('Details')
         setIsAddOpen(true)
     }
 
     const closeDialog = () => {
         setIsAddOpen(false)
-        setEditingRoomId(null)
+        setEditingRoom(null)
     }
 
-    const formDefaults: RoomTypeFormValues = editingRoomType ? valuesFromRoomType(editingRoomType) : ROOM_FORM_DEFAULTS
+    const formDefaults: RoomTypeFormValues = editingRoom ? valuesFromRoomType(editingRoom) : ROOM_FORM_DEFAULTS
 
     const handleSave = async (values: RoomTypeFormValues) => {
         // Strip empty optional strings so the backend treats them as omitted.
@@ -248,8 +238,8 @@ function RouteComponent() {
             viewType: values.viewType.trim() || undefined,
         }
 
-        if (isEditMode && editingRoomId) {
-            await updateMutation.mutateAsync({ id: editingRoomId, payload })
+        if (editingRoom) {
+            await updateMutation.mutateAsync({ id: editingRoom.id, payload })
         } else {
             await createMutation.mutateAsync(payload)
         }
@@ -334,27 +324,21 @@ function RouteComponent() {
             >
                 <DialogContent className="sm:max-w-160">
                     <DialogHeader>
-                        <DialogTitle>{isEditMode ? 'Edit room type' : 'Create room type'}</DialogTitle>
+                        <DialogTitle>{editingRoom ? 'Edit room type' : 'Create room type'}</DialogTitle>
                         <DialogDescription>
-                            {isEditMode ? `Editing "${editingRoomType?.name ?? ''}"` : 'Add a new room type to this property'}
+                            {editingRoom ? `Editing "${editingRoom?.name ?? ''}"` : 'Add a new room type to this property'}
                         </DialogDescription>
                     </DialogHeader>
 
-                    {isEditMode && (isLoadingEdit || !editingRoomType) ? (
-                        <div className="flex justify-center py-12">
-                            <Spinner className="size-6" />
-                        </div>
-                    ) : (
-                        <RoomTypeForm
-                            key={editingRoomId ?? 'add'}
-                            defaultValues={formDefaults}
-                            activeTab={activeTab}
-                            onActiveTabChange={setActiveTab}
-                            onSubmit={handleSave}
-                            onCancel={closeDialog}
-                            submitLabel={isSaving ? 'Saving...' : isEditMode ? 'Save changes' : 'Save room type'}
-                        />
-                    )}
+                    <RoomTypeForm
+                        key={editingRoom?.id ?? 'add'}
+                        defaultValues={formDefaults}
+                        activeTab={activeTab}
+                        onActiveTabChange={setActiveTab}
+                        onSubmit={handleSave}
+                        onCancel={closeDialog}
+                        submitLabel={isSaving ? 'Saving...' : editingRoom ? 'Save changes' : 'Save room type'}
+                    />
                 </DialogContent>
             </Dialog>
         </>
@@ -371,7 +355,7 @@ function RoomTypeCardItem({
     propertyId: string
     propertySlug: string
     item: import('@/lib/api/room-type').RoomTypeListItem
-    onEdit: (room: RoomTypeCard) => void
+    onEdit: (room: RoomType) => void
 }) {
     const { data, isLoading } = useQuery({
         queryKey: ['room-type', propertyId, item.id],
@@ -383,7 +367,7 @@ function RoomTypeCardItem({
     return <RoomTypeCardView room={data.data} propertySlug={propertySlug} onEdit={onEdit} />
 }
 
-function RoomTypeCardView({ room, propertySlug, onEdit }: { room: RoomType; propertySlug: string; onEdit: (room: RoomTypeCard) => void }) {
+function RoomTypeCardView({ room, propertySlug, onEdit }: { room: RoomType; propertySlug: string; onEdit: (room: RoomType) => void }) {
     const navigate = useNavigate()
 
     const card = mapRoomTypeToCard(room)
@@ -482,7 +466,7 @@ function RoomTypeCardView({ room, propertySlug, onEdit }: { room: RoomType; prop
                     <Button
                         onClick={(e) => {
                             e.stopPropagation()
-                            onEdit(card)
+                            onEdit(room)
                         }}
                         variant="outline"
                     >

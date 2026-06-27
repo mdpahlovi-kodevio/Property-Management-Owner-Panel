@@ -87,14 +87,7 @@ export interface Property {
 }
 
 /** Slimmer property returned by list (with counts). */
-export interface PropertyListItem extends Omit<Property, 'amenities' | 'images' | 'addons' | 'roomTypes'> {
-    _count: {
-        roomTypes: number
-        images: number
-        amenities: number
-        addons: number
-    }
-}
+export interface PropertyListItem extends Omit<Property, 'policy' | 'amenities' | 'images' | 'addons' | 'roomTypes'> {}
 
 // ── Query / payload types ───────────────────────────────
 export interface ListPropertyParams {

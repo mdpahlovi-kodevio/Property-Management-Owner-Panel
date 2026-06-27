@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
 import { Separator } from '@/components/ui/separator'
-import { Spinner } from '@/components/ui/spinner'
 import { Switch } from '@/components/ui/switch'
 import { useSearchParams } from '@/hooks/use-search-params'
 import {
@@ -250,22 +249,13 @@ function RouteComponent() {
     const mergeSearch = useSearchParams()
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<PropTab>('Basics')
-    const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null)
-    const isEditMode = editingPropertyId !== null
+    const [editingProperty, setEditingProperty] = useState<Property | null>(null)
 
     // ── List query ──
     const { data, isLoading, refetch } = useQuery({
         queryKey: ['properties', query],
         queryFn: () => propertyApi.list(query),
     })
-
-    // ── Full property for the edit dialog ──
-    const { data: editingData, isLoading: isLoadingEdit } = useQuery({
-        queryKey: ['property', editingPropertyId],
-        queryFn: () => propertyApi.get(editingPropertyId as string),
-        enabled: !!editingPropertyId,
-    })
-    const editingProperty = editingData?.data
 
     // ── Mutations ──
     const createMutation = useMutation({
@@ -289,27 +279,27 @@ function RouteComponent() {
     })
 
     const openAdd = () => {
-        setEditingPropertyId(null)
+        setEditingProperty(null)
         setActiveTab('Basics')
         setIsAddOpen(true)
     }
 
-    const openEdit = (property: PropertyCard) => {
-        setEditingPropertyId(property.id)
+    const openEdit = (property: Property) => {
+        setEditingProperty(property)
         setActiveTab('Basics')
         setIsAddOpen(true)
     }
 
     const closeDialog = () => {
         setIsAddOpen(false)
-        setEditingPropertyId(null)
+        setEditingProperty(null)
     }
 
     const formDefaults: PropertyFormValues = editingProperty ? valuesFromProperty(editingProperty) : FORM_DEFAULTS
 
     const handleSave = async (values: PropertyFormValues) => {
-        if (isEditMode && editingPropertyId) {
-            await updateMutation.mutateAsync({ id: editingPropertyId, payload: values })
+        if (editingProperty) {
+            await updateMutation.mutateAsync({ id: editingProperty.id, payload: values })
         } else {
             await createMutation.mutateAsync(values)
         }
@@ -370,35 +360,29 @@ function RouteComponent() {
             >
                 <DialogContent className="sm:max-w-160">
                     <DialogHeader>
-                        <DialogTitle>{isEditMode ? t('properties.editProperty') : t('properties.createProperty')}</DialogTitle>
+                        <DialogTitle>{editingProperty ? t('properties.editProperty') : t('properties.createProperty')}</DialogTitle>
                         <DialogDescription>
-                            {isEditMode
+                            {editingProperty
                                 ? t('properties.editing', `Editing "{{name}}"`, { name: editingProperty?.name ?? '' })
                                 : t('properties.addDesc')}
                         </DialogDescription>
                     </DialogHeader>
 
-                    {isEditMode && (isLoadingEdit || !editingProperty) ? (
-                        <div className="flex justify-center py-12">
-                            <Spinner className="size-6" />
-                        </div>
-                    ) : (
-                        <PropertyForm
-                            key={editingPropertyId ?? 'add'}
-                            defaultValues={formDefaults}
-                            activeTab={activeTab}
-                            onActiveTabChange={setActiveTab}
-                            onSubmit={handleSave}
-                            onCancel={closeDialog}
-                            submitLabel={
-                                isSaving
-                                    ? t('properties.saving', 'Saving...')
-                                    : isEditMode
-                                      ? t('properties.saveChanges')
-                                      : t('properties.saveProperty')
-                            }
-                        />
-                    )}
+                    <PropertyForm
+                        key={editingProperty?.id ?? 'add'}
+                        defaultValues={formDefaults}
+                        activeTab={activeTab}
+                        onActiveTabChange={setActiveTab}
+                        onSubmit={handleSave}
+                        onCancel={closeDialog}
+                        submitLabel={
+                            isSaving
+                                ? t('properties.saving', 'Saving...')
+                                : editingProperty
+                                  ? t('properties.saveChanges')
+                                  : t('properties.saveProperty')
+                        }
+                    />
                 </DialogContent>
             </Dialog>
         </>
@@ -406,7 +390,10 @@ function RouteComponent() {
 }
 
 // ─── Property card (rich render needs the full property from GET /:id) ──
-function PropertyCardItem({ item, onEdit }: { item: PropertyListItem; onEdit: (property: PropertyCard) => void }) {
+function PropertyCardItem({ item, onEdit }: { item: PropertyListItem; onEdit: (property: Property) => void }) {
+    const { t } = useTranslation()
+    const navigate = useNavigate()
+
     const { data, isLoading } = useQuery({
         queryKey: ['property', item.id],
         queryFn: () => propertyApi.get(item.id),
@@ -414,12 +401,7 @@ function PropertyCardItem({ item, onEdit }: { item: PropertyListItem; onEdit: (p
 
     if (isLoading || !data) return <PropertyCardSkeleton />
 
-    return <PropertyCardView property={mapPropertyToCard(data.data)} onEdit={onEdit} />
-}
-
-function PropertyCardView({ property, onEdit }: { property: PropertyCard; onEdit: (property: PropertyCard) => void }) {
-    const { t } = useTranslation()
-    const navigate = useNavigate()
+    const property = mapPropertyToCard(data.data)
 
     return (
         <div
@@ -511,7 +493,7 @@ function PropertyCardView({ property, onEdit }: { property: PropertyCard; onEdit
                     <Button
                         onClick={(e) => {
                             e.stopPropagation()
-                            onEdit(property)
+                            onEdit(data.data)
                         }}
                         variant="outline"
                     >
