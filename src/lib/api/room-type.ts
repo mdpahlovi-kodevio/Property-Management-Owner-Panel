@@ -58,30 +58,8 @@ export interface RoomType {
     units: RoomTypeUnit[]
 }
 
-/** Slimmer room type returned by list (with counts). */
-export interface RoomTypeListItem {
-    id: string
-    propertyId: string
-    name: string
-    internalCode: string
-    description: string | null
-    maxAdults: number
-    maxChildren: number
-    maxOccupancy: number
-    basePrice: string | number
-    roomSize: number | null
-    smokingRoom: boolean
-    accessibleRoom: boolean
-    bathroomType: BathroomType
-    viewType: string | null
-    status: RoomTypeStatus
-    createdAt: string
-    _count: {
-        beds: number
-        amenities: number
-        images: number
-        units: number
-    }
+export interface RoomTypeListItem extends Omit<RoomType, 'beds' | 'amenities' | 'images' | 'units'> {
+    _count: { beds: number; units: number }
 }
 
 // ── Query / payload types ───────────────────────────────
@@ -111,7 +89,7 @@ export interface RoomTypeUnitPayload {
 
 export interface CreateRoomTypePayload {
     name: string
-    internalCode?: string
+    internalCode: string
     description?: string
     maxAdults?: number
     maxChildren?: number
@@ -145,9 +123,7 @@ export const roomTypeApi = {
             `/owner/property/${propertyId}/room-type${toQuery((params ?? {}) as Record<string, string | number | boolean | undefined>)}`,
         ),
 
-    get: (propertyId: string, id: string) => request<{ data: RoomType }>(`/owner/property/${propertyId}/room-type/${id}`),
-
-    getBySlug: (propertyId: string, slug: string) => request<{ data: RoomType }>(`/owner/property/${propertyId}/room-type/slug/${slug}`),
+    getBySlug: (propertyId: string, slug: string) => request<{ data: RoomType }>(`/owner/property/${propertyId}/room-type/${slug}`),
 
     create: (propertyId: string, payload: CreateRoomTypePayload) =>
         request<{ data: RoomType }>(`/owner/property/${propertyId}/room-type`, {

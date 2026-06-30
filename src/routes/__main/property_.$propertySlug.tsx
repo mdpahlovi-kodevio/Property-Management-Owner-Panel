@@ -46,6 +46,7 @@ type RoomTypeCard = {
     id: string
     propertyId: string
     title: string
+    internalCode: string
     location: string
     details: string
     basePrice: number
@@ -66,8 +67,8 @@ type RoomTab = (typeof ROOM_TABS)[number]
 
 // ─── Zod schema mirroring the create/update payload ─────────────────
 const roomTypeFormSchema = z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters').max(128),
-    internalCode: z.string().max(64),
+    name: z.string().min(2, 'Room type name is required').max(128),
+    internalCode: z.string().min(2, 'Internal code is required').max(64),
     description: z.string().max(5000),
     maxAdults: z.number().int().min(1).max(50),
     maxChildren: z.number().int().min(0).max(50),
@@ -168,15 +169,12 @@ function RouteComponent() {
 
     // ── Resolve slug → property via the dedicated slug endpoint. ──
     const { data: propertyData, isLoading: isLoadingProperty } = useQuery({
-        queryKey: ['property-by-slug', propertySlug],
-        queryFn: async () => {
-            const res = await propertyApi.getBySlug(propertySlug)
-            return res.data
-        },
+        queryKey: ['property', propertySlug],
+        queryFn: () => propertyApi.getBySlug(propertySlug),
     })
-    const propertyId = propertyData?.id
-    const propertySlugResolved = propertyData?.slug ?? propertySlug
-    const propertyName = propertyData?.name
+
+    const propertyId = propertyData?.data?.id
+    const propertyName = propertyData?.data?.name
 
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<RoomTab>('Details')
@@ -234,7 +232,6 @@ function RouteComponent() {
         // Strip empty optional strings so the backend treats them as omitted.
         const payload: CreateRoomTypePayload = {
             ...values,
-            internalCode: values.internalCode.trim() || undefined,
             viewType: values.viewType.trim() || undefined,
         }
 
@@ -294,7 +291,7 @@ function RouteComponent() {
                             <RoomTypeCardItem
                                 key={item.id}
                                 propertyId={propertyId}
-                                propertySlug={propertySlugResolved}
+                                propertySlug={propertySlug}
                                 item={item}
                                 onEdit={openEdit}
                             />
@@ -358,8 +355,8 @@ function RoomTypeCardItem({
     onEdit: (room: RoomType) => void
 }) {
     const { data, isLoading } = useQuery({
-        queryKey: ['room-type', propertyId, item.id],
-        queryFn: () => roomTypeApi.get(propertyId, item.id),
+        queryKey: ['room-type', propertyId, item.internalCode],
+        queryFn: () => roomTypeApi.getBySlug(propertyId, item.internalCode),
     })
 
     if (isLoading || !data) return <RoomTypeCardSkeleton />
@@ -378,7 +375,7 @@ function RoomTypeCardView({ room, propertySlug, onEdit }: { room: RoomType; prop
             onClick={() =>
                 navigate({
                     to: '/property/$propertySlug/room/$roomSlug',
-                    params: { propertySlug, roomSlug: slugifyRoom(card.title) },
+                    params: { propertySlug, roomSlug: card.internalCode },
                 })
             }
         >
@@ -479,7 +476,7 @@ function RoomTypeCardView({ room, propertySlug, onEdit }: { room: RoomType; prop
                             e.stopPropagation()
                             navigate({
                                 to: '/property/$propertySlug/room/$roomSlug',
-                                params: { propertySlug, roomSlug: slugifyRoom(card.title) },
+                                params: { propertySlug, roomSlug: card.internalCode },
                             })
                         }}
                     >
@@ -511,6 +508,7 @@ function mapRoomTypeToCard(rt: RoomType): RoomTypeCard {
         id: rt.id,
         propertyId: rt.propertyId,
         title: rt.name,
+        internalCode: rt.internalCode,
         location: `Floor ${floorLabel}`,
         details: `${bedsCount} Bed${bedsCount === 1 ? '' : 's'} • ${roomSizeLabel}`,
         basePrice: Number(rt.basePrice),
@@ -525,17 +523,6 @@ function mapRoomTypeToCard(rt: RoomType): RoomTypeCard {
         maxGuests: rt.maxOccupancy,
         roomSizeLabel,
     }
-}
-
-function slugifyRoom(text: string): string {
-    return text
-        .toString()
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^\w-]+/g, '')
-        .replace(/--+/g, '-')
-        .replace(/^-+/, '')
-        .replace(/-+$/, '')
 }
 
 function RoomTypeCardSkeleton() {
@@ -615,13 +602,7 @@ function RoomTypeForm({
                             </form.AppField>
                             <div className="grid grid-cols-2 gap-3">
                                 <form.AppField name="internalCode">
-                                    {(field) => (
-                                        <field.FormInput
-                                            label="Internal code"
-                                            placeholder="e.g. DLX-KNG-01"
-                                            hint="Leave blank to auto-generate from the name."
-                                        />
-                                    )}
+                                    {(field) => <field.FormInput label="Internal code" placeholder="e.g. DLX-KNG-01" />}
                                 </form.AppField>
                                 <form.AppField name="roomSize">
                                     {(field) => <field.FormInputNumber label="Room size (sqm)" placeholder="28" min={0} step="any" />}

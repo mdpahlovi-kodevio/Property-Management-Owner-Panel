@@ -167,11 +167,9 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                             </div>
                             <div className="md:w-2/3 p-6 flex flex-col justify-center">
                                 <div className="flex items-center gap-2 mb-2">
-                                    {rt.internalCode && (
-                                        <Badge variant="outline" className="text-xs font-mono font-bold bg-muted text-muted-foreground">
-                                            {rt.internalCode}
-                                        </Badge>
-                                    )}
+                                    <Badge variant="outline" className="text-xs font-mono font-bold bg-muted text-muted-foreground">
+                                        {rt.internalCode}
+                                    </Badge>
                                     <Badge variant="secondary" className="text-xs">
                                         {rt.viewType || 'Standard View'}
                                     </Badge>

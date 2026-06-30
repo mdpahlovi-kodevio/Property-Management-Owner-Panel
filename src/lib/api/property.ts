@@ -155,9 +155,7 @@ export const propertyApi = {
     list: (params?: Record<string, string | number | boolean | undefined>) =>
         request<Paginated<PropertyListItem>>(`/owner/property${toQuery(params ?? {})}`),
 
-    get: (id: string) => request<{ data: Property }>(`/owner/property/${id}`),
-
-    getBySlug: (slug: string) => request<{ data: Property }>(`/owner/property/slug/${slug}`),
+    getBySlug: (slug: string) => request<{ data: Property }>(`/owner/property/${slug}`),
 
     create: (payload: CreatePropertyPayload) =>
         request<{ data: Property }>(`/owner/property`, {

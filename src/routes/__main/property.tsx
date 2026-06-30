@@ -111,24 +111,24 @@ function mapPropertyToCard(p: Property): PropertyCard {
 
 // ─── Zod schema for the create/edit form ──────────────────────────
 const propertyFormSchema = z.object({
-    name: z.string().min(1, 'Property name is required'),
+    name: z.string().min(2, 'Property name is required'),
     slug: z
         .string()
         .min(2, 'Slug is required')
         .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers and hyphens'),
     propertyType: z.enum(PropertyTypeOptions, 'Property type is required'),
-    description: z.string().min(1, 'Description is required'),
+    description: z.string().min(2, 'Description is required'),
     status: z.enum(PropertyStatusOptions, 'Property status is required'),
-    country: z.string().min(1, 'Country is required'),
+    country: z.string().min(2, 'Country is required'),
     state: z.string(),
-    city: z.string().min(1, 'City is required'),
+    city: z.string().min(2, 'City is required'),
     postalCode: z.string(),
-    address1: z.string().min(1, 'Address is required'),
+    address1: z.string().min(2, 'Address is required'),
     address2: z.string(),
     latitude: z.number(),
     longitude: z.number(),
-    checkInTime: z.string().min(1, 'Check-in time is required'),
-    checkOutTime: z.string().min(1, 'Check-out time is required'),
+    checkInTime: z.string().min(2, 'Check-in time is required'),
+    checkOutTime: z.string().min(2, 'Check-out time is required'),
     websiteId: z.string().optional(),
     amenities: z.array(z.string()),
     policy: z.object({
@@ -139,7 +139,7 @@ const propertyFormSchema = z.object({
     }),
     addons: z.array(
         z.object({
-            name: z.string().min(1, 'Addon name is required'),
+            name: z.string().min(2, 'Addon name is required'),
             description: z.string(),
             price: z.number().min(0, 'Price must be 0 or more'),
             state: z.enum(AddonStateOptions, 'Addon state is required'),
@@ -395,8 +395,8 @@ function PropertyCardItem({ item, onEdit }: { item: PropertyListItem; onEdit: (p
     const navigate = useNavigate()
 
     const { data, isLoading } = useQuery({
-        queryKey: ['property', item.id],
-        queryFn: () => propertyApi.get(item.id),
+        queryKey: ['property', item.slug],
+        queryFn: () => propertyApi.getBySlug(item.slug),
     })
 
     if (isLoading || !data) return <PropertyCardSkeleton />
