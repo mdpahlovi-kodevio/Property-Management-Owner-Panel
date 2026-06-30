@@ -23,7 +23,7 @@ import {
     type UpdateRoomTypePayload,
 } from '@/lib/api'
 import { capitalize, cn, GetRoomAmenities } from '@/lib/utils'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Edit, Eye, MapPin, Plus, RotateCw, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
@@ -165,6 +165,7 @@ function RouteComponent() {
     const navigate = useNavigate()
     const query = Route.useSearch()
     const mergeSearch = useSearchParams()
+    const queryClient = useQueryClient()
     const { propertySlug } = Route.useParams()
 
     // ── Resolve slug → property via the dedicated slug endpoint. ──
@@ -201,8 +202,8 @@ function RouteComponent() {
     const updateMutation = useMutation({
         mutationFn: ({ id, payload }: { id: string; payload: UpdateRoomTypePayload }) =>
             roomTypeApi.update(propertyId as string, id, payload),
-        onSuccess: () => {
-            refetch()
+        onSuccess: (response) => {
+            queryClient.invalidateQueries({ queryKey: ['room-type', propertyId, response?.data?.internalCode] })
             toast.success('Room type updated successfully!')
             closeDialog()
         },

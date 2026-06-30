@@ -19,7 +19,7 @@ import {
     type UpdatePropertyPayload,
 } from '@/lib/api'
 import { capitalize, cn, GetPropertyAmenities, GetWebsites } from '@/lib/utils'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Edit, Eye, MapPin, Package, Plus, Star, Trash2 } from 'lucide-react'
 import { useState } from 'react'
@@ -247,6 +247,7 @@ function RouteComponent() {
     const { t } = useTranslation()
     const query = Route.useSearch()
     const mergeSearch = useSearchParams()
+    const queryClient = useQueryClient()
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<PropTab>('Basics')
     const [editingProperty, setEditingProperty] = useState<Property | null>(null)
@@ -270,8 +271,8 @@ function RouteComponent() {
 
     const updateMutation = useMutation({
         mutationFn: ({ id, payload }: { id: string; payload: UpdatePropertyPayload }) => propertyApi.update(id, payload),
-        onSuccess: () => {
-            refetch()
+        onSuccess: (response) => {
+            queryClient.invalidateQueries({ queryKey: ['property', response?.data?.slug] })
             toast.success(t('properties.updatedSuccess', 'Property updated successfully!'))
             closeDialog()
         },
