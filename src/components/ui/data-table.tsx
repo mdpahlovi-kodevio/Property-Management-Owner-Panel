@@ -23,6 +23,7 @@ type DataTableProps<T> = {
     total?: number
     limitOptions?: number[]
     onReset?: () => void
+    onRowClick?: (row: T) => void
 }
 
 function DataTable<T>({
@@ -36,6 +37,7 @@ function DataTable<T>({
     total = 0,
     limitOptions = [5, 10, 20],
     onReset,
+    onRowClick,
 }: DataTableProps<T>) {
     const mergeSearch = useSearchParams()
 
@@ -103,7 +105,11 @@ function DataTable<T>({
                 </TableHeader>
                 <TableBody>
                     {data.map((row, index) => (
-                        <TableRow key={index}>
+                        <TableRow
+                            key={index}
+                            onClick={onRowClick ? () => onRowClick(row) : undefined}
+                            className={onRowClick ? 'cursor-pointer' : undefined}
+                        >
                             {columns.map((col) => (
                                 <TableCell key={col.key} className={col.className}>
                                     {col.render(row)}

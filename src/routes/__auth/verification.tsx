@@ -109,7 +109,7 @@ function RouteComponent() {
                     form.handleSubmit()
                 }}
             >
-                <form.AppField name="otp">{(field) => <field.FormInputOtp />}</form.AppField>
+                <form.AppField name="otp">{(field) => <field.FormInputOtp label="Verification code" />}</form.AppField>
 
                 <form.AppForm>
                     <form.FormSubmit label={t('auth.verify', 'Verify')} />

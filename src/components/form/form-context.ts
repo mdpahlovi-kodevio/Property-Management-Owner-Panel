@@ -3,8 +3,8 @@ import { FormAvatar } from './form-avatar'
 import { FormGallery } from './form-gallery'
 import { FormImage } from './form-image'
 import { FormInput } from './form-input'
-import { FormInputOtp } from './form-input-otp'
 import { FormInputNumber } from './form-input-number'
+import { FormInputOtp } from './form-input-otp'
 import { FormModuleMap } from './form-module-map'
 import { FormRadio } from './form-radio'
 import { FormSearchableSelect } from './form-searchable-select'
@@ -24,9 +24,9 @@ export const { useAppForm } = createFormHook({
         FormGallery,
         FormImage,
         FormInput,
+        FormInputNumber,
         FormInputOtp,
         FormModuleMap,
-        FormInputNumber,
         FormRadio,
         FormSearchableSelect,
         FormSelect,
