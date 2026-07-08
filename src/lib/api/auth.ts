@@ -4,6 +4,21 @@ export const SessionKey = ['session']
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
+export type SignInResult = { data: Session } | { data: { requiresMfa: true; mfaToken: string } }
+
+export interface MfaSetupResponse {
+    secret: string
+    uri: string
+}
+
+export interface MfaEnableResponse {
+    backupCodes: string[]
+}
+
+export interface MfaStatusResponse {
+    enabled: boolean
+}
+
 export interface Session {
     user: {
         id: string
@@ -61,6 +76,19 @@ export interface UpdateMePayload {
     image?: string
     phone?: string
 }
+export interface MfaVerifyPayload {
+    mfaToken: string
+    code: string
+}
+
+export interface MfaEnablePayload {
+    code: string
+}
+
+export interface MfaDisablePayload {
+    password: string
+    code: string
+}
 export interface ChangePasswordPayload {
     currentPassword: string
     newPassword: string
@@ -71,10 +99,35 @@ export interface ChangePasswordPayload {
 
 export const authApi = {
     signIn: (payload: SignInPayload) =>
-        request<{ data: Session }>('/auth/sign-in', {
+        request<SignInResult>('/auth/sign-in', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        }),
+
+    mfaVerify: (payload: MfaVerifyPayload) =>
+        request<{ data: Session }>('/auth/mfa/verify', {
             method: 'POST',
             body: JSON.stringify(payload),
         }).then((r) => r.data),
+
+    mfaSetup: () =>
+        request<{ data: MfaSetupResponse }>('/auth/mfa/setup', {
+            method: 'POST',
+        }).then((r) => r.data),
+
+    mfaEnable: (payload: MfaEnablePayload) =>
+        request<{ data: MfaEnableResponse }>('/auth/mfa/enable', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        }).then((r) => r.data),
+
+    mfaDisable: (payload: MfaDisablePayload) =>
+        request<{ message: string }>('/auth/mfa/disable', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        }),
+
+    mfaStatus: () => request<{ data: MfaStatusResponse }>('/auth/mfa/status').then((r) => r.data),
 
     signOut: () => request<void>('/auth/sign-out', { method: 'POST' }),
 
@@ -88,7 +141,7 @@ export const authApi = {
 
     verifyResetOtp: (payload: VerifyResetOtpPayload) =>
         request<{ message: string; data: { token: string; expiresAt: string } }>('/auth/verify-reset-otp', {
-            method: 'POST', 
+            method: 'POST',
             body: JSON.stringify(payload),
         }),
 

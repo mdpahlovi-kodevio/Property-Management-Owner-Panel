@@ -1,16 +1,18 @@
 import { useAppForm } from '@/components/form/form-context'
 import { Button } from '@/components/ui/button'
+import { ErrorComp } from '@/components/ui/error-comp'
 import { PageHeader } from '@/components/ui/page-header'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { authApi, SessionKey } from '@/lib/api'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { Globe, Phone, Shield, User } from 'lucide-react'
+import { CheckCircle2, Copy, Globe, Phone, Shield, User, XCircle } from 'lucide-react'
+import QRCode from 'qrcode'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import * as z from 'zod'
+import { z } from 'zod'
 
 export const Route = createFileRoute('/__main/settings')({
     component: RouteComponent,
@@ -331,7 +333,6 @@ function GeneralTab() {
 
 function SecurityTab() {
     const { t } = useTranslation()
-    const [twoFactor, setTwoFactor] = useState(false)
 
     const changePassword = useMutation({
         mutationFn: authApi.changePassword,
@@ -355,13 +356,7 @@ function SecurityTab() {
     })
 
     return (
-        <form
-            onSubmit={(e) => {
-                e.preventDefault()
-                form.handleSubmit()
-            }}
-            className="flex flex-col gap-5"
-        >
+        <div className="flex flex-col gap-5">
             <div>
                 <h3 className="text-base font-semibold text-foreground">{t('settings.security.title')}</h3>
                 <p className="text-sm text-muted-foreground mt-0.5">{t('settings.security.description')}</p>
@@ -370,7 +365,13 @@ function SecurityTab() {
             <Separator />
 
             {/* Change Password */}
-            <div className="flex flex-col gap-4">
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault()
+                    form.handleSubmit()
+                }}
+                className="flex flex-col gap-4"
+            >
                 <div className="grid grid-cols-1 gap-4 max-w-md">
                     <form.AppField name="currentPassword">
                         {(field) => (
@@ -402,27 +403,412 @@ function SecurityTab() {
                         )}
                     </form.AppField>
                 </div>
-            </div>
+
+                <div>
+                    <form.AppForm>
+                        <form.FormSubmit label={t('settings.security.save')} />
+                    </form.AppForm>
+                </div>
+            </form>
 
             <Separator />
 
             {/* Two-Factor Authentication */}
+            <MfaSection />
+        </div>
+    )
+}
+
+// ─── MFA Section ────────────────────────────────────────────────────────────
+
+const verifySchema = z.object({
+    code: z
+        .string()
+        .regex(/^\d{6}$/, 'Enter a valid 6-digit code')
+        .length(6, 'Enter a valid 6-digit code'),
+})
+
+const confirmCodeSchema = z.object({
+    password: z.string().min(1, 'Enter your current password'),
+    code: z
+        .string()
+        .regex(/^\d{6}$/, 'Enter a valid 6-digit code')
+        .length(6, 'Enter a valid 6-digit code'),
+})
+
+type MfaStep = 'idle' | 'verify' | 'backup-codes' | 'disable-confirm'
+
+function MfaSection() {
+    const { t } = useTranslation()
+    const queryClient = useQueryClient()
+
+    const [step, setStep] = useState<MfaStep>('idle')
+    const [secret, setSecret] = useState('')
+    const [uri, setUri] = useState('')
+    const [qrDataUrl, setQrDataUrl] = useState('')
+    const [backupCodes, setBackupCodes] = useState<string[]>([])
+
+    // Fetch MFA status on mount
+    const {
+        data: status,
+        isLoading,
+        error,
+        refetch,
+    } = useQuery({
+        queryKey: ['mfa-status'],
+        queryFn: () => authApi.mfaStatus(),
+    })
+
+    const isEnabled = status?.enabled ?? false
+
+    // ── Forms (declared BEFORE the mutations that close over them) ────────
+    const verifyForm = useAppForm({
+        defaultValues: { code: '' },
+        validators: { onChange: verifySchema },
+        onSubmit: async ({ value }) => {
+            await enableMutation.mutateAsync(value.code)
+        },
+    })
+
+    const disableForm = useAppForm({
+        defaultValues: { password: '', code: '' },
+        validators: { onChange: confirmCodeSchema },
+        onSubmit: async ({ value }) => {
+            await disableMutation.mutateAsync(value)
+        },
+    })
+
+    // ── Mutations ───────────────────────────────────────────────────────────
+    const setupMutation = useMutation({
+        mutationFn: authApi.mfaSetup,
+        onSuccess: (data) => {
+            setSecret(data.secret)
+            setUri(data.uri)
+            setStep('verify')
+        },
+        onError: (error) => toast.error(error.message),
+    })
+
+    const enableMutation = useMutation({
+        mutationFn: (code: string) => authApi.mfaEnable({ code }),
+        onSuccess: (data) => {
+            setBackupCodes(data.backupCodes)
+            setStep('backup-codes')
+            queryClient.invalidateQueries({ queryKey: ['mfa-status'] })
+        },
+        onError: (error) => toast.error(error.message),
+    })
+
+    const disableMutation = useMutation({
+        mutationFn: (payload: { password: string; code: string }) => authApi.mfaDisable(payload),
+        onSuccess: (data) => {
+            toast.success(data.message)
+            setStep('idle')
+            disableForm.reset()
+            queryClient.invalidateQueries({ queryKey: ['mfa-status'] })
+        },
+        onError: (error) => toast.error(error.message),
+    })
+
+    // ── Local QR generation (replaces third-party api.qrserver.com) ───────
+    useEffect(() => {
+        if (!uri) {
+            setQrDataUrl('')
+            return
+        }
+        let cancelled = false
+        QRCode.toDataURL(uri, { width: 200, margin: 1 })
+            .then((url) => {
+                if (!cancelled) setQrDataUrl(url)
+            })
+            .catch(() => {
+                if (!cancelled) setQrDataUrl('')
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [uri])
+
+    // ── Error fallback for status query ────────────────────────────────────
+    if (error) {
+        // ErrorComp is a TanStack Router error boundary component; cast to satisfy its prop contract.
+        return <ErrorComp error={error} reset={refetch} />
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Shield className="h-4 w-4" />
+                {t('settings.security.twoFactor.loading', 'Loading MFA status...')}
+            </div>
+        )
+    }
+
+    // ── Backup Codes screen (shown after initial setup) ──
+    if (step === 'backup-codes') {
+        return (
+            <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                    <p className="text-sm font-medium text-foreground">
+                        {t('settings.security.twoFactor.enabled', 'Two-factor authentication is enabled')}
+                    </p>
+                </div>
+
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                    <p className="text-sm font-medium text-amber-800 mb-2">
+                        {t('settings.security.twoFactor.backupCodesTitle', 'Save your backup codes')}
+                    </p>
+                    <p className="text-xs text-amber-700 mb-3">
+                        {t(
+                            'settings.security.twoFactor.backupCodesDescription',
+                            'Each code can only be used once. Store them in a safe place — you will need them if you lose access to your authenticator app.',
+                        )}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                        {backupCodes.map((code, i) => (
+                            <div key={i} className="relative group">
+                                <code className="block bg-white rounded px-2 py-1 text-sm font-mono text-center border">{code}</code>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(code)
+                                        toast.success(t('settings.security.twoFactor.codeCopied', 'Code copied'))
+                                    }}
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-amber-100"
+                                    aria-label="Copy code"
+                                >
+                                    <Copy className="h-3 w-3 text-amber-700" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <Button
+                    variant="outline"
+                    onClick={() => {
+                        setStep('idle')
+                        setBackupCodes([])
+                        setSecret('')
+                        setUri('')
+                    }}
+                >
+                    {t('settings.security.twoFactor.done', 'Done')}
+                </Button>
+            </div>
+        )
+    }
+
+    // ── Verify Code screen (initial setup) ───────────────────────────────
+    if (step === 'verify') {
+        return (
+            <div className="flex flex-col gap-4">
+                <div>
+                    <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        {t('settings.security.twoFactor.setupTitle', 'Set up authenticator app')}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                        {t(
+                            'settings.security.twoFactor.setupDescription',
+                            'Scan the QR code below with your authenticator app (e.g. Google Authenticator, Authy), then enter the 6-digit code to verify.',
+                        )}
+                    </p>
+                </div>
+
+                <div className="flex justify-center">
+                    <div className="rounded-lg border bg-white p-4">
+                        {qrDataUrl ? (
+                            <img src={qrDataUrl} alt="QR Code" className="h-48 w-48" />
+                        ) : (
+                            <div className="h-48 w-48 flex items-center justify-center text-xs text-muted-foreground">
+                                {t('settings.security.twoFactor.qrError', 'Failed to render QR code. Use the key below.')}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="text-center">
+                    <p className="text-xs text-muted-foreground mb-1">
+                        {t('settings.security.twoFactor.orEnterCode', 'Or enter this key manually:')}
+                    </p>
+                    <code className="rounded bg-muted px-3 py-1 text-sm font-mono select-all">
+                        {secret.match(/.{1,4}/g)?.join(' ') ?? secret}
+                    </code>
+                </div>
+
+                <form
+                    className="flex w-full max-w-md mx-auto flex-col items-center gap-4"
+                    onSubmit={(e) => {
+                        e.preventDefault()
+                        verifyForm.handleSubmit()
+                    }}
+                >
+                    <verifyForm.AppField name="code">
+                        {(field) => (
+                            <field.FormInputOtp
+                                label={t('settings.security.twoFactor.code', 'Verification Code')}
+                                disabled={enableMutation.isPending}
+                            />
+                        )}
+                    </verifyForm.AppField>
+
+                    <div className="flex gap-2 justify-center">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                                setStep('idle')
+                                setSecret('')
+                                setUri('')
+                                setQrDataUrl('')
+                                verifyForm.reset()
+                            }}
+                        >
+                            {t('settings.security.twoFactor.cancel', 'Cancel')}
+                        </Button>
+                        <verifyForm.AppForm>
+                            <verifyForm.FormSubmit
+                                label={
+                                    enableMutation.isPending
+                                        ? t('settings.security.twoFactor.enabling', 'Enabling...')
+                                        : t('settings.security.twoFactor.enable', 'Enable')
+                                }
+                            />
+                        </verifyForm.AppForm>
+                    </div>
+                </form>
+            </div>
+        )
+    }
+
+    // ── Disable Confirm screen ───────────────────────────────────────────
+    if (step === 'disable-confirm') {
+        return (
+            <div className="flex flex-col gap-4 max-w-md">
+                <div>
+                    <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <XCircle className="h-4 w-4 text-red-500" />
+                        {t('settings.security.twoFactor.disableTitle', 'Disable Two-Factor Authentication')}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                        {t(
+                            'settings.security.twoFactor.disableDescription',
+                            'Enter your password and a verification code from your authenticator app to disable MFA.',
+                        )}
+                    </p>
+                </div>
+
+                <form
+                    className="flex flex-col gap-4"
+                    onSubmit={(e) => {
+                        e.preventDefault()
+                        disableForm.handleSubmit()
+                    }}
+                >
+                    <disableForm.AppField name="password">
+                        {(field) => (
+                            <field.FormInput
+                                type="password"
+                                autoComplete="current-password"
+                                label={t('settings.security.twoFactor.disablePassword', 'Current Password')}
+                                placeholder={t('settings.security.twoFactor.disablePasswordPlaceholder', 'Enter your password')}
+                            />
+                        )}
+                    </disableForm.AppField>
+
+                    <disableForm.AppField name="code">
+                        {(field) => (
+                            <field.FormInputOtp
+                                label={t('settings.security.twoFactor.code', 'Verification Code')}
+                                disabled={disableMutation.isPending}
+                            />
+                        )}
+                    </disableForm.AppField>
+
+                    <div className="flex gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                                setStep('idle')
+                                disableForm.reset()
+                            }}
+                        >
+                            {t('settings.security.twoFactor.cancel', 'Cancel')}
+                        </Button>
+                        <disableForm.AppForm>
+                            <disableForm.FormSubmit
+                                label={
+                                    disableMutation.isPending
+                                        ? t('settings.security.twoFactor.disabling', 'Disabling...')
+                                        : t('settings.security.twoFactor.disable', 'Disable')
+                                }
+                                destructive
+                            />
+                        </disableForm.AppForm>
+                    </div>
+                </form>
+            </div>
+        )
+    }
+
+    // ── Idle screen (default) ─────────────────────────────────────────────
+    if (isEnabled) {
+        return (
+            <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                            <Shield className="h-4 w-4 text-emerald-500" />
+                            {t('settings.security.twoFactor.label', 'Two-Factor Authentication')}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5 ml-6">
+                            {t('settings.security.twoFactor.enabledStatus', 'MFA is currently enabled.')}
+                        </p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 border border-emerald-200">
+                        <CheckCircle2 className="h-3 w-3" />
+                        {t('settings.security.twoFactor.enabled', 'Enabled')}
+                    </span>
+                </div>
+
+                <Button
+                    variant="outline"
+                    className="w-fit text-red-600 border-red-200 hover:bg-red-50"
+                    onClick={() => setStep('disable-confirm')}
+                >
+                    {t('settings.security.twoFactor.disable', 'Disable')}
+                </Button>
+            </div>
+        )
+    }
+
+    return (
+        <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
                 <div>
                     <p className="text-sm font-medium text-foreground flex items-center gap-2">
                         <Shield className="h-4 w-4" />
-                        {t('settings.security.twoFactor.label')}
+                        {t('settings.security.twoFactor.label', 'Two-Factor Authentication')}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 ml-6">{t('settings.security.twoFactor.description')}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 ml-6">
+                        {t('settings.security.twoFactor.description', 'Add an extra layer of security to your account.')}
+                    </p>
                 </div>
-                <Switch checked={twoFactor} onCheckedChange={setTwoFactor} />
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+                    <XCircle className="h-3 w-3" />
+                    {t('settings.security.twoFactor.disabled', 'Disabled')}
+                </span>
             </div>
-            <div>
-                <form.AppForm>
-                    <form.FormSubmit label={t('settings.security.save')} />
-                </form.AppForm>
-            </div>
-        </form>
+
+            <Button className="w-fit" onClick={() => setupMutation.mutate()} disabled={setupMutation.isPending}>
+                {setupMutation.isPending
+                    ? t('settings.security.twoFactor.settingUp', 'Setting up...')
+                    : t('settings.security.twoFactor.setup', 'Set up')}
+            </Button>
+        </div>
     )
 }
 
