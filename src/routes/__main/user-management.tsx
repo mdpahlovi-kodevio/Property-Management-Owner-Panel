@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
 import { useSearchParams } from '@/hooks/use-search-params'
 import type { CreateGuestPayload, Guest, UpdateGuestPayload } from '@/lib/api'
 import { guestApi, resolveImage } from '@/lib/api'
@@ -25,6 +26,7 @@ const searchSchema = z.object({
     limit: z.number().default(10),
     search: z.string().optional(),
     websiteId: z.string().optional(),
+    status: z.enum(['active', 'banned']).optional(),
 })
 
 export const Route = createFileRoute('/__main/user-management')({
@@ -118,8 +120,8 @@ function RouteComponent() {
             await createMutation.mutateAsync({
                 name: values.name,
                 email: values.email,
-                image: values.image,
-                phone: values.phone,
+                image: values.image || undefined,
+                phone: values.phone || undefined,
                 websiteId: values.websiteId,
                 password: values.password ?? '12345678',
             })
@@ -285,6 +287,7 @@ function RouteComponent() {
 
                     <GuestForm
                         key={editingGuest?.id ?? 'add'}
+                        isEditMode={isEditMode}
                         defaultValues={
                             editingGuest
                                 ? {
@@ -299,7 +302,6 @@ function RouteComponent() {
                         }
                         onSubmit={handleSave}
                         onCancel={closeDialog}
-                        isEditMode={isEditMode}
                     />
                 </DialogContent>
             </Dialog>
@@ -350,10 +352,10 @@ function GuestForm({
             }}
             className="space-y-4"
         >
-            <form.AppField name="image">{(field) => <field.FormAvatar folder="guest" />}</form.AppField>
+            <form.AppField name="image">{(field) => <field.FormAvatar folder="owner-guest" />}</form.AppField>
 
             <form.AppField name="name">
-                {(field) => <field.FormInput label={t('user-management.fullName', 'Full Name')} placeholder="e.g. Jane Cooper" />}
+                {(field) => <field.FormInput label={t('user-management.fullName', 'Full Name')} placeholder="e.g. Jane Cooper" disabled={isEditMode} />}
             </form.AppField>
 
             <form.AppField name="email">
@@ -372,23 +374,24 @@ function GuestForm({
             </form.AppField>
 
             {!isEditMode && (
-                <form.AppField name="password">
-                    {(field) => (
-                        <field.FormInput type="password" label={t('auth.password', 'Password')} placeholder="e.g. at least 8 characters" />
-                    )}
-                </form.AppField>
-            )}
+                <>
+                    <form.AppField name="websiteId">
+                        {(field) => (
+                            <field.FormSelect
+                                label={t('user-management.website', 'Website')}
+                                placeholder={t('user-management.selectWebsite', 'Select a website')}
+                                options={websiteOptions}
+                            />
+                        )}
+                    </form.AppField>
 
-            <form.AppField name="websiteId">
-                {(field) => (
-                    <field.FormSelect
-                        label={t('user-management.website', 'Website')}
-                        placeholder={t('user-management.selectWebsite', 'Select a website')}
-                        options={websiteOptions}
-                        disabled={isEditMode}
-                    />
-                )}
-            </form.AppField>
+                    <form.AppField name="password">
+                        {(field) => (
+                            <field.FormInput type="password" label={t('auth.password', 'Password')} placeholder="e.g. at least 8 characters" />
+                        )}
+                    </form.AppField>
+                </>
+            )}
 
             {isEditMode && (
                 <form.AppField name="status">

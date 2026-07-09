@@ -2,7 +2,6 @@ import type { Paginated } from './base'
 import { request, toQuery } from './base'
 
 // ── Shapes returned by the backend ────────────────────────────────────────
-
 export interface GuestUser {
     id: string
     name: string
