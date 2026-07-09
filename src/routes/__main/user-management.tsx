@@ -352,10 +352,16 @@ function GuestForm({
             }}
             className="space-y-4"
         >
-            <form.AppField name="image">{(field) => <field.FormAvatar folder="owner-guest" />}</form.AppField>
+            <form.AppField name="image">{(field) => <field.FormAvatar folder="guest" />}</form.AppField>
 
             <form.AppField name="name">
-                {(field) => <field.FormInput label={t('user-management.fullName', 'Full Name')} placeholder="e.g. Jane Cooper" disabled={isEditMode} />}
+                {(field) => (
+                    <field.FormInput
+                        label={t('user-management.fullName', 'Full Name')}
+                        placeholder="e.g. Jane Cooper"
+                        disabled={isEditMode}
+                    />
+                )}
             </form.AppField>
 
             <form.AppField name="email">
@@ -387,7 +393,11 @@ function GuestForm({
 
                     <form.AppField name="password">
                         {(field) => (
-                            <field.FormInput type="password" label={t('auth.password', 'Password')} placeholder="e.g. at least 8 characters" />
+                            <field.FormInput
+                                type="password"
+                                label={t('auth.password', 'Password')}
+                                placeholder="e.g. at least 8 characters"
+                            />
                         )}
                     </form.AppField>
                 </>
