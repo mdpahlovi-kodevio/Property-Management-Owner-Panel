@@ -184,13 +184,13 @@ function RouteComponent() {
     // ── Room-type list query ──
     const { data, isLoading, refetch } = useQuery({
         queryKey: ['room-types', propertyId, query],
-        queryFn: () => roomTypeApi.list(propertyId as string, query),
+        queryFn: () => roomTypeApi.list({ ...query, propertyId }),
         enabled: !!propertyId,
     })
 
     // ── Mutations ──
     const createMutation = useMutation({
-        mutationFn: (payload: CreateRoomTypePayload) => roomTypeApi.create(propertyId as string, payload),
+        mutationFn: (payload: CreateRoomTypePayload) => roomTypeApi.create(payload),
         onSuccess: () => {
             refetch()
             toast.success('Room type created successfully!')
@@ -200,8 +200,7 @@ function RouteComponent() {
     })
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, payload }: { id: string; payload: UpdateRoomTypePayload }) =>
-            roomTypeApi.update(propertyId as string, id, payload),
+        mutationFn: ({ id, payload }: { id: string; payload: UpdateRoomTypePayload }) => roomTypeApi.update(id, payload),
         onSuccess: (response) => {
             queryClient.invalidateQueries({ queryKey: ['room-type', propertyId, response?.data?.internalCode] })
             toast.success('Room type updated successfully!')
@@ -230,8 +229,14 @@ function RouteComponent() {
     const formDefaults: RoomTypeFormValues = editingRoom ? valuesFromRoomType(editingRoom) : ROOM_FORM_DEFAULTS
 
     const handleSave = async (values: RoomTypeFormValues) => {
+        if (!propertyId) {
+            navigate({ to: '/property' })
+            return
+        }
+
         // Strip empty optional strings so the backend treats them as omitted.
         const payload: CreateRoomTypePayload = {
+            propertyId,
             ...values,
             viewType: values.viewType.trim() || undefined,
         }

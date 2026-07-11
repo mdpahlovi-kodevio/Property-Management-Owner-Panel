@@ -76,6 +76,7 @@ export interface Property {
     longitude: number | null
     checkInTime: string
     checkOutTime: string
+    currency: string | null
     createdAt: string
     updatedAt: string
     deletedAt: string | null
@@ -87,7 +88,7 @@ export interface Property {
 }
 
 /** Slimmer property returned by list (with counts). */
-export interface PropertyListItem extends Omit<Property, 'policy' | 'amenities' | 'images' | 'addons' | 'roomTypes'> {}
+export interface PropertyListItem extends Omit<Property, 'policy' | 'amenities' | 'images' | 'roomTypes'> {}
 
 // ── Query / payload types ───────────────────────────────
 export interface ListPropertyParams {
@@ -154,6 +155,8 @@ export type UpdatePropertyPayload = Partial<CreatePropertyPayload>
 export const propertyApi = {
     list: (params?: Record<string, string | number | boolean | undefined>) =>
         request<Paginated<PropertyListItem>>(`/owner/property${toQuery(params ?? {})}`),
+
+    listPageLess: () => request<{ data: PropertyListItem[] }>(`/owner/property/page-less`),
 
     getBySlug: (slug: string) => request<{ data: Property }>(`/owner/property/${slug}`),
 

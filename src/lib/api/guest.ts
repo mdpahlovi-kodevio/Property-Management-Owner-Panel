@@ -48,6 +48,7 @@ export interface UpdateGuestPayload {
 export const guestApi = {
     list: (params?: Record<string, string | number | boolean | undefined>) =>
         request<Paginated<Guest>>(`/owner/guest${toQuery(params ?? {})}`),
+    listPageLess: () => request<{ data: Guest[] }>(`/owner/guest/page-less`),
     create: (payload: CreateGuestPayload) =>
         request<{ data: Guest }>(`/owner/guest`, {
             method: 'POST',

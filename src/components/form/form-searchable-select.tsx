@@ -1,16 +1,16 @@
+import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
-import * as z from 'zod'
 import { cn } from '@/lib/utils'
 import { Check, ChevronDown, Search, UserPlus, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { useFieldContext } from './form-context'
+import * as z from 'zod'
+import { useAppForm, useFieldContext } from './form-context'
 
 type Option = { label: string; value: string }
 
 const newGuestSchema = z.object({
-    name: z.string().min(1, 'Name is required.'),
+    name: z.string().min(1, 'Enter guest full name.'),
     email: z.email('Enter a valid email address.').toLowerCase(),
-    phone: z.string().min(1, 'Phone is required.'),
 })
 
 type FormSearchableSelectProps = {
@@ -22,7 +22,6 @@ type FormSearchableSelectProps = {
     /** Allow adding a new guest inline */
     allowAddNew?: boolean
     addNewLabel?: string
-    onAddNew?: (guest: { name: string; email: string; phone: string }) => void
 }
 
 export function FormSearchableSelect({
@@ -33,7 +32,6 @@ export function FormSearchableSelect({
     disabled,
     allowAddNew = false,
     addNewLabel = 'Add new guest',
-    onAddNew,
 }: FormSearchableSelectProps) {
     const field = useFieldContext<string>()
     const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid
@@ -41,17 +39,42 @@ export function FormSearchableSelect({
     const [open, setOpen] = useState(false)
     const [search, setSearch] = useState('')
     const [options, setOptions] = useState<Option[]>(initialOptions)
-
-    // Add-new-guest form state
     const [showAddNew, setShowAddNew] = useState(false)
-    const [newName, setNewName] = useState('')
-    const [newEmail, setNewEmail] = useState('')
-    const [newPhone, setNewPhone] = useState('')
-    const [addError, setAddError] = useState('')
 
     const containerRef = useRef<HTMLDivElement>(null)
     const searchRef = useRef<HTMLInputElement>(null)
-    const nameRef = useRef<HTMLInputElement>(null)
+
+    // Sub-form for adding a new guest (mirrors the guest form pattern in user-management.tsx)
+    // Lives outside a <form> wrapper because we're already nested inside the parent's form.
+    const newGuestForm = useAppForm({
+        defaultValues: { name: '', email: '' },
+        validators: { onChange: newGuestSchema },
+        onSubmit: async ({ value }) => {
+            const { name, email } = value
+
+            if (options.some((o) => o.value === email)) {
+                newGuestForm.setFieldMeta('email', (prev) => ({
+                    ...prev,
+                    isValid: false,
+                    errors: ['This guest already exists.'],
+                }))
+                return
+            }
+
+            setOptions((prev) => [...prev, { value: email, label: `${name} (${email})` }])
+            field.handleChange(email)
+            field.handleBlur()
+            setOpen(false)
+            setSearch('')
+            setShowAddNew(false)
+            newGuestForm.reset()
+        },
+    })
+
+    const closeAddNewPanel = () => {
+        setShowAddNew(false)
+        newGuestForm.reset()
+    }
 
     const selectedOption = options.find((o) => o.value === field.state.value)
 
@@ -64,15 +87,12 @@ export function FormSearchableSelect({
                 setOpen(false)
                 setSearch('')
                 setShowAddNew(false)
-                setNewName('')
-                setNewEmail('')
-                setNewPhone('')
-                setAddError('')
+                newGuestForm.reset()
             }
         }
         document.addEventListener('mousedown', handler)
         return () => document.removeEventListener('mousedown', handler)
-    }, [])
+    }, [newGuestForm])
 
     // Focus search when opened
     useEffect(() => {
@@ -80,13 +100,6 @@ export function FormSearchableSelect({
             setTimeout(() => searchRef.current?.focus(), 10)
         }
     }, [open, showAddNew])
-
-    // Focus name field when add-new panel opens
-    useEffect(() => {
-        if (showAddNew) {
-            setTimeout(() => nameRef.current?.focus(), 10)
-        }
-    }, [showAddNew])
 
     const handleSelect = (value: string) => {
         field.handleChange(value)
@@ -101,34 +114,6 @@ export function FormSearchableSelect({
         field.handleChange('')
         field.handleBlur()
         setSearch('')
-    }
-
-    const handleAddNewGuest = () => {
-        const result = newGuestSchema.safeParse({ name: newName, email: newEmail, phone: newPhone })
-        if (!result.success) {
-            setAddError(result.error.issues[0].message)
-            return
-        }
-
-        const { name, email, phone } = result.data
-        if (options.some((o) => o.value === email)) {
-            setAddError('This guest already exists.')
-            return
-        }
-
-        if (onAddNew) {
-            onAddNew({ name, email, phone })
-        }
-
-        setOptions((prev) => [...prev, { value: email, label: `${name} (${email})` }])
-        field.handleChange(email)
-        field.handleBlur()
-        setOpen(false)
-        setSearch('')
-        setShowAddNew(false)
-        setNewName('')
-        setNewEmail('')
-        setNewPhone('')
     }
 
     return (
@@ -256,117 +241,44 @@ export function FormSearchableSelect({
                                     </span>
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            setShowAddNew(false)
-                                            setNewName('')
-                                            setNewEmail('')
-                                            setNewPhone('')
-                                            setAddError('')
-                                        }}
+                                        onClick={closeAddNewPanel}
                                         className="text-muted-foreground hover:text-foreground rounded-md p-0.5 transition-colors"
                                     >
                                         <X className="h-4 w-4" />
                                     </button>
                                 </div>
 
-                                {/* Name field */}
-                                <div className="space-y-1">
-                                    <label className="text-xs font-medium text-muted-foreground">Full Name</label>
-                                    <input
-                                        ref={nameRef}
-                                        type="text"
-                                        value={newName}
-                                        onChange={(e) => {
-                                            setNewName(e.target.value)
-                                            setAddError('')
-                                        }}
-                                        placeholder="e.g. John Smith"
-                                        className={cn(
-                                            'flex h-8 w-full rounded-md border border-input bg-background px-3 text-sm outline-none',
-                                            'transition-shadow placeholder:text-muted-foreground',
-                                        )}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault()
-                                                handleAddNewGuest()
-                                            }
-                                        }}
-                                    />
-                                </div>
+                                <newGuestForm.AppField name="name">
+                                    {(subField) => <subField.FormInput size="sm" label="Full Name" placeholder="e.g. John Smith" />}
+                                </newGuestForm.AppField>
 
-                                {/* Email field */}
-                                <div className="space-y-1">
-                                    <label className="text-xs font-medium text-muted-foreground">Email Address</label>
-                                    <input
-                                        type="email"
-                                        value={newEmail}
-                                        onChange={(e) => {
-                                            setNewEmail(e.target.value)
-                                            setAddError('')
-                                        }}
-                                        placeholder="e.g. john@example.com"
-                                        className={cn(
-                                            'flex h-8 w-full rounded-md border border-input bg-background px-3 text-sm outline-none',
-                                            'transition-shadow placeholder:text-muted-foreground',
-                                        )}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault()
-                                                handleAddNewGuest()
-                                            }
-                                        }}
-                                    />
-                                </div>
+                                <newGuestForm.AppField name="email">
+                                    {(subField) => (
+                                        <subField.FormInput
+                                            size="sm"
+                                            type="email"
+                                            label="Email Address"
+                                            placeholder="e.g. john@example.com"
+                                        />
+                                    )}
+                                </newGuestForm.AppField>
 
-                                {/* Phone field */}
-                                <div className="space-y-1">
-                                    <label className="text-xs font-medium text-muted-foreground">Phone Number</label>
-                                    <input
-                                        type="tel"
-                                        value={newPhone}
-                                        onChange={(e) => {
-                                            setNewPhone(e.target.value)
-                                            setAddError('')
-                                        }}
-                                        placeholder="e.g. +1 416 XXX XXXX"
-                                        className={cn(
-                                            'flex h-8 w-full rounded-md border border-input bg-background px-3 text-sm outline-none',
-                                            'transition-shadow placeholder:text-muted-foreground',
-                                        )}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault()
-                                                handleAddNewGuest()
-                                            }
-                                        }}
-                                    />
-                                </div>
-
-                                {/* Error message */}
-                                {addError && <p className="text-xs text-destructive font-medium">{addError}</p>}
-
-                                {/* Action buttons */}
                                 <div className="flex gap-2 pt-1">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setShowAddNew(false)
-                                            setNewName('')
-                                            setNewEmail('')
-                                            setNewPhone('')
-                                            setAddError('')
-                                        }}
-                                        className="flex-1 h-8 rounded-md border border-input text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                                    >
+                                    <Button size="sm" type="button" variant="outline" onClick={closeAddNewPanel}>
                                         Cancel
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleAddNewGuest}
-                                        className="flex-1 h-8 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-                                    >
-                                        Add Guest
-                                    </button>
+                                    </Button>
+                                    <newGuestForm.Subscribe selector={(state) => state.canSubmit}>
+                                        {(canSubmit) => (
+                                            <Button
+                                                size="sm"
+                                                type="button"
+                                                onClick={() => newGuestForm.handleSubmit()}
+                                                disabled={!canSubmit}
+                                            >
+                                                Add Guest
+                                            </Button>
+                                        )}
+                                    </newGuestForm.Subscribe>
                                 </div>
                             </div>
                         )}

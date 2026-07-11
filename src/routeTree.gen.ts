@@ -30,6 +30,7 @@ import { Route as _authResetPasswordRouteImport } from './routes/__auth/reset-pa
 import { Route as _authForgotPasswordRouteImport } from './routes/__auth/forgot-password'
 import { Route as _mainSupportIndexRouteImport } from './routes/__main/support.index'
 import { Route as _mainSupportIdRouteImport } from './routes/__main/support.$id'
+import { Route as _mainReservationsIdRouteImport } from './routes/__main/reservations_.$id'
 import { Route as _mainReportsSourceRouteImport } from './routes/__main/reports_.$source'
 import { Route as _mainPropertyPropertySlugRouteImport } from './routes/__main/property_.$propertySlug'
 import { Route as _mainPropertyPropertySlugRoomRoomSlugRouteImport } from './routes/__main/property_.$propertySlug_.room.$roomSlug'
@@ -137,6 +138,11 @@ const _mainSupportIdRoute = _mainSupportIdRouteImport.update({
   path: '/support/$id',
   getParentRoute: () => _mainRouteRoute,
 } as any)
+const _mainReservationsIdRoute = _mainReservationsIdRouteImport.update({
+  id: '/reservations_/$id',
+  path: '/reservations/$id',
+  getParentRoute: () => _mainRouteRoute,
+} as any)
 const _mainReportsSourceRoute = _mainReportsSourceRouteImport.update({
   id: '/reports_/$source',
   path: '/reports/$source',
@@ -175,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/user-management': typeof _mainUserManagementRoute
   '/property/$propertySlug': typeof _mainPropertyPropertySlugRoute
   '/reports/$source': typeof _mainReportsSourceRoute
+  '/reservations/$id': typeof _mainReservationsIdRoute
   '/support/$id': typeof _mainSupportIdRoute
   '/support/': typeof _mainSupportIndexRoute
   '/property/$propertySlug/room/$roomSlug': typeof _mainPropertyPropertySlugRoomRoomSlugRoute
@@ -199,6 +206,7 @@ export interface FileRoutesByTo {
   '/user-management': typeof _mainUserManagementRoute
   '/property/$propertySlug': typeof _mainPropertyPropertySlugRoute
   '/reports/$source': typeof _mainReportsSourceRoute
+  '/reservations/$id': typeof _mainReservationsIdRoute
   '/support/$id': typeof _mainSupportIdRoute
   '/support': typeof _mainSupportIndexRoute
   '/property/$propertySlug/room/$roomSlug': typeof _mainPropertyPropertySlugRoomRoomSlugRoute
@@ -226,6 +234,7 @@ export interface FileRoutesById {
   '/__main/': typeof _mainIndexRoute
   '/__main/property_/$propertySlug': typeof _mainPropertyPropertySlugRoute
   '/__main/reports_/$source': typeof _mainReportsSourceRoute
+  '/__main/reservations_/$id': typeof _mainReservationsIdRoute
   '/__main/support/$id': typeof _mainSupportIdRoute
   '/__main/support/': typeof _mainSupportIndexRoute
   '/__main/property_/$propertySlug_/room/$roomSlug': typeof _mainPropertyPropertySlugRoomRoomSlugRoute
@@ -252,6 +261,7 @@ export interface FileRouteTypes {
     | '/user-management'
     | '/property/$propertySlug'
     | '/reports/$source'
+    | '/reservations/$id'
     | '/support/$id'
     | '/support/'
     | '/property/$propertySlug/room/$roomSlug'
@@ -276,6 +286,7 @@ export interface FileRouteTypes {
     | '/user-management'
     | '/property/$propertySlug'
     | '/reports/$source'
+    | '/reservations/$id'
     | '/support/$id'
     | '/support'
     | '/property/$propertySlug/room/$roomSlug'
@@ -302,6 +313,7 @@ export interface FileRouteTypes {
     | '/__main/'
     | '/__main/property_/$propertySlug'
     | '/__main/reports_/$source'
+    | '/__main/reservations_/$id'
     | '/__main/support/$id'
     | '/__main/support/'
     | '/__main/property_/$propertySlug_/room/$roomSlug'
@@ -461,6 +473,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof _mainSupportIdRouteImport
       parentRoute: typeof _mainRouteRoute
     }
+    '/__main/reservations_/$id': {
+      id: '/__main/reservations_/$id'
+      path: '/reservations/$id'
+      fullPath: '/reservations/$id'
+      preLoaderRoute: typeof _mainReservationsIdRouteImport
+      parentRoute: typeof _mainRouteRoute
+    }
     '/__main/reports_/$source': {
       id: '/__main/reports_/$source'
       path: '/reports/$source'
@@ -519,6 +538,7 @@ interface _mainRouteRouteChildren {
   _mainIndexRoute: typeof _mainIndexRoute
   _mainPropertyPropertySlugRoute: typeof _mainPropertyPropertySlugRoute
   _mainReportsSourceRoute: typeof _mainReportsSourceRoute
+  _mainReservationsIdRoute: typeof _mainReservationsIdRoute
   _mainSupportIdRoute: typeof _mainSupportIdRoute
   _mainSupportIndexRoute: typeof _mainSupportIndexRoute
   _mainPropertyPropertySlugRoomRoomSlugRoute: typeof _mainPropertyPropertySlugRoomRoomSlugRoute
@@ -540,6 +560,7 @@ const _mainRouteRouteChildren: _mainRouteRouteChildren = {
   _mainIndexRoute: _mainIndexRoute,
   _mainPropertyPropertySlugRoute: _mainPropertyPropertySlugRoute,
   _mainReportsSourceRoute: _mainReportsSourceRoute,
+  _mainReservationsIdRoute: _mainReservationsIdRoute,
   _mainSupportIdRoute: _mainSupportIdRoute,
   _mainSupportIndexRoute: _mainSupportIndexRoute,
   _mainPropertyPropertySlugRoomRoomSlugRoute:

@@ -49,7 +49,39 @@ export interface ListPaymentParams {
     search?: string
 }
 
+export interface CreatePaymentPayload {
+    bookingId: string
+    amount: string
+    method: PaymentMethod
+    status?: PaymentStatus
+    provider?: string
+    providerRef?: string
+    note?: string
+    settledAt?: string
+}
+
+export interface UpdatePaymentPayload {
+    bookingId: string
+    status?: PaymentStatus
+    provider?: string
+    providerRef?: string
+    note?: string
+    reason?: string
+}
+
 export const paymentApi = {
     list: (params?: ListPaymentParams) =>
         request<Paginated<Payment>>(`/owner/payment${toQuery((params ?? {}) as Record<string, string | number | boolean | undefined>)}`),
+
+    create: (payload: CreatePaymentPayload) =>
+        request<{ data: Payment }>(`/owner/payment`, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        }),
+
+    update: (paymentId: string, payload: UpdatePaymentPayload) =>
+        request<{ data: Payment }>(`/owner/payment/${paymentId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload),
+        }),
 }

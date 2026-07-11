@@ -67,6 +67,7 @@ export interface ListRoomTypeParams {
     page?: number
     limit?: number
     search?: string
+    propertyId?: string
     bathroomType?: BathroomType
     status?: RoomTypeStatus
 }
@@ -88,6 +89,7 @@ export interface RoomTypeUnitPayload {
 }
 
 export interface CreateRoomTypePayload {
+    propertyId: string
     name: string
     internalCode: string
     description?: string
@@ -118,21 +120,23 @@ export type UpdateRoomTypePayload = Partial<CreateRoomTypePayload>
 
 // ── API ─────────────────────────────────────────────────
 export const roomTypeApi = {
-    list: (propertyId: string, params?: ListRoomTypeParams) =>
+    list: (params?: ListRoomTypeParams) =>
         request<Paginated<RoomTypeListItem>>(
-            `/owner/property/${propertyId}/room-type${toQuery((params ?? {}) as Record<string, string | number | boolean | undefined>)}`,
+            `/owner/room-type${toQuery((params ?? {}) as Record<string, string | number | boolean | undefined>)}`,
         ),
 
-    getBySlug: (propertyId: string, slug: string) => request<{ data: RoomType }>(`/owner/property/${propertyId}/room-type/${slug}`),
+    listPageLess: () => request<{ data: RoomType[] }>(`/owner/room-type/page-less`),
 
-    create: (propertyId: string, payload: CreateRoomTypePayload) =>
-        request<{ data: RoomType }>(`/owner/property/${propertyId}/room-type`, {
+    getBySlug: (propertyId: string, slug: string) => request<{ data: RoomType }>(`/owner/room-type/${propertyId}/${slug}`),
+
+    create: (payload: CreateRoomTypePayload) =>
+        request<{ data: RoomType }>(`/owner/room-type`, {
             method: 'POST',
             body: JSON.stringify(payload),
         }),
 
-    update: (propertyId: string, id: string, payload: UpdateRoomTypePayload) =>
-        request<{ data: RoomType }>(`/owner/property/${propertyId}/room-type/${id}`, {
+    update: (id: string, payload: UpdateRoomTypePayload) =>
+        request<{ data: RoomType }>(`/owner/room-type/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(payload),
         }),

@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input'
 import { useFieldContext } from './form-context'
 
 type FormInputProps = Omit<React.ComponentProps<'input'>, 'size'> & {
+    size?: 'sm' | 'default'
     label: string
 }
 

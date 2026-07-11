@@ -1,6 +1,7 @@
 export * from './amenity'
 export * from './auth'
 export * from './base'
+export * from './booking'
 export * from './employee'
 export * from './guest'
 export * from './payment'

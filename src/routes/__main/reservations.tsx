@@ -1,295 +1,340 @@
 import { useAppForm } from '@/components/form/form-context'
 import { Button } from '@/components/ui/button'
-import type { DataTableColumn } from '@/components/ui/data-table'
-import { DataTable } from '@/components/ui/data-table'
+import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Label } from '@/components/ui/label'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
-import { StatusConfirm } from '@/components/ui/status-confirm'
-import { TrashConfirm } from '@/components/ui/trash-confirm'
-import { PROPERTIES, formatPrice, getPropertyById } from '@/lib/properties'
-import { createFileRoute } from '@tanstack/react-router'
-import { Check, ChevronDown, Edit, Plus, Trash2, Users } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useSearchParams } from '@/hooks/use-search-params'
+import { bookingApi, BookingStatusOptions, resolveImage, type Booking, type BookingStatus, type CreateBookingPayload } from '@/lib/api'
+import { capitalize, cn, GetGuests, GetProperties, GetRoomTypes } from '@/lib/utils'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Calendar, Check, ChevronDown, Edit, Eye, Plus, Sparkles } from 'lucide-react'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import * as z from 'zod'
-import {
-    RESERVATIONS,
-    createReservation,
-    updateReservation,
-    toggleReservationStatus,
-    deleteReservation,
-    type Reservation,
-} from '@/lib/reservations'
-import { USERS, createUser } from '@/lib/users'
+
+const searchSchema = z.object({
+    page: z.number().default(1),
+    limit: z.number().default(10),
+    search: z.string().optional(),
+    status: z.enum(BookingStatusOptions).optional(),
+    propertyId: z.string().optional(),
+})
 
 export const Route = createFileRoute('/__main/reservations')({
+    validateSearch: searchSchema,
     component: RouteComponent,
 })
 
-const reservationSchema = z.object({
-    userEmail: z.email('Please enter a valid email').toLowerCase(),
-    property: z.string().min(1, 'Property is required'),
-    unit: z.string().min(1, 'unit is required'),
-    checkIn: z.string().min(1, 'Check in date is required'),
-    checkOut: z.string().min(1, 'Check out date is required'),
-    paymentMethod: z.string(),
-    channel: z.string().min(1, 'Channel is required'),
-    image: z.string().optional(),
-    status: z.enum(['Pending', 'Confirmed']),
-})
+/** Form schema — mirrors the backend's `CreateBookingDto` for owners. */
+const reservationSchema = z
+    .object({
+        guestId: z.string().min(1, 'Select a guest'),
+        propertyId: z.string().min(1, 'Select a property'),
+        roomTypeId: z.string().min(1, 'Select a room type'),
+        unitId: z.string().min(1, 'Select a room'),
+        checkInDate: z.string().min(1, 'Check-in date is required'),
+        checkOutDate: z.string().min(1, 'Check-out date is required'),
+        adults: z.number().int().min(1, 'At least 1 adult is required').max(50),
+        children: z.number().int().min(0, 'Children cannot be negative').max(50),
+        addonIds: z.array(z.string()),
+    })
+    .refine((d) => new Date(d.checkOutDate) > new Date(d.checkInDate), {
+        message: 'Check-out must be after check-in',
+        path: ['checkOutDate'],
+    })
+
+// Status badge styling per BookingStatus (mirrors Admin Panel palette)
+const STATUS_BADGE: Record<BookingStatus, string> = {
+    PENDING: 'text-amber-600 bg-amber-500/10',
+    CONFIRMED: 'text-emerald-600 bg-emerald-500/10',
+    CHECKED_IN: 'text-blue-600 bg-blue-500/10',
+    CHECKED_OUT: 'text-slate-600 bg-slate-500/10',
+    CANCELLED: 'text-red-600 bg-red-500/10',
+    NO_SHOW: 'text-rose-600 bg-rose-500/10',
+}
+
+function formatDate(dateStr: string) {
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function formatPrice(amount: string | number, currency?: string | null) {
+    const value = typeof amount === 'string' ? parseFloat(amount) : amount
+    if (!Number.isFinite(value)) return currency ? `${currency} ${amount}` : String(amount)
+    if (currency) {
+        try {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value)
+        } catch {
+            return `${currency} ${value.toFixed(2)}`
+        }
+    }
+    return value.toFixed(2)
+}
+
+function nightsBetween(checkIn: string, checkOut: string): number {
+    if (!checkIn || !checkOut) return 0
+    const ms = new Date(checkOut).getTime() - new Date(checkIn).getTime()
+    const nights = Math.round(ms / 86_400_000)
+    return Number.isFinite(nights) && nights > 0 ? nights : 0
+}
+
+function todayStr() {
+    return new Date().toISOString().split('T')[0]
+}
+
+function tomorrowStr() {
+    const d = new Date()
+    d.setDate(d.getDate() + 1)
+    return d.toISOString().split('T')[0]
+}
+
+type ReservationFormValues = z.infer<typeof reservationSchema>
+
+const defaultFormValues: ReservationFormValues = {
+    guestId: '',
+    propertyId: '',
+    roomTypeId: '',
+    unitId: '',
+    checkInDate: todayStr(),
+    checkOutDate: tomorrowStr(),
+    adults: 2,
+    children: 0,
+    addonIds: [],
+}
 
 function RouteComponent() {
-    const [reservations, setReservations] = useState<Reservation[]>(RESERVATIONS)
-    const [searchQuery, setSearchQuery] = useState('')
+    const { t } = useTranslation()
+    const query = Route.useSearch()
+    const mergeSearch = useSearchParams()
+    const navigate = useNavigate()
+    const properties = GetProperties()
+
     const [isOpen, setIsOpen] = useState(false)
-    const [editingReservation, setEditingReservation] = useState<Reservation | null>(null)
 
-    const isEditMode = editingReservation !== null
+    // Fetch dynamic reservations for the current owner
+    const { data, isLoading, refetch } = useQuery({
+        queryKey: ['reservations', query],
+        queryFn: () => bookingApi.list(query),
+    })
 
-    const openAdd = () => {
-        setEditingReservation(null)
-        setIsOpen(true)
-    }
+    // ── Create mutation ─────────────────────────────────────────────
+    const createMutation = useMutation({
+        mutationFn: (payload: CreateBookingPayload) => bookingApi.create(payload),
+        onSuccess: () => {
+            toast.success(t('reservations.createdSuccess', 'Reservation created successfully'))
+            refetch()
+            setIsOpen(false)
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || t('reservations.createFailed', 'Failed to create reservation'))
+        },
+    })
 
-    const openEdit = (res: Reservation) => {
-        setEditingReservation(res)
-        setIsOpen(true)
-    }
-
-    const closeDialog = () => {
-        setIsOpen(false)
-        setEditingReservation(null)
-    }
-
-    const handleSave = (values: z.infer<typeof reservationSchema>) => {
-        let payment = '$0.00'
-        let paymentStatus = 'Pending'
-        const property = getPropertyById(values.property)
-        if (property && values.unit && values.checkIn && values.checkOut) {
-            const roomType = property.roomTypes.find((rt) => rt.units.some((u) => u.id === values.unit))
-            if (roomType) {
-                const checkInDate = new Date(values.checkIn)
-                const checkOutDate = new Date(values.checkOut)
-                let nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 3600 * 24))
-                if (nights <= 0 || isNaN(nights)) nights = 1
-                const total = roomType.basePrice * nights
-                payment = formatPrice(total, property.property.currency)
-                paymentStatus = values.paymentMethod === 'Cash' ? 'Pending' : 'Paid'
-            }
-        }
-
-        if (isEditMode) {
-            updateReservation(editingReservation.id, { ...values, payment, paymentStatus })
-        } else {
-            createReservation({
-                ...values,
-                payment,
-                paymentStatus,
-                image: values.userEmail
-                    ? `https://api.dicebear.com/7.x/notionists/svg?seed=${values.userEmail.replace(/[^a-zA-Z]/g, '')}`
-                    : undefined,
-            })
-        }
-        setReservations([...RESERVATIONS])
-        closeDialog()
-    }
-
-    const filteredReservations = useMemo(() => {
-        if (!searchQuery.trim()) return reservations
-        const query = searchQuery.toLowerCase()
-        return reservations.filter(
-            (r) =>
-                r.userEmail.toLowerCase().includes(query) ||
-                getPropertyById(r.property)?.property.name.toLowerCase().includes(query) ||
-                r.checkIn.toLowerCase().includes(query) ||
-                r.checkOut.toLowerCase().includes(query) ||
-                r.payment.toLowerCase().includes(query) ||
-                r.paymentStatus.toLowerCase().includes(query) ||
-                r.channel.toLowerCase().includes(query),
-        )
-    }, [reservations, searchQuery])
-
-    const handleToggleStatus = (id: number) => {
-        toggleReservationStatus(id)
-        setReservations([...RESERVATIONS])
-    }
-
-    const handleDeleteReservation = (id: number) => {
-        deleteReservation(id)
-        setReservations([...RESERVATIONS])
-    }
-
-    const columns: DataTableColumn<Reservation>[] = useMemo(
-        () => [
-            {
-                key: 'user',
-                header: 'Guest Email',
-                className: 'flex items-center gap-3',
-                render: (r) => (
-                    <>
-                        <div className="size-8 rounded-full overflow-hidden shrink-0">
-                            {r.image ? <img src={r.image} alt={r.userEmail} className="size-full object-cover" /> : null}
-                        </div>
-                        {r.userEmail}
-                    </>
-                ),
-            },
-            {
-                key: 'property',
-                header: 'Property',
-                render: (r) => <span className="text-muted-foreground">{getPropertyById(r.property)?.property.name || r.property}</span>,
-            },
-            {
-                key: 'dates',
-                header: 'Dates',
-                render: (r) => (
-                    <span className="text-muted-foreground">
-                        {r.checkIn} to {r.checkOut}
-                    </span>
-                ),
-            },
-            {
-                key: 'channel',
-                header: 'Channel',
-                render: (r) => <span className="text-muted-foreground">{r.channel}</span>,
-            },
-            { key: 'payment', header: 'Payment', render: (r) => <span className="text-muted-foreground">{r.payment}</span> },
-            {
-                key: 'paymentStatus',
-                header: 'Payment Status',
-                render: (r) => (
-                    <span
-                        className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                            r.paymentStatus === 'Paid' ? 'text-green-600 bg-green-500/10' : 'text-yellow-600 bg-yellow-500/10'
-                        }`}
-                    >
-                        {r.paymentStatus}
-                    </span>
-                ),
-            },
-            {
-                key: 'status',
-                header: 'Status',
-                render: (r) =>
-                    r.status === 'Pending' ? (
-                        <span className="text-xs font-semibold text-yellow-600 bg-yellow-500/10 px-2.5 py-1 rounded-full">Pending</span>
-                    ) : r.status === 'Confirmed' ? (
-                        <span className="text-xs font-semibold text-green-600 bg-green-500/10 px-2.5 py-1 rounded-full">Confirmed</span>
-                    ) : (
-                        <span className="text-xs font-semibold text-red-600 bg-red-500/10 px-2.5 py-1 rounded-full">Cancelled</span>
-                    ),
-            },
-            {
-                key: 'action',
-                header: 'Action',
-                render: (r) => (
+    // Table columns definition
+    const columns: DataTableColumn<Booking>[] = [
+        {
+            key: 'user',
+            header: t('reservations.user', 'User'),
+            render: (res) => (
+                <div className="flex items-center gap-3">
+                    <div className="size-8 rounded-full overflow-hidden bg-muted shrink-0">
+                        {res.guest.user.image ? (
+                            <img src={resolveImage(res.guest.user.image)} alt={res.guest.user.name} className="size-full object-cover" />
+                        ) : (
+                            <div className="size-full flex items-center justify-center text-muted-foreground text-xs font-semibold">
+                                {res.guest.user.name.slice(0, 2).toUpperCase()}
+                            </div>
+                        )}
+                    </div>
+                    <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{res.guest.user.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{res.guest.user.email}</p>
+                    </div>
+                </div>
+            ),
+        },
+        {
+            key: 'property',
+            header: t('reservations.property', 'Property'),
+            render: (res) => (
+                <div className="min-w-0">
+                    <p className="font-medium text-foreground truncate">{res.property.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                        {res.roomType.name}
+                        {res.unit.roomNumber ? ` · Room ${res.unit.roomNumber}` : ''}
+                    </p>
+                </div>
+            ),
+        },
+        {
+            key: 'dates',
+            header: t('reservations.dates', 'Dates'),
+            render: (res) => (
+                <div className="min-w-0">
+                    <p className="text-sm text-foreground">
+                        {formatDate(res.checkInDate)} — {formatDate(res.checkOutDate)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                        {res.nights} {res.nights === 1 ? 'night' : 'nights'}
+                    </p>
+                </div>
+            ),
+        },
+        {
+            key: 'amount',
+            header: t('reservations.amount', 'Amount'),
+            render: (res) => (
+                <div className="min-w-0">
+                    <p className="font-semibold text-foreground">{formatPrice(res.grandTotal, res.currency)}</p>
+                    <p className="text-xs text-muted-foreground">{formatPrice(res.nightlyRate, res.currency)}/night</p>
+                </div>
+            ),
+        },
+        {
+            key: 'status',
+            header: t('reservations.status', 'Status'),
+            render: (res) => (
+                <span className={cn('text-xs font-semibold px-2.5 py-1 rounded-full capitalize', STATUS_BADGE[res.status])}>
+                    {res.status.toLowerCase().replace(/_/g, ' ')}
+                </span>
+            ),
+        },
+        {
+            key: 'action',
+            header: t('reservations.action', 'Action'),
+            render: (res) => (
+                <div onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button size="sm">
-                                Action <ChevronDown className="h-3.5 w-3.5" />
+                                {t('reservations.actionBtn', 'Action')} <ChevronDown className="size-3.5" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-white">
-                            <DropdownMenuItem onClick={() => openEdit(r)}>
-                                <Edit className="size-3.5" /> Edit
+                            <DropdownMenuItem onClick={() => navigate({ to: '/reservations/$id', params: { id: res.id } })}>
+                                <Eye className="size-3.5" />
+                                {t('reservations.view', 'View Details')}
                             </DropdownMenuItem>
-                            <StatusConfirm
-                                name={r.userEmail}
-                                currentStatus={r.status}
-                                newStatus={r.status === 'Pending' ? 'Confirmed' : r.status === 'Confirmed' ? 'Cancelled' : 'Pending'}
-                                onConfirm={() => handleToggleStatus(r.id)}
+                            <DropdownMenuItem
+                                onClick={() => navigate({ to: '/reservations/$id', params: { id: res.id }, search: { edit: 1 } })}
                             >
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <Check className="size-3.5" /> Toggle Status
-                                </DropdownMenuItem>
-                            </StatusConfirm>
-                            <TrashConfirm name={r.userEmail} onConfirm={() => handleDeleteReservation(r.id)}>
-                                <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()}>
-                                    <Trash2 className="size-3.5" /> Delete
-                                </DropdownMenuItem>
-                            </TrashConfirm>
+                                <Edit className="size-3.5" />
+                                {t('reservations.edit', 'Edit Details')}
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                ),
-            },
-        ],
-        [],
-    )
+                </div>
+            ),
+        },
+    ]
+
+    const handleSubmit = async (values: ReservationFormValues) => {
+        await createMutation.mutateAsync({
+            propertyId: values.propertyId,
+            roomTypeId: values.roomTypeId,
+            unitId: values.unitId,
+            guestId: values.guestId,
+            checkInDate: values.checkInDate,
+            checkOutDate: values.checkOutDate,
+            adults: values.adults,
+            children: values.children,
+            addonIds: values.addonIds,
+        })
+    }
 
     return (
         <>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <PageHeader title="Reservations" description="Manage reservations and bookings" />
-                <div className="flex items-center gap-4 w-full sm:w-auto">
-                    <SearchInput
-                        value={searchQuery}
-                        onValueChange={setSearchQuery}
-                        placeholder="Search reservations"
-                        className="w-full sm:w-[320px]"
-                    />
-                    <Button onClick={openAdd} className="w-full sm:w-auto">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Reservation
-                    </Button>
-                </div>
+            <PageHeader
+                title={t('reservations.title', 'Reservations')}
+                description={t('reservations.description', 'Track upcoming, current, and past reservations across your properties.')}
+            />
+
+            {/* Controls row: search + status + property filters + add button */}
+            <div className="flex flex-wrap items-center gap-3">
+                <SearchInput
+                    value={query.search ?? ''}
+                    placeholder={t('reservations.searchPlaceholder', 'Search by user, property or reservation ID')}
+                    className="sm:w-80"
+                />
+
+                <Select
+                    value={query.status ?? 'all'}
+                    onValueChange={(value) => mergeSearch({ status: value === 'all' ? undefined : (value as BookingStatus), page: 1 })}
+                >
+                    <SelectTrigger className="min-w-40">
+                        <SelectValue placeholder={t('reservations.status', 'Status')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">{t('reservations.allStatuses', 'All statuses')}</SelectItem>
+                        {BookingStatusOptions.map((s) => (
+                            <SelectItem key={s} value={s}>
+                                {capitalize(s)}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+
+                <Select
+                    value={query.propertyId ?? 'all'}
+                    onValueChange={(value) => mergeSearch({ propertyId: value === 'all' ? undefined : value, page: 1 })}
+                >
+                    <SelectTrigger className="min-w-40">
+                        <SelectValue placeholder={t('reservations.property', 'Property')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">{t('reservations.allProperties', 'All properties')}</SelectItem>
+                        {properties.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                                {p.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+
+                <Button onClick={() => setIsOpen(true)} className="ml-auto">
+                    <Plus className="size-4" />
+                    {t('reservations.add', 'Add Reservation')}
+                </Button>
             </div>
 
+            {/* Data Table */}
             <DataTable
+                loading={isLoading}
                 columns={columns}
-                data={filteredReservations}
-                noun="reservations"
-                emptyIcon={<Users className="h-6 w-6" />}
-                onReset={() => setSearchQuery('')}
+                data={data?.data ?? []}
+                noun={t('reservations.noun', 'reservations')}
+                emptyIcon={<Calendar className="h-6 w-6" />}
+                page={query.page}
+                limit={query.limit}
+                total={data?.meta.total ?? 0}
+                onReset={() => mergeSearch({ search: undefined, status: undefined, propertyId: undefined, page: 1, limit: 10 })}
+                onRowClick={(res) => navigate({ to: '/reservations/$id', params: { id: res.id } })}
             />
 
             <Dialog
                 open={isOpen}
                 onOpenChange={(open) => {
-                    if (!open) closeDialog()
+                    if (!open) setIsOpen(false)
                 }}
             >
-                <DialogContent>
+                <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>{isEditMode ? 'Edit Reservation' : 'Add Reservation'}</DialogTitle>
+                        <DialogTitle>{t('reservations.addTitle', 'Add Reservation')}</DialogTitle>
                         <DialogDescription>
-                            {isEditMode
-                                ? `Modify reservation for ${editingReservation.userEmail || 'Guest'}.`
-                                : 'Enter reservation details to add a new booking.'}
+                            {t('reservations.addDesc', 'Enter reservation details to add a new booking.')}
                         </DialogDescription>
                     </DialogHeader>
 
                     <ReservationForm
-                        key={editingReservation?.id ?? 'add'}
-                        defaultValues={
-                            editingReservation
-                                ? {
-                                      userEmail: editingReservation.userEmail,
-                                      property: editingReservation.property,
-                                      unit: editingReservation.unit,
-                                      checkIn: editingReservation.checkIn,
-                                      checkOut: editingReservation.checkOut,
-                                      paymentMethod: editingReservation.paymentMethod,
-                                      channel: editingReservation.channel,
-                                      image: editingReservation.image,
-                                      status: editingReservation.status as 'Pending' | 'Confirmed',
-                                  }
-                                : {
-                                      userEmail: '',
-                                      property: '',
-                                      unit: '',
-                                      checkIn: '',
-                                      checkOut: '',
-                                      paymentMethod: 'Credit Card',
-                                      channel: 'Direct',
-                                      image: '',
-                                      status: 'Confirmed',
-                                  }
-                        }
-                        onSubmit={handleSave}
-                        onCancel={closeDialog}
-                        submitLabel={isEditMode ? 'Save Changes' : 'Add Reservation'}
+                        key="add"
+                        defaultValues={defaultFormValues}
+                        onSubmit={handleSubmit}
+                        onCancel={() => setIsOpen(false)}
+                        submitLabel={t('reservations.form.submit', 'Add reservation')}
                     />
                 </DialogContent>
             </Dialog>
@@ -303,15 +348,22 @@ function ReservationForm({
     onCancel,
     submitLabel,
 }: {
-    defaultValues: z.infer<typeof reservationSchema>
-    onSubmit: (values: z.infer<typeof reservationSchema>) => void
+    defaultValues: ReservationFormValues
+    onSubmit: (values: ReservationFormValues) => Promise<void> | void
     onCancel: () => void
     submitLabel: string
 }) {
+    const { t } = useTranslation()
+    const guests = GetGuests()
+    const properties = GetProperties()
+    const roomTypes = GetRoomTypes()
+
     const form = useAppForm({
         defaultValues,
         validators: { onChange: reservationSchema },
-        onSubmit: async ({ value }) => onSubmit(value),
+        onSubmit: async ({ value }) => {
+            await onSubmit(value)
+        },
     })
 
     return (
@@ -322,163 +374,255 @@ function ReservationForm({
             }}
             className="space-y-4"
         >
-            <form.AppField name="userEmail">
-                {(field) => (
-                    <field.FormSearchableSelect
-                        label="Guest Email"
-                        placeholder="Select guest email..."
-                        searchPlaceholder="Search by name or email or phone number..."
-                        allowAddNew
-                        addNewLabel="Add new guest"
-                        options={USERS.map((u) => ({ value: u.email, label: `${u.name} (${u.email})` }))}
-                        onAddNew={(guest) => {
-                            createUser({
-                                name: guest.name,
-                                email: guest.email,
-                                image: `https://api.dicebear.com/7.x/notionists/svg?seed=${guest.name.replace(' ', '')}`,
-                                phone: guest.phone,
-                                bookings: 0,
-                                status: 'Active',
-                            })
-                        }}
-                    />
-                )}
-            </form.AppField>
-
-            <form.AppField name="property">
-                {(field) => (
-                    <field.FormSelect
-                        label="Property"
-                        placeholder="Select Property"
-                        options={PROPERTIES.map((p) => ({
-                            value: p.property.id,
-                            label: p.property.name,
-                        }))}
-                    />
-                )}
-            </form.AppField>
-
+            {/* Guest */}
             <form.Subscribe
-                selector={(state) => state.values.property}
+                selector={(state) => state.values.propertyId}
                 children={(selectedPropertyId) => {
-                    const selectedProperty = getPropertyById(selectedPropertyId)
-                    const unitOptions = selectedProperty
-                        ? selectedProperty.roomTypes.flatMap((rt) =>
-                              rt.units.map((u) => ({
-                                  value: u.id,
-                                  label: `${u.roomNumber} (${rt.name})`,
-                              })),
-                          )
-                        : []
+                    const selectedProperty = properties.find((rt) => rt.id === selectedPropertyId)
+                    const guestOptions = guests
+                        .filter((guest) => (selectedProperty ? guest.websiteId === selectedProperty.websiteId : true))
+                        .map((guest) => ({
+                            value: guest.id,
+                            label: `${guest.user.name} (${guest.user.email})`,
+                        }))
 
                     return (
-                        <form.AppField name="unit">
-                            {(field) => <field.FormSelect label="Unit" placeholder="Select Unit" options={unitOptions} />}
+                        <form.AppField name="guestId">
+                            {(field) => (
+                                <field.FormSelect
+                                    label={t('reservations.form.guest', 'Guest')}
+                                    placeholder={t('reservations.form.guestPlaceholder', 'Select a guest...')}
+                                    options={guestOptions}
+                                />
+                            )}
                         </form.AppField>
                     )
                 }}
             />
 
+            {/* Property */}
+            <form.Subscribe
+                selector={(state) => state.values.guestId}
+                children={(selectedGuestId) => {
+                    const selectedGuest = guests.find((rt) => rt.id === selectedGuestId)
+                    const propertyOptions = properties
+                        .filter((p) => (selectedGuest ? p.websiteId === selectedGuest.websiteId : true))
+                        .map((p) => ({
+                            value: p.id,
+                            label: p.name,
+                        }))
+
+                    return (
+                        <form.AppField name="propertyId">
+                            {(field) => (
+                                <field.FormSelect
+                                    label={t('reservations.form.property', 'Property')}
+                                    placeholder={t('reservations.form.propertyPlaceholder', 'Select property')}
+                                    options={propertyOptions}
+                                />
+                            )}
+                        </form.AppField>
+                    )
+                }}
+            />
+
+            {/* Room type (filtered by property) */}
+            <form.Subscribe
+                selector={(state) => state.values.propertyId}
+                children={(selectedPropertyId) => {
+                    const roomTypeOptions = roomTypes
+                        .filter((rt) => rt.propertyId === selectedPropertyId)
+                        .map((rt) => ({
+                            value: rt.id,
+                            label: rt.name,
+                        }))
+
+                    return (
+                        <form.AppField name="roomTypeId">
+                            {(field) => (
+                                <field.FormSelect
+                                    label={t('reservations.form.roomType', 'Room type')}
+                                    placeholder={t('reservations.form.roomTypePlaceholder', 'Select room type')}
+                                    options={roomTypeOptions}
+                                    disabled={!selectedPropertyId}
+                                />
+                            )}
+                        </form.AppField>
+                    )
+                }}
+            />
+
+            {/* Unit (filtered by room type) */}
+            <form.Subscribe
+                selector={(state) => state.values.roomTypeId}
+                children={(selectedRoomTypeId) => {
+                    const unitOptions =
+                        roomTypes
+                            .find((rt) => rt.id === selectedRoomTypeId)
+                            ?.units.map((u) => ({
+                                value: u.id,
+                                label: `Room ${u.roomNumber}${u.floor ? ` · Floor ${u.floor}` : ''}`,
+                            })) ?? []
+
+                    return (
+                        <form.AppField name="unitId">
+                            {(field) => (
+                                <field.FormSelect
+                                    label={t('reservations.form.unit', 'Room')}
+                                    placeholder={t('reservations.form.unitPlaceholder', 'Select room')}
+                                    options={unitOptions}
+                                    disabled={!selectedRoomTypeId}
+                                />
+                            )}
+                        </form.AppField>
+                    )
+                }}
+            />
+
+            {/* Dates + occupancy */}
+            <div className="grid grid-cols-2 gap-3">
+                <form.AppField name="checkInDate">
+                    {(field) => <field.FormInput type="date" label={t('reservations.form.checkIn', 'Check-in')} min={todayStr()} />}
+                </form.AppField>
+                <form.AppField name="checkOutDate">
+                    {(field) => (
+                        <field.FormInput
+                            type="date"
+                            label={t('reservations.form.checkOut', 'Check-out')}
+                            min={form.state.values.checkInDate || todayStr()}
+                        />
+                    )}
+                </form.AppField>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+                <form.AppField name="adults">
+                    {(field) => <field.FormInputNumber label={t('reservations.form.adults', 'Adults')} placeholder="2" min={1} max={50} />}
+                </form.AppField>
+                <form.AppField name="children">
+                    {(field) => (
+                        <field.FormInputNumber label={t('reservations.form.children', 'Children')} placeholder="0" min={0} max={50} />
+                    )}
+                </form.AppField>
+            </div>
+
+            {/* Addons (only shown when a property is selected and the property has any active addons) */}
             <form.Subscribe
                 selector={(state) => ({
-                    propertyId: state.values.property,
-                    unitId: state.values.unit,
-                    checkIn: state.values.checkIn,
-                    checkOut: state.values.checkOut,
+                    propertyId: state.values.propertyId,
+                    addonIds: state.values.addonIds,
                 })}
-                children={({ propertyId, unitId, checkIn, checkOut }) => {
-                    const property = getPropertyById(propertyId)
-                    let priceDisplay = ''
-                    if (property && unitId && checkIn && checkOut) {
-                        const roomType = property.roomTypes.find((rt) => rt.units.some((u) => u.id === unitId))
-                        if (roomType) {
-                            const checkInDate = new Date(checkIn)
-                            const checkOutDate = new Date(checkOut)
-                            let nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 3600 * 24))
-                            if (nights <= 0 || isNaN(nights)) nights = 1
-                            const total = roomType.basePrice * nights
-                            priceDisplay = `${formatPrice(total, property.property.currency)} (${nights} night${nights > 1 ? 's' : ''})`
-                        }
-                    }
-                    if (!priceDisplay) return null
+                children={({ propertyId, addonIds }) => {
+                    if (!propertyId) return null
+
+                    const property = properties.find((p) => p.id === propertyId)
+                    if (!property?.addons.length) return null
+
                     return (
-                        <div className="text-sm font-medium text-slate-700 bg-[#EEF3FF] p-3 rounded-xl border border-[#243E8B]/20">
-                            Total Price: <span className="font-bold text-[#243E8B]">{priceDisplay}</span>
+                        <div className="space-y-2">
+                            <div className="text-foreground flex items-center gap-1.5 text-sm font-semibold">
+                                <Sparkles className="size-4 text-primary" />
+                                {t('reservations.form.addons', 'Extras')}
+                            </div>
+                            <div className="space-y-2">
+                                {property.addons.map((a) => {
+                                    const checked = addonIds.includes(a.id)
+                                    return (
+                                        <button
+                                            key={a.id}
+                                            type="button"
+                                            onClick={() => {
+                                                const next = checked ? addonIds.filter((id) => id !== a.id) : [...addonIds, a.id]
+                                                form.setFieldValue('addonIds', next)
+                                            }}
+                                            className={cn(
+                                                'flex w-full items-start gap-2.5 rounded-md border p-2.5 text-left transition',
+                                                checked ? 'border-primary bg-primary/5' : 'border-input hover:border-muted-foreground/40',
+                                            )}
+                                        >
+                                            <span
+                                                className={cn(
+                                                    'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border',
+                                                    checked
+                                                        ? 'border-primary bg-primary text-primary-foreground'
+                                                        : 'border-muted-foreground/40',
+                                                )}
+                                            >
+                                                {checked && <Check className="size-3" />}
+                                            </span>
+                                            <span className="min-w-0 flex-1">
+                                                <span className="flex items-center justify-between gap-2">
+                                                    <span className="text-sm font-medium">{a.name}</span>
+                                                    <span className="text-muted-foreground text-xs font-semibold">
+                                                        +{formatPrice(a.price, property.currency)}
+                                                    </span>
+                                                </span>
+                                                {a.description && (
+                                                    <span className="text-muted-foreground mt-0.5 block text-xs leading-relaxed">
+                                                        {a.description}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </button>
+                                    )
+                                })}
+                            </div>
                         </div>
                     )
                 }}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <form.AppField name="checkIn">{(field) => <field.FormInput type="date" label="Check In" />}</form.AppField>
-                <form.AppField name="checkOut">{(field) => <field.FormInput type="date" label="Check Out" />}</form.AppField>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <form.AppField name="paymentMethod">
-                    {(field) => (
-                        <field.FormSelect
-                            label="Payment Method"
-                            placeholder="Select Payment Method"
-                            options={[
-                                { value: 'Cash', label: 'Cash' },
-                                { value: 'Credit Card', label: 'Credit Card' },
-                                { value: 'Debit Card', label: 'Debit Card' },
-                                { value: 'Stripe', label: 'Stripe' },
-                                { value: 'Square', label: 'Square' },
-                                { value: 'PayPal', label: 'PayPal' },
-                            ]}
-                        />
-                    )}
-                </form.AppField>
+            {/* Live price summary */}
+            <form.Subscribe
+                selector={(state) => ({
+                    propertyId: state.values.propertyId,
+                    roomTypeId: state.values.roomTypeId,
+                    checkInDate: state.values.checkInDate,
+                    checkOutDate: state.values.checkOutDate,
+                    addonIds: state.values.addonIds,
+                })}
+                children={({ propertyId, roomTypeId, checkInDate, checkOutDate, addonIds }) => {
+                    if (!propertyId || !roomTypeId || !checkInDate || !checkOutDate) return null
+                    const property = properties.find((p) => p.id === propertyId)
+                    if (!property) return null
+                    const room = roomTypes.find((rt) => rt.id === roomTypeId)
+                    if (!room) return null
+                    const nights = nightsBetween(checkInDate, checkOutDate)
+                    if (nights <= 0) return null
 
-                <form.AppField name="channel">
-                    {(field) => (
-                        <field.FormSelect
-                            label="Booking Channel"
-                            placeholder="Select Booking Channel"
-                            options={[
-                                { value: 'Direct', label: 'Direct' },
-                                { value: 'Airbnb', label: 'Airbnb' },
-                                { value: 'Booking.com', label: 'Booking.com' },
-                                { value: 'Expedia', label: 'Expedia' },
-                                { value: 'Vrbo', label: 'Vrbo' },
-                            ]}
-                        />
-                    )}
-                </form.AppField>
-            </div>
+                    const nightly = Number(room.basePrice) || 0
+                    const roomTotal = nightly * nights
+                    const selectedAddons = property.addons.filter((a) => addonIds.includes(a.id))
+                    const addonTotal = selectedAddons.reduce((sum, a) => sum + (Number(a.price) || 0), 0)
+                    const grandTotal = roomTotal + addonTotal
+                    const currency = property.currency
 
-            <form.AppField name="status">
-                {(field) => (
-                    <div className="space-y-1.5">
-                        <Label>Status</Label>
-                        <div className="flex gap-4">
-                            <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                <input
-                                    type="radio"
-                                    checked={field.state.value === 'Pending'}
-                                    onChange={() => field.handleChange('Pending')}
-                                    className="h-4 w-4 accent-primary"
-                                />
-                                Pending
-                            </label>
-                            <label className="flex items-center gap-2 text-sm cursor-pointer">
-                                <input
-                                    type="radio"
-                                    checked={field.state.value === 'Confirmed'}
-                                    onChange={() => field.handleChange('Confirmed')}
-                                    className="h-4 w-4 accent-primary"
-                                />
-                                Confirmed
-                            </label>
+                    return (
+                        <div className="text-muted-foreground space-y-1.5 rounded-lg border bg-muted/40 p-3 text-sm">
+                            <div className="flex items-center justify-between">
+                                <span>
+                                    {formatPrice(nightly, currency)} × {nights} {nights === 1 ? 'night' : 'nights'}
+                                </span>
+                                <span className="text-foreground font-medium">{formatPrice(roomTotal, currency)}</span>
+                            </div>
+                            {addonTotal > 0 && (
+                                <div className="flex items-center justify-between">
+                                    <span>{t('reservations.form.addonsTotal', 'Extras')}</span>
+                                    <span className="text-foreground font-medium">{formatPrice(addonTotal, currency)}</span>
+                                </div>
+                            )}
+                            <div className="text-foreground flex items-center justify-between border-t pt-1.5 font-semibold">
+                                <span>{t('reservations.form.summary', 'Total Price')}</span>
+                                <span>{formatPrice(grandTotal, currency)}</span>
+                            </div>
                         </div>
-                    </div>
-                )}
-            </form.AppField>
+                    )
+                }}
+            />
 
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={onCancel} className="px-4 py-2 text-sm cursor-pointer">
-                    Cancel
+                    {t('properties.cancel', 'Cancel')}
                 </Button>
                 <form.AppForm>
                     <form.FormSubmit label={submitLabel} />
