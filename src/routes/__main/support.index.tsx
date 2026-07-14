@@ -1,12 +1,11 @@
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import { DataTableFooter } from '@/components/ui/data-table'
+import { Input } from '@/components/ui/input'
 import { PageHeader } from '@/components/ui/page-header'
-import { SearchInput } from '@/components/ui/search-input'
 import { Spinner } from '@/components/ui/spinner'
 import { StatCard } from '@/components/ui/stat-card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
@@ -14,7 +13,7 @@ import { supportApi } from '@/lib/api'
 import type { SupportTicketCategory, SupportTicketPriority } from '@/lib/api'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckCheck, CircleCheckBig, Clock, MessageSquare, Plus, SearchX } from 'lucide-react'
+import { CheckCheck, CircleCheckBig, Clock, MessageSquare, Plus, Search, SearchX, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -140,28 +139,22 @@ function RouteComponent() {
 
     const { data: openCount } = useQuery({
         queryKey: ['support-tickets-count', 'OPEN'],
-        queryFn: () =>
-            supportApi.listTickets({ limit: 1, page: 1, status: 'OPEN' }).then((r) => r.meta.total),
+        queryFn: () => supportApi.listTickets({ limit: 1, page: 1, status: 'OPEN' }).then((r) => r.meta.total),
     })
 
     const { data: inProgressCount } = useQuery({
         queryKey: ['support-tickets-count', 'IN_PROGRESS'],
-        queryFn: () =>
-            supportApi
-                .listTickets({ limit: 1, page: 1, status: 'IN_PROGRESS' })
-                .then((r) => r.meta.total),
+        queryFn: () => supportApi.listTickets({ limit: 1, page: 1, status: 'IN_PROGRESS' }).then((r) => r.meta.total),
     })
 
     const { data: resolvedCount } = useQuery({
         queryKey: ['support-tickets-count', 'RESOLVED'],
-        queryFn: () =>
-            supportApi.listTickets({ limit: 1, page: 1, status: 'RESOLVED' }).then((r) => r.meta.total),
+        queryFn: () => supportApi.listTickets({ limit: 1, page: 1, status: 'RESOLVED' }).then((r) => r.meta.total),
     })
 
     const { data: closedCount } = useQuery({
         queryKey: ['support-tickets-count', 'CLOSED'],
-        queryFn: () =>
-            supportApi.listTickets({ limit: 1, page: 1, status: 'CLOSED' }).then((r) => r.meta.total),
+        queryFn: () => supportApi.listTickets({ limit: 1, page: 1, status: 'CLOSED' }).then((r) => r.meta.total),
     })
 
     const createMutation = useMutation({
@@ -181,7 +174,6 @@ function RouteComponent() {
             setNewPriority('MEDIUM')
             queryClient.invalidateQueries({ queryKey: ['support-tickets'] })
             queryClient.invalidateQueries({ queryKey: ['support-tickets-count'] })
-
         },
         onError: (err: Error) => {
             toast.error(err.message || 'Failed to create support ticket')
@@ -194,7 +186,24 @@ function RouteComponent() {
         <>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <PageHeader title="Support" description="Manage your Support" className="mb-0" />
-                <SearchInput value={searchQuery} onValueChange={setSearchQuery} placeholder="Search" className="sm:w-80" />
+                <div className="relative w-full sm:w-80">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/75" />
+                    <Input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search tickets..."
+                        className="pl-9 pr-8"
+                    />
+                    {searchQuery && (
+                        <button
+                            type="button"
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            <X className="h-3 w-3" />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Stat Cards Row */}
@@ -272,7 +281,14 @@ function RouteComponent() {
                                     No records matched your search query or active filters. Try clearing your parameters!
                                 </p>
                             </div>
-                            <Button variant="outline" size="sm" onClick={() => { setSearchQuery(''); setActiveTab('All') }}>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    setSearchQuery('')
+                                    setActiveTab('All')
+                                }}
+                            >
                                 Reset Filters
                             </Button>
                         </div>
