@@ -102,19 +102,10 @@ function RouteComponent() {
                 <p className="font-medium text-foreground">{user}</p>
             </div>
 
-            <form
-                className="grid gap-6"
-                onSubmit={(e) => {
-                    e.preventDefault()
-                    form.handleSubmit()
-                }}
-            >
+            <form.AppForm className="grid gap-6">
                 <form.AppField name="otp">{(field) => <field.FormInputOtp label="Verification code" />}</form.AppField>
-
-                <form.AppForm>
-                    <form.FormSubmit label={t('auth.verify', 'Verify')} />
-                </form.AppForm>
-            </form>
+                <form.FormSubmit label={t('auth.verify', 'Verify')} />
+            </form.AppForm>
 
             <p className="text-center text-sm text-muted-foreground">
                 {t('auth.didntReceiveCode', "Didn't receive the code?")}{' '}

@@ -3,111 +3,193 @@ import { ButtonGroup } from '@/components/ui/button-group'
 import { DataTableFooter } from '@/components/ui/data-table'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
+import { Spinner } from '@/components/ui/spinner'
 import { StatCard } from '@/components/ui/stat-card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { supportApi } from '@/lib/api'
+import type { SupportTicketCategory, SupportTicketPriority } from '@/lib/api'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCheck, CircleCheckBig, Clock, MessageSquare, Plus, SearchX } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/__main/support/')({
     component: RouteComponent,
 })
 
-const INITIAL_REQUESTS = [
-    {
-        id: '#123',
-        title: 'Payment issue',
-        property: 'Sunrise Apartments — Maintenance',
-        status: 'Open',
-        timeAgo: '2h ago',
-    },
-    {
-        id: '#124',
-        title: 'Unable to access dashboard',
-        property: 'Sunrise Apartments — Maintenance',
-        status: 'In Progress',
-        timeAgo: '2h ago',
-    },
-    {
-        id: '#125',
-        title: 'Late payment complaint',
-        property: 'Sunrise Apartments — Maintenance',
-        status: 'Close',
-        timeAgo: '2h ago',
-    },
-    {
-        id: '#126',
-        title: 'System notification problem',
-        property: 'Sunrise Apartments — Maintenance',
-        status: 'Open',
-        timeAgo: '2h ago',
-    },
-]
-
-const TABS = ['All', 'Open', 'In Progress', 'Resolved', 'Close'] as const
+const TABS = ['All', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const
 
 type Tab = (typeof TABS)[number]
 
+const CATEGORIES: { value: SupportTicketCategory; label: string }[] = [
+    { value: 'GENERAL', label: 'General' },
+    { value: 'ACCOUNT', label: 'Account' },
+    { value: 'BILLING', label: 'Billing' },
+    { value: 'SUBSCRIPTION', label: 'Subscription' },
+    { value: 'PROPERTY_MANAGEMENT', label: 'Property Management' },
+    { value: 'WEBSITE_BUILDER', label: 'Website Builder' },
+    { value: 'BOOKING_SYSTEM', label: 'Booking System' },
+    { value: 'PAYMENT_GATEWAY', label: 'Payment Gateway' },
+    { value: 'TECHNICAL', label: 'Technical' },
+    { value: 'BUG_REPORT', label: 'Bug Report' },
+    { value: 'FEATURE_REQUEST', label: 'Feature Request' },
+]
+
+const PRIORITIES: { value: SupportTicketPriority; label: string }[] = [
+    { value: 'LOW', label: 'Low' },
+    { value: 'MEDIUM', label: 'Medium' },
+    { value: 'HIGH', label: 'High' },
+    { value: 'URGENT', label: 'Urgent' },
+]
+
+const STATUS_LABELS: Record<string, string> = {
+    OPEN: 'Open',
+    IN_PROGRESS: 'In Progress',
+    RESOLVED: 'Resolved',
+    CLOSED: 'Closed',
+    REJECTED: 'Rejected',
+}
+
 const getStatusClasses = (status: string) => {
     switch (status) {
-        case 'Open':
+        case 'OPEN':
             return 'text-blue-600 bg-blue-500/10'
-        case 'In Progress':
+        case 'IN_PROGRESS':
             return 'text-orange-600 bg-orange-500/10'
-        case 'Resolved':
+        case 'RESOLVED':
             return 'text-slate-600 bg-slate-500/10'
-        case 'Close':
+        case 'CLOSED':
             return 'text-green-600 bg-green-500/10'
-        case 'Urgent':
+        case 'REJECTED':
             return 'text-red-600 bg-red-500/10'
         default:
             return 'text-slate-600 bg-slate-500/10'
     }
 }
 
+const getPriorityClasses = (priority: string) => {
+    switch (priority) {
+        case 'URGENT':
+            return 'text-red-600 bg-red-500/10'
+        case 'HIGH':
+            return 'text-orange-600 bg-orange-500/10'
+        case 'MEDIUM':
+            return 'text-blue-600 bg-blue-500/10'
+        case 'LOW':
+            return 'text-slate-600 bg-slate-500/10'
+        default:
+            return 'text-slate-600 bg-slate-500/10'
+    }
+}
+
+function formatTimeAgo(dateString: string): string {
+    const now = new Date()
+    const date = new Date(dateString)
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    if (diffMins < 1) return 'just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    const diffHours = Math.floor(diffMins / 60)
+    if (diffHours < 24) return `${diffHours}h ago`
+    const diffDays = Math.floor(diffHours / 24)
+    if (diffDays < 7) return `${diffDays}d ago`
+    return date.toLocaleDateString()
+}
+
 function RouteComponent() {
-    const [requests] = useState(INITIAL_REQUESTS)
+    const queryClient = useQueryClient()
     const [activeTab, setActiveTab] = useState<Tab>('All')
     const [searchQuery, setSearchQuery] = useState('')
     const [page, setPage] = useState(1)
     const [limit, setLimit] = useState(10)
     const [isNewRequestOpen, setIsNewRequestOpen] = useState(false)
 
-    const filteredRequests = useMemo(() => {
-        let result = [...requests]
+    // New ticket form state
+    const [newTitle, setNewTitle] = useState('')
+    const [newCategory, setNewCategory] = useState<SupportTicketCategory>('GENERAL')
+    const [newPriority, setNewPriority] = useState<SupportTicketPriority>('MEDIUM')
+    const [newDescription, setNewDescription] = useState('')
 
-        if (activeTab !== 'All') {
-            result = result.filter((r) => r.status === activeTab)
+    const queryParams = useMemo(() => {
+        const params: Record<string, string | number | boolean | undefined> = {
+            page,
+            limit,
         }
+        if (activeTab !== 'All') params.status = activeTab
+        if (searchQuery.trim()) params.search = searchQuery.trim()
+        return params
+    }, [page, limit, activeTab, searchQuery])
 
-        if (searchQuery.trim() !== '') {
-            const query = searchQuery.toLowerCase()
-            result = result.filter(
-                (r) =>
-                    r.title.toLowerCase().includes(query) || r.property.toLowerCase().includes(query) || r.id.toLowerCase().includes(query),
-            )
-        }
+    const { data, isLoading } = useQuery({
+        queryKey: ['support-tickets', queryParams],
+        queryFn: () => supportApi.listTickets(queryParams),
+    })
 
-        return result
-    }, [requests, activeTab, searchQuery])
+    const tickets = data?.data ?? []
+    const meta = data?.meta
 
-    // Reset to page 1 when filters change
-    useMemo(() => {
+    // Reset page when filters change
+    useEffect(() => {
         setPage(1)
-    }, [filteredRequests.length])
+    }, [activeTab, searchQuery])
 
-    const paginatedRequests = useMemo(() => {
-        const start = (page - 1) * limit
-        return filteredRequests.slice(start, start + limit)
-    }, [filteredRequests, page, limit])
+    const { data: openCount } = useQuery({
+        queryKey: ['support-tickets-count', 'OPEN'],
+        queryFn: () =>
+            supportApi.listTickets({ limit: 1, page: 1, status: 'OPEN' }).then((r) => r.meta.total),
+    })
 
-    const total = filteredRequests.length
+    const { data: inProgressCount } = useQuery({
+        queryKey: ['support-tickets-count', 'IN_PROGRESS'],
+        queryFn: () =>
+            supportApi
+                .listTickets({ limit: 1, page: 1, status: 'IN_PROGRESS' })
+                .then((r) => r.meta.total),
+    })
 
-    // List View
+    const { data: resolvedCount } = useQuery({
+        queryKey: ['support-tickets-count', 'RESOLVED'],
+        queryFn: () =>
+            supportApi.listTickets({ limit: 1, page: 1, status: 'RESOLVED' }).then((r) => r.meta.total),
+    })
+
+    const { data: closedCount } = useQuery({
+        queryKey: ['support-tickets-count', 'CLOSED'],
+        queryFn: () =>
+            supportApi.listTickets({ limit: 1, page: 1, status: 'CLOSED' }).then((r) => r.meta.total),
+    })
+
+    const createMutation = useMutation({
+        mutationFn: () =>
+            supportApi.createTicket({
+                title: newTitle,
+                description: newDescription,
+                category: newCategory,
+                priority: newPriority,
+            }),
+        onSuccess: () => {
+            toast.success('Support ticket created successfully')
+            setIsNewRequestOpen(false)
+            setNewTitle('')
+            setNewDescription('')
+            setNewCategory('GENERAL')
+            setNewPriority('MEDIUM')
+            queryClient.invalidateQueries({ queryKey: ['support-tickets'] })
+            queryClient.invalidateQueries({ queryKey: ['support-tickets-count'] })
+
+        },
+        onError: (err: Error) => {
+            toast.error(err.message || 'Failed to create support ticket')
+        },
+    })
+
+    const total = meta?.total ?? 0
+
     return (
         <>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -117,10 +199,10 @@ function RouteComponent() {
 
             {/* Stat Cards Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard label="Open" value="12" icon={MessageSquare} color="blue" />
-                <StatCard label="In Progress" value="8" icon={Clock} color="orange" />
-                <StatCard label="Resolved" value="100" icon={CheckCheck} color="emerald" />
-                <StatCard label="Closed" value="142" icon={CircleCheckBig} color="slate" />
+                <StatCard label="Open" value={openCount ?? '-'} icon={MessageSquare} color="blue" />
+                <StatCard label="In Progress" value={inProgressCount ?? '-'} icon={Clock} color="orange" />
+                <StatCard label="Resolved" value={resolvedCount ?? '-'} icon={CheckCheck} color="emerald" />
+                <StatCard label="Closed" value={closedCount ?? '-'} icon={CircleCheckBig} color="slate" />
             </div>
 
             {/* Navigation and search control row */}
@@ -128,7 +210,7 @@ function RouteComponent() {
                 <ButtonGroup>
                     {TABS.map((tab) => (
                         <Button key={tab} variant={activeTab === tab ? 'default' : 'outline'} onClick={() => setActiveTab(tab)}>
-                            {tab}
+                            {STATUS_LABELS[tab] ?? tab}
                         </Button>
                     ))}
                 </ButtonGroup>
@@ -140,115 +222,154 @@ function RouteComponent() {
             </div>
 
             {/* List of Support Requests */}
-            <div className="flex flex-col gap-4">
-                {paginatedRequests.map((req, index) => (
-                    <Link
-                        key={req.id}
-                        to="/support/$id"
-                        params={{ id: req.id }}
-                        className="flex flex-col border rounded-lg gap-2 p-4 animate-support-card-in transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm"
-                        style={{ animationDelay: `${index * 80}ms` }}
-                    >
-                        <div className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-2">
-                                <span className="font-semibold text-primary">{req.id}</span>
-                                <span className="font-semibold text-foreground text-lg">{req.title}</span>
+            {isLoading ? (
+                <div className="flex items-center justify-center py-16">
+                    <Spinner className="h-8 w-8" />
+                </div>
+            ) : (
+                <div className="flex flex-col gap-4">
+                    {tickets.map((ticket, index) => (
+                        <Link
+                            key={ticket.id}
+                            to="/support/$id"
+                            params={{ id: ticket.id }}
+                            className="flex flex-col border rounded-lg gap-2 p-4 animate-support-card-in transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm"
+                            style={{ animationDelay: `${index * 80}ms` }}
+                        >
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-primary">{ticket.reference}</span>
+                                    <span className="font-semibold text-foreground text-lg">{ticket.title}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${getPriorityClasses(ticket.priority)}`}>
+                                        {ticket.priority}
+                                    </span>
+                                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${getStatusClasses(ticket.status)}`}>
+                                        {STATUS_LABELS[ticket.status] ?? ticket.status}
+                                    </span>
+                                </div>
                             </div>
-                            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${getStatusClasses(req.status)}`}>
-                                {req.status}
-                            </span>
-                        </div>
 
-                        <div className="flex items-center justify-between gap-4">
-                            <div className="text-sm text-muted-foreground">{req.property}</div>
-                            <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5" />
-                                {req.timeAgo}
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="text-sm text-muted-foreground truncate">{ticket.description}</div>
+                                <div className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+                                    <Clock className="w-3.5 h-3.5" />
+                                    {formatTimeAgo(ticket.lastActivityAt)}
+                                </div>
                             </div>
-                        </div>
-                    </Link>
-                ))}
+                        </Link>
+                    ))}
 
-                {filteredRequests.length === 0 && (
-                    <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
-                        <div className="p-3 bg-muted rounded-full text-muted-foreground animate-pulse">
-                            <SearchX className="h-6 w-6" />
+                    {tickets.length === 0 && (
+                        <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+                            <div className="p-3 bg-muted rounded-full text-muted-foreground animate-pulse">
+                                <SearchX className="h-6 w-6" />
+                            </div>
+                            <div className="max-w-xs">
+                                <h3 className="font-semibold text-foreground">No support requests found</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    No records matched your search query or active filters. Try clearing your parameters!
+                                </p>
+                            </div>
+                            <Button variant="outline" size="sm" onClick={() => { setSearchQuery(''); setActiveTab('All') }}>
+                                Reset Filters
+                            </Button>
                         </div>
-                        <div className="max-w-xs">
-                            <h3 className="font-semibold text-foreground">No support requests found</h3>
-                            <p className="text-sm text-muted-foreground">
-                                No records matched your search query or active filters. Try clearing your parameters!
-                            </p>
-                        </div>
-                        <Button variant="outline" size="sm" onClick={() => setSearchQuery('')}>
-                            Reset Filters
-                        </Button>
-                    </div>
-                )}
-            </div>
+                    )}
+                </div>
+            )}
 
-            <DataTableFooter
-                page={page}
-                limit={limit}
-                total={total}
-                onPageChange={setPage}
-                onLimitChange={setLimit}
-                noun="support requests"
-            />
+            {total > 0 && (
+                <DataTableFooter
+                    page={page}
+                    limit={limit}
+                    total={total}
+                    onPageChange={setPage}
+                    onLimitChange={setLimit}
+                    noun="support requests"
+                />
+            )}
 
             {/* New Support Request Dialog */}
             <Dialog open={isNewRequestOpen} onOpenChange={setIsNewRequestOpen}>
                 <DialogContent className="w-[95%] sm:max-w-150 bg-white p-8 rounded-lg gap-6">
                     <DialogHeader className="text-left mb-2">
                         <DialogTitle className="text-[22px] font-bold text-slate-900 mb-2">Submit Support Request</DialogTitle>
-                        <DialogDescription className="text-[15px] text-slate-600 font-medium">Drag and drop your files here</DialogDescription>
+                        <DialogDescription className="text-[15px] text-slate-600 font-medium">
+                            Describe your issue and we'll get back to you shortly
+                        </DialogDescription>
                     </DialogHeader>
 
                     <div className="flex flex-col gap-6">
                         <div className="space-y-2.5">
                             <Label className="text-base font-semibold text-slate-900">Subject</Label>
-                            <Input placeholder="Enter subject" className="h-12 rounded-lg border-slate-200 text-[15px]" />
+                            <Input
+                                placeholder="Enter subject"
+                                className="h-12 rounded-lg border-slate-200 text-[15px]"
+                                value={newTitle}
+                                onChange={(e) => setNewTitle(e.target.value)}
+                            />
                         </div>
 
-                        <div className="space-y-2.5">
-                            <Label className="text-base font-semibold text-slate-900">Priority</Label>
-                            <Select>
-                                <SelectTrigger className="h-12 rounded-lg border-slate-200 text-[15px] text-slate-500">
-                                    <SelectValue placeholder="Select priority" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="low">Low</SelectItem>
-                                    <SelectItem value="medium">Medium</SelectItem>
-                                    <SelectItem value="high">High</SelectItem>
-                                    <SelectItem value="urgent">Urgent</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2.5">
+                                <Label className="text-base font-semibold text-slate-900">Category</Label>
+                                <Select value={newCategory} onValueChange={(v) => setNewCategory(v as SupportTicketCategory)}>
+                                    <SelectTrigger className="h-12 rounded-lg border-slate-200 text-[15px]">
+                                        <SelectValue placeholder="Select category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {CATEGORIES.map((cat) => (
+                                            <SelectItem key={cat.value} value={cat.value}>
+                                                {cat.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                        <div className="space-y-2.5">
-                            <Label className="text-base font-semibold text-slate-900">Employee</Label>
-                            <Select>
-                                <SelectTrigger className="h-12 rounded-lg border-slate-200 text-[15px] text-slate-500">
-                                    <SelectValue placeholder="Select employee name" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="john">John Doe</SelectItem>
-                                    <SelectItem value="jane">Jane Smith</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <div className="space-y-2.5">
+                                <Label className="text-base font-semibold text-slate-900">Priority</Label>
+                                <Select value={newPriority} onValueChange={(v) => setNewPriority(v as SupportTicketPriority)}>
+                                    <SelectTrigger className="h-12 rounded-lg border-slate-200 text-[15px]">
+                                        <SelectValue placeholder="Select priority" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {PRIORITIES.map((p) => (
+                                            <SelectItem key={p.value} value={p.value}>
+                                                {p.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
 
                         <div className="space-y-2.5">
                             <Label className="text-base font-semibold text-slate-900">Description</Label>
-                            <Textarea placeholder="Typing" className="min-h-35 rounded-lg border-slate-200 text-[15px] resize-none" />
+                            <Textarea
+                                placeholder="Describe your issue in detail..."
+                                className="min-h-35 rounded-lg border-slate-200 text-[15px] resize-none"
+                                value={newDescription}
+                                onChange={(e) => setNewDescription(e.target.value)}
+                            />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 mt-4">
-                            <Button variant="outline" onClick={() => setIsNewRequestOpen(false)} className="h-12 rounded-lg font-semibold text-[15px] border-slate-200 text-slate-600 hover:bg-slate-50">
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsNewRequestOpen(false)}
+                                className="h-12 rounded-lg font-semibold text-[15px] border-slate-200 text-slate-600 hover:bg-slate-50"
+                            >
                                 Cancel
                             </Button>
-                            <Button className="h-12 rounded-lg font-semibold text-[15px] bg-[#243E8B] hover:bg-[#1D3270] text-white">
-                                Submit Request
+                            <Button
+                                className="h-12 rounded-lg font-semibold text-[15px] bg-[#243E8B] hover:bg-[#1D3270] text-white"
+                                disabled={!newTitle.trim() || !newDescription.trim() || createMutation.isPending}
+                                onClick={() => createMutation.mutate()}
+                            >
+                                {createMutation.isPending ? 'Submitting...' : 'Submit Request'}
                             </Button>
                         </div>
                     </div>
