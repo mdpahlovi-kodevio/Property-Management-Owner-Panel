@@ -77,6 +77,8 @@ export interface Property {
     checkInTime: string
     checkOutTime: string
     currency: string | null
+    rating: number
+    reviewCount: number
     createdAt: string
     updatedAt: string
     deletedAt: string | null
