@@ -2,7 +2,7 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
 import { useFieldContext } from './form-context'
 
-type FormTextareaProps = {
+type FormTextareaProps = Omit<React.ComponentProps<'textarea'>, 'name' | 'value' | 'onChange' | 'onBlur'> & {
     label: string
     placeholder?: string
     disabled?: boolean

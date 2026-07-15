@@ -1,11 +1,6 @@
 import type { Paginated } from './base'
 import { request, toQuery } from './base'
-
-export type PaymentMethod = 'CASH' | 'CARD' | 'BANK'
-
-export type PaymentStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'REFUNDED'
-
-export type BookingSource = 'DIRECT' | 'MANUAL' | 'OTA' | 'API'
+import type { BookingSource, PaymentMethod, PaymentStatus } from './booking'
 
 export interface PaymentBookingSummary {
     id: string

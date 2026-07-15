@@ -1,43 +1,34 @@
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
-import { Skeleton } from '@/components/ui/skeleton'
-import { cn } from '@/lib/utils'
-import { createFileRoute } from '@tanstack/react-router'
-import {
-    BedDouble,
-    ChevronLeft,
-    ChevronRight,
-    RefreshCw,
-    XCircle,
-    Home,
-    DoorOpen,
-    Wrench,
-} from 'lucide-react'
-
-// Hooks and Utilities
-import { useCalendarState } from '@/components/calendar/hooks/useCalendarState'
-import { useCalendarStats } from '@/components/calendar/hooks/useCalendarStats'
-import { isSameDay } from '@/lib/calendar-utils'
-import { MONTHS, ROOMS } from '@/lib/calendar'
-
-// UI Components
-import { StatCardsGrid } from '@/components/ui/stat-card'
-import { Legend } from '@/components/calendar/Legend'
+import { PageHeader } from '#/components/ui/page-header'
+import { BlockDialog } from '@/components/calendar/BlockDialog'
 import { BookingDetailDialog } from '@/components/calendar/BookingDetailDialog'
 import { CalendarRow } from '@/components/calendar/CalendarRow'
-import { PageHeader } from '#/components/ui/page-header'
+import { useCalendarState } from '@/components/calendar/hooks/useCalendarState'
+import { Legend } from '@/components/calendar/Legend'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
+import { StatCardsGrid } from '@/components/ui/stat-card'
+import { unitBlockApi, type UnitBlock } from '@/lib/api'
+import { MONTHS } from '@/lib/calendar'
+import { isSameDay } from '@/lib/calendar-utils'
+import { cn } from '@/lib/utils'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { createFileRoute } from '@tanstack/react-router'
+import { BedDouble, ChevronLeft, ChevronRight, DoorOpen, Home, Plus, RefreshCw, Wrench, XCircle } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/__main/calendar')({
     component: RouteComponent,
 })
+
+function toISODate(d: Date): string {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+}
 
 function RouteComponent() {
     const {
@@ -46,88 +37,89 @@ function RouteComponent() {
         currentMonth,
         filterStatus,
         setFilterStatus,
-        filterType,
-        setFilterType,
-        selectedBooking,
-        setSelectedBooking,
+        selectedEntry,
+        setSelectedEntry,
         isRefreshing,
-        daysInMonth,
         days,
         goToPrev,
         goToNext,
         goToToday,
         handleRefresh,
         isCurrentMonth,
+        units,
+        entriesByUnit,
+        isLoading,
+        isError,
+        todayStats,
+        statusOptions,
     } = useCalendarState()
 
-    const {
-        filteredRooms,
-        bookingsForRoom,
-        todayStats,
-    } = useCalendarStats({
-        currentYear,
-        currentMonth,
-        days,
-        daysInMonth,
-        today,
-        filterStatus,
-        filterType,
+    const queryClient = useQueryClient()
+
+    // Block dialog state: null = closed, otherwise carries the config.
+    const [createBlockDefaults, setCreateBlockDefaults] = useState<{ unitId?: string; fromDate?: string; toDate?: string } | null>(null)
+    const [editingBlock, setEditingBlock] = useState<UnitBlock | null>(null)
+
+    // Fall back to zeros during the first render to avoid layout shift.
+    const stats = todayStats ?? { date: '', total: 0, booked: 0, available: 0, maintenance: 0 }
+
+    const selectedUnit = selectedEntry ? (units.find((u) => u.id === selectedEntry.unitId) ?? null) : null
+
+    // Build the UnitBlock shape needed by BlockDialog from a CalendarEntry.
+    const blockForEntry = (entry: {
+        id: string
+        type: 'booking' | 'block'
+        checkIn: Date
+        checkOut: Date
+        label: string
+        reason?: string
+        unitId: string
+    }): UnitBlock | null => {
+        if (entry.type !== 'block') return null
+        return {
+            id: entry.id,
+            unitId: entry.unitId,
+            fromDate: toISODate(entry.checkIn),
+            toDate: toISODate(entry.checkOut),
+            reason: entry.reason ?? null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            deletedAt: null,
+        }
+    }
+
+    const deleteBlockMutation = useMutation({
+        mutationFn: (id: string) => unitBlockApi.remove(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['calendar-snapshot'] })
+            queryClient.invalidateQueries({ queryKey: ['calendar-stats'] })
+            toast.success('Block removed')
+            setSelectedEntry(null)
+        },
+        onError: (err: Error) => toast.error(err.message || 'Failed to delete block'),
     })
 
-    const selectedRoom = selectedBooking
-        ? ROOMS.find((r) => r.id === selectedBooking.roomId) ?? null
-        : null
+    const handleFreeCellClick = (unitId: string, date: Date) => {
+        const iso = toISODate(date)
+        setCreateBlockDefaults({ unitId, fromDate: iso, toDate: iso })
+    }
 
     return (
         <>
-            <PageHeader
-                title="Calender"
-                description="Manage your Schedules via Calender"
-            />
-            {/* ── Stat Cards Grid ───────────────────────────────────────────── */}
+            <PageHeader title="Calender" description="Manage your Schedules via Calender" />
             <StatCardsGrid
                 cards={[
-                    {
-                        icon: Home,
-                        label: "Total Rooms",
-                        value: todayStats.total,
-                        color: "blue"
-                    },
-                    {
-                        icon: BedDouble,
-                        label: "Booked Today",
-                        value: todayStats.booked,
-                        color: "rose"
-                    },
-                    {
-                        icon: DoorOpen,
-                        label: "Available Today",
-                        value: todayStats.available,
-                        color: "emerald"
-                    },
-                    {
-                        icon: Wrench,
-                        label: "Maintenance",
-                        value: todayStats.maintenance,
-                        color: "slate"
-                    }
+                    { icon: Home, label: 'Total Rooms', value: stats.total, color: 'blue' },
+                    { icon: BedDouble, label: 'Booked Today', value: stats.booked, color: 'rose' },
+                    { icon: DoorOpen, label: 'Available Today', value: stats.available, color: 'emerald' },
+                    { icon: Wrench, label: 'Maintenance', value: stats.maintenance, color: 'slate' },
                 ]}
             />
-            {/* ── Calendar Card ──────────────────────────────────────────────── */}
             <Card className="border-0 shadow-sm overflow-hidden">
-                {/* Toolbar */}
                 <CardHeader className="pb-3 border-b border-border/60">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
-                        {/* Month navigator */}
                         <div className="flex items-center gap-2">
-                            <Button
-                                id="calendar-prev-month"
-                                variant="outline"
-                                size="sm"
-                                onClick={goToPrev}
-                                className="size-8 p-0"
-                            >
+                            <Button id="calendar-prev-month" variant="outline" size="sm" onClick={goToPrev} className="size-8 p-0">
                                 <ChevronLeft className="size-4" />
                             </Button>
 
@@ -135,72 +127,50 @@ function RouteComponent() {
                                 {MONTHS[currentMonth]} {currentYear}
                             </CardTitle>
 
-                            <Button
-                                id="calendar-next-month"
-                                variant="outline"
-                                size="sm"
-                                onClick={goToNext}
-                                className="size-8 p-0"
-                            >
+                            <Button id="calendar-next-month" variant="outline" size="sm" onClick={goToNext} className="size-8 p-0">
                                 <ChevronRight className="size-4" />
                             </Button>
 
                             {!isCurrentMonth && (
-                                <Button
-                                    id="calendar-today"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={goToToday}
-                                    className="text-xs h-8 px-3"
-                                >
+                                <Button id="calendar-today" variant="outline" size="sm" onClick={goToToday} className="text-xs h-8 px-3">
                                     Today
                                 </Button>
                             )}
                         </div>
 
-                        {/* Filters + actions */}
                         <div className="flex items-center gap-2 flex-wrap">
-                            {/* Status filter */}
-                            <Select value={filterStatus} onValueChange={setFilterStatus}>
-                                <SelectTrigger
-                                    id="calendar-filter-status"
-                                    size="sm"
-                                    className="h-8 text-xs"
-                                >
+                            <Button
+                                id="calendar-create-block"
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs gap-1.5"
+                                onClick={() => setCreateBlockDefaults({})}
+                                disabled={units.length === 0}
+                            >
+                                <Plus className="size-3.5" />
+                                Block
+                            </Button>
+
+                            <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as typeof filterStatus)}>
+                                <SelectTrigger id="calendar-filter-status" size="sm" className="h-8 text-xs">
                                     <SelectValue placeholder="All statuses" />
                                 </SelectTrigger>
                                 <SelectContent position="popper">
                                     <SelectGroup>
                                         <SelectItem value="all">All Statuses</SelectItem>
-                                        <SelectItem value="confirmed">Confirmed</SelectItem>
-                                        <SelectItem value="pending">Pending</SelectItem>
-                                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                                        <SelectItem value="blocked">Blocked</SelectItem>
+                                        {statusOptions.map((s) => (
+                                            <SelectItem key={s} value={s}>
+                                                {s
+                                                    .toLowerCase()
+                                                    .split('_')
+                                                    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+                                                    .join(' ')}
+                                            </SelectItem>
+                                        ))}
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
 
-                            {/* Room type filter */}
-                            <Select value={filterType} onValueChange={setFilterType}>
-                                <SelectTrigger
-                                    id="calendar-filter-type"
-                                    size="sm"
-                                    className="h-8 text-xs"
-                                >
-                                    <SelectValue placeholder="All rooms" />
-                                </SelectTrigger>
-                                <SelectContent position="popper">
-                                    <SelectGroup>
-                                        <SelectItem value="all">All Rooms</SelectItem>
-                                        <SelectItem value="single">Single</SelectItem>
-                                        <SelectItem value="double">Double</SelectItem>
-                                        <SelectItem value="suite">Suite</SelectItem>
-                                        <SelectItem value="villa">Villa</SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-
-                            {/* Refresh */}
                             <Button
                                 id="calendar-refresh"
                                 variant="outline"
@@ -211,30 +181,30 @@ function RouteComponent() {
                             >
                                 <RefreshCw className={cn('size-3.5', isRefreshing && 'animate-spin')} />
                             </Button>
-
                         </div>
                     </div>
                 </CardHeader>
 
-                {/* Grid */}
                 <CardContent className="p-0 overflow-x-auto">
-                    {isRefreshing ? (
+                    {isRefreshing || (isLoading && units.length === 0) ? (
                         <div className="p-4 flex flex-col gap-2">
                             {Array.from({ length: 6 }).map((_, i) => (
                                 <Skeleton key={i} className="h-12 w-full rounded-lg" />
                             ))}
                         </div>
+                    ) : isError ? (
+                        <div className="flex items-center justify-center py-16 text-muted-foreground text-sm gap-2">
+                            <XCircle className="size-5" />
+                            Failed to load calendar data. Please try again.
+                        </div>
                     ) : (
                         <div className="min-w-180">
-                            {/* Day-number header */}
                             <div className="flex border-b border-border/60 bg-muted/40">
-                                {/* Room column header */}
                                 <div className="w-40 shrink-0 px-3 py-2 border-r border-border/60 flex items-center gap-1.5">
                                     <BedDouble className="size-3.5 text-muted-foreground" />
                                     <span className="text-xs font-semibold text-muted-foreground">Rooms</span>
                                 </div>
 
-                                {/* Day numbers */}
                                 <div className="flex flex-1">
                                     {days.map((d) => {
                                         const cellDate = new Date(currentYear, currentMonth, d)
@@ -258,8 +228,8 @@ function RouteComponent() {
                                                         isToday
                                                             ? 'text-primary'
                                                             : isWeekend
-                                                                ? 'text-muted-foreground/50'
-                                                                : 'text-muted-foreground/60',
+                                                              ? 'text-muted-foreground/50'
+                                                              : 'text-muted-foreground/60',
                                                     )}
                                                 >
                                                     {DOW_ABBR[dow]}
@@ -270,8 +240,8 @@ function RouteComponent() {
                                                         isToday
                                                             ? 'bg-primary text-primary-foreground'
                                                             : isWeekend
-                                                                ? 'text-muted-foreground/60'
-                                                                : 'text-muted-foreground',
+                                                              ? 'text-muted-foreground/60'
+                                                              : 'text-muted-foreground',
                                                     )}
                                                 >
                                                     {d}
@@ -282,23 +252,23 @@ function RouteComponent() {
                                 </div>
                             </div>
 
-                            {/* Room rows */}
-                            {filteredRooms.length === 0 ? (
+                            {units.length === 0 ? (
                                 <div className="flex items-center justify-center py-16 text-muted-foreground text-sm gap-2">
                                     <XCircle className="size-5" />
-                                    No rooms match the current filter
+                                    No rooms to display
                                 </div>
                             ) : (
-                                filteredRooms.map((room) => (
+                                units.map((unit) => (
                                     <CalendarRow
-                                        key={room.id}
-                                        room={room}
-                                        bookings={bookingsForRoom(room.id)}
+                                        key={unit.id}
+                                        unit={unit}
+                                        entries={entriesByUnit.get(unit.id) ?? []}
                                         days={days}
                                         year={currentYear}
                                         month={currentMonth}
                                         today={today}
-                                        onBookingClick={setSelectedBooking}
+                                        onEntryClick={setSelectedEntry}
+                                        onFreeCellClick={handleFreeCellClick}
                                     />
                                 ))
                             )}
@@ -306,25 +276,46 @@ function RouteComponent() {
                     )}
                 </CardContent>
 
-                {/* Footer */}
                 <div className="flex items-center justify-between px-4 py-3 border-t border-border/60 bg-muted/20">
                     <Legend />
                     <p className="text-[11px] text-muted-foreground hidden sm:block">
-                        {filteredRooms.length} room{filteredRooms.length !== 1 ? 's' : ''} ·
-                        Click any bar to view details
+                        {units.length} room{units.length !== 1 ? 's' : ''} · Click a free day to block it
                     </p>
                 </div>
             </Card>
 
-
-            {/* Booking detail dialog */}
-            {selectedBooking && selectedRoom && (
+            {selectedEntry && selectedUnit && (
                 <BookingDetailDialog
-                    booking={selectedBooking}
-                    room={selectedRoom}
-                    onClose={() => setSelectedBooking(null)}
+                    entry={selectedEntry}
+                    unit={selectedUnit}
+                    onClose={() => setSelectedEntry(null)}
+                    onEditBlock={() => {
+                        const block = blockForEntry(selectedEntry)
+                        if (block) {
+                            setSelectedEntry(null)
+                            setEditingBlock(block)
+                        }
+                    }}
+                    onDeleteBlock={() => {
+                        if (window.confirm('Delete this maintenance block?')) {
+                            deleteBlockMutation.mutate(selectedEntry.id)
+                        }
+                    }}
                 />
             )}
+
+            {createBlockDefaults && (
+                <BlockDialog
+                    mode="create"
+                    units={units}
+                    defaultUnitId={createBlockDefaults.unitId}
+                    defaultFromDate={createBlockDefaults.fromDate}
+                    defaultToDate={createBlockDefaults.toDate}
+                    onClose={() => setCreateBlockDefaults(null)}
+                />
+            )}
+
+            {editingBlock && <BlockDialog mode="edit" units={units} block={editingBlock} onClose={() => setEditingBlock(null)} />}
         </>
     )
 }

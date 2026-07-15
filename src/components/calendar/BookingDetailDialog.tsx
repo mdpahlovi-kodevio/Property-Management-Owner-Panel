@@ -1,23 +1,42 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
-import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
-import { Moon, Users, Info } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { formatDate, daysBetween } from '@/lib/calendar-utils'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Separator } from '@/components/ui/separator'
 import { STATUS_CONFIG } from '@/lib/calendar'
-import type { Booking, Room } from '@/types/calendar'
+import { daysBetween, formatDate } from '@/lib/calendar-utils'
+import { cn } from '@/lib/utils'
+import type { CalendarEntry, CalendarUnit } from '@/types/calendar'
+import { useNavigate } from '@tanstack/react-router'
+import { Info, Moon, Pencil, Trash2, Users, Wrench } from 'lucide-react'
 
 export function BookingDetailDialog({
-    booking,
-    room,
+    entry,
+    unit,
     onClose,
+    onEditBlock,
+    onDeleteBlock,
 }: {
-    booking: Booking
-    room: Room
+    entry: CalendarEntry
+    unit: CalendarUnit
     onClose: () => void
+    onEditBlock?: () => void
+    onDeleteBlock?: () => void
 }) {
-    const cfg = STATUS_CONFIG[booking.status]
-    const nights = daysBetween(booking.checkIn, booking.checkOut)
+    const cfg = STATUS_CONFIG[entry.status]
+    const isBlock = entry.type === 'block'
+    const nights = daysBetween(entry.checkIn, entry.checkOut)
+    const navigate = useNavigate()
+
+    const formattedAmount =
+        entry.totalAmount > 0
+            ? (() => {
+                  const cur = entry.currency ?? unit.propertyCurrency
+                  try {
+                      return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur }).format(entry.totalAmount)
+                  } catch {
+                      return `${cur} ${entry.totalAmount.toFixed(2)}`
+                  }
+              })()
+            : '—'
 
     return (
         <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -30,18 +49,29 @@ export function BookingDetailDialog({
                                 cfg.bg,
                             )}
                         >
-                            <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${booking.guestName.replace(' ', '')}`} alt={booking.guestName} className="size-full object-cover" />
+                            {isBlock ? (
+                                <Wrench className={cn('size-5', cfg.text)} />
+                            ) : (
+                                <img
+                                    src={
+                                        entry.avatar
+                                            ? entry.avatar
+                                            : `https://api.dicebear.com/7.x/notionists/svg?seed=${entry.label.replace(' ', '')}`
+                                    }
+                                    alt={entry.label}
+                                    className="size-full object-cover"
+                                />
+                            )}
                         </div>
-                        <div>
-                            <DialogTitle className="text-base">{booking.guestName}</DialogTitle>
-                            <DialogDescription className="text-xs">
-                                {room.name} ·{' '}
-                                {room.type.charAt(0).toUpperCase() + room.type.slice(1)}
+                        <div className="min-w-0">
+                            <DialogTitle className="text-base truncate">{entry.label}</DialogTitle>
+                            <DialogDescription className="text-xs truncate">
+                                {unit.name} · {unit.roomTypeName}
                             </DialogDescription>
                         </div>
                         <span
                             className={cn(
-                                'ml-auto text-xs font-semibold px-2.5 py-1 rounded-full border',
+                                'ml-auto text-xs font-semibold px-2.5 py-1 rounded-full border shrink-0',
                                 cfg.bg,
                                 cfg.text,
                                 cfg.border,
@@ -57,11 +87,11 @@ export function BookingDetailDialog({
                 <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="flex flex-col gap-0.5">
                         <span className="text-xs text-muted-foreground font-medium">Check-in</span>
-                        <span className="font-semibold">{formatDate(booking.checkIn)}</span>
+                        <span className="font-semibold">{formatDate(entry.checkIn)}</span>
                     </div>
                     <div className="flex flex-col gap-0.5">
                         <span className="text-xs text-muted-foreground font-medium">Check-out</span>
-                        <span className="font-semibold">{formatDate(booking.checkOut)}</span>
+                        <span className="font-semibold">{formatDate(entry.checkOut)}</span>
                     </div>
                     <div className="flex flex-col gap-0.5">
                         <span className="text-xs text-muted-foreground font-medium">Duration</span>
@@ -71,41 +101,66 @@ export function BookingDetailDialog({
                         </span>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                        <span className="text-xs text-muted-foreground font-medium">Guests</span>
+                        <span className="text-xs text-muted-foreground font-medium">{isBlock ? 'Block type' : 'Guests'}</span>
                         <span className="font-semibold flex items-center gap-1.5">
-                            <Users className="size-3.5 text-muted-foreground" />
-                            {booking.guestCount} guest{booking.guestCount !== 1 ? 's' : ''}
+                            {isBlock ? (
+                                <>
+                                    <Wrench className="size-3.5 text-muted-foreground" />
+                                    Maintenance
+                                </>
+                            ) : (
+                                <>
+                                    <Users className="size-3.5 text-muted-foreground" />
+                                    {entry.guestCount} guest{entry.guestCount !== 1 ? 's' : ''}
+                                </>
+                            )}
                         </span>
                     </div>
-                    <div className="flex flex-col gap-0.5">
-                        <span className="text-xs text-muted-foreground font-medium">Channel</span>
-                        <span className="font-semibold">{booking.channel}</span>
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                        <span className="text-xs text-muted-foreground font-medium">Total Amount</span>
-                        <span className="font-semibold text-primary">
-                            {booking.totalAmount > 0
-                                ? `$${booking.totalAmount.toLocaleString()}`
-                                : '—'}
-                        </span>
-                    </div>
+                    {!isBlock && (
+                        <>
+                            <div className="flex flex-col gap-0.5">
+                                <span className="text-xs text-muted-foreground font-medium">Channel</span>
+                                <span className="font-semibold">{entry.channel}</span>
+                            </div>
+                            <div className="flex flex-col gap-0.5">
+                                <span className="text-xs text-muted-foreground font-medium">Total Amount</span>
+                                <span className="font-semibold text-primary">{formattedAmount}</span>
+                            </div>
+                        </>
+                    )}
                 </div>
 
-                {booking.notes && (
+                {entry.reason && (
                     <>
                         <Separator />
                         <div className="flex items-start gap-2 text-sm text-muted-foreground bg-muted rounded-lg p-3">
                             <Info className="size-4 shrink-0 mt-0.5 text-primary" />
-                            <span>{booking.notes}</span>
+                            <span>{entry.reason}</span>
                         </div>
                     </>
                 )}
 
                 <DialogFooter className="flex-row gap-2 justify-end">
+                    {isBlock && onDeleteBlock && (
+                        <Button variant="destructive" size="sm" onClick={onDeleteBlock} className="mr-auto">
+                            <Trash2 className="size-3.5" />
+                            Delete
+                        </Button>
+                    )}
                     <Button variant="outline" size="sm" onClick={onClose}>
                         Close
                     </Button>
-                    <Button size="sm">Edit Reservation</Button>
+                    {isBlock && onEditBlock && (
+                        <Button size="sm" onClick={onEditBlock}>
+                            <Pencil className="size-3.5" />
+                            Edit Block
+                        </Button>
+                    )}
+                    {!isBlock && (
+                        <Button size="sm" onClick={() => navigate({ to: '/reservations/$id', params: { id: entry.id } })}>
+                            Edit Reservation
+                        </Button>
+                    )}
                 </DialogFooter>
             </DialogContent>
         </Dialog>
