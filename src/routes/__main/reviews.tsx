@@ -233,8 +233,8 @@ function ReviewCard({
     const avatarSrc = review.guest.user.image || `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(guestName)}`
 
     return (
-        <Card className="transition-shadow hover:shadow-md">
-            <CardContent className="p-6 flex flex-col gap-4">
+        <Card className="pt-5 transition-shadow hover:shadow-md">
+            <CardContent className="flex flex-col gap-4">
                 <div className="flex items-start gap-4">
                     <img src={avatarSrc} alt={guestName} className="size-12 rounded-full object-cover ring-1 ring-border/50 shrink-0" />
                     <div className="flex-1 min-w-0">

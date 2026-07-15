@@ -29,7 +29,7 @@ export const Route = createFileRoute('/__main/payments')({
     component: RouteComponent,
 })
 
-function formatPriceValue(amount: string, currency: string) {
+function formatPrice(amount: string, currency: string) {
     try {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(parseFloat(amount))
     } catch {
@@ -77,7 +77,7 @@ function RouteComponent() {
             {
                 key: 'amount',
                 header: 'Amount',
-                render: (p) => <span className="text-muted-foreground">{formatPriceValue(p.amount, p.currency)}</span>,
+                render: (p) => <span className="text-muted-foreground">{formatPrice(p.amount, p.currency)}</span>,
             },
             {
                 key: 'method',

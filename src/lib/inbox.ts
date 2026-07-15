@@ -215,11 +215,11 @@ export function getDateGroup(timestamp: string) {
 }
 
 export function sendMessage(conversationId: string, message: Message): Conversation | undefined {
-    const index = CONVERSATIONS.findIndex(c => c.id === conversationId)
+    const index = CONVERSATIONS.findIndex((c) => c.id === conversationId)
     if (index !== -1) {
         CONVERSATIONS[index] = {
             ...CONVERSATIONS[index],
-            messages: [...CONVERSATIONS[index].messages, message]
+            messages: [...CONVERSATIONS[index].messages, message],
         }
         return CONVERSATIONS[index]
     }
@@ -227,7 +227,7 @@ export function sendMessage(conversationId: string, message: Message): Conversat
 }
 
 export function updateMessageStatusToRead(conversationId: string): Conversation | undefined {
-    const index = CONVERSATIONS.findIndex(c => c.id === conversationId)
+    const index = CONVERSATIONS.findIndex((c) => c.id === conversationId)
     if (index !== -1) {
         const updatedMessages = [...CONVERSATIONS[index].messages]
         const lastMsg = updatedMessages[updatedMessages.length - 1]
@@ -242,16 +242,16 @@ export function updateMessageStatusToRead(conversationId: string): Conversation 
 
 export function blockUser(conversationId: string): boolean {
     const initialLength = CONVERSATIONS.length
-    CONVERSATIONS = CONVERSATIONS.filter(c => c.id !== conversationId)
+    CONVERSATIONS = CONVERSATIONS.filter((c) => c.id !== conversationId)
     return CONVERSATIONS.length !== initialLength
 }
 
 export function updateNote(conversationId: string, note: string): Conversation | undefined {
-    const index = CONVERSATIONS.findIndex(c => c.id === conversationId)
+    const index = CONVERSATIONS.findIndex((c) => c.id === conversationId)
     if (index !== -1) {
         CONVERSATIONS[index] = {
             ...CONVERSATIONS[index],
-            contact: { ...CONVERSATIONS[index].contact, notes: note }
+            contact: { ...CONVERSATIONS[index].contact, notes: note },
         }
         return CONVERSATIONS[index]
     }
