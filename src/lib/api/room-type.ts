@@ -2,7 +2,7 @@ import type { Amenity } from './amenity'
 import type { Paginated } from './base'
 import { request, toQuery } from './base'
 
-// ── Enums (mirror Prisma generated enums) ───────────────
+// ── Enums ───────────────
 export const BathroomTypeOptions = ['PRIVATE', 'SHARED'] as const
 export type BathroomType = (typeof BathroomTypeOptions)[number]
 
@@ -34,7 +34,6 @@ export interface RoomTypeUnit {
 }
 
 // ── Top-level shapes ────────────────────────────────────
-/** Full room type returned by findOne / create / update. */
 export interface RoomType {
     id: string
     propertyId: string
@@ -44,7 +43,6 @@ export interface RoomType {
     maxAdults: number
     maxChildren: number
     maxOccupancy: number
-    basePrice: string | number
     roomSize: number | null
     smokingRoom: boolean
     accessibleRoom: boolean
@@ -56,6 +54,12 @@ export interface RoomType {
     amenities: { amenity: Amenity }[]
     images: RoomTypeImage[]
     units: RoomTypeUnit[]
+    ratePlans: {
+        id: string
+        name: string
+        code: string
+        defaultPrice: string | number
+    }[]
 }
 
 export interface RoomTypeListItem extends Omit<RoomType, 'beds' | 'amenities' | 'images' | 'units'> {
@@ -96,7 +100,6 @@ export interface CreateRoomTypePayload {
     maxAdults?: number
     maxChildren?: number
     maxOccupancy?: number
-    basePrice: number
     roomSize?: number
     smokingRoom?: boolean
     accessibleRoom?: boolean
@@ -109,13 +112,6 @@ export interface CreateRoomTypePayload {
     units?: RoomTypeUnitPayload[]
 }
 
-/**
- * Patch payload for PATCH /owner/property/:propertyId/room-type/:id.
- * Every field is optional. To update beds, amenities, images or units, send the
- * FULL new list — the backend will delete all existing rows and replace them with
- * the provided list. Omit a key to leave that relation untouched; send `[]` to
- * clear it.
- */
 export type UpdateRoomTypePayload = Partial<CreateRoomTypePayload>
 
 // ── API ─────────────────────────────────────────────────

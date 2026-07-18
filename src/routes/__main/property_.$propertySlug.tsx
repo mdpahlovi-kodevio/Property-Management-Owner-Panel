@@ -22,6 +22,7 @@ import {
     type RoomTypeStatus,
     type UpdateRoomTypePayload,
 } from '@/lib/api'
+import { formatPrice } from '@/lib/properties'
 import { capitalize, cn, GetRoomAmenities } from '@/lib/utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
@@ -49,7 +50,8 @@ type RoomTypeCard = {
     internalCode: string
     location: string
     details: string
-    basePrice: number
+    startingFromPrice: number
+    activeRatePlanCode: string | null
     totalUnits: number
     capacity: string
     status: RoomTypeStatus
@@ -73,7 +75,6 @@ const roomTypeFormSchema = z.object({
     maxAdults: z.number().int().min(1).max(50),
     maxChildren: z.number().int().min(0).max(50),
     maxOccupancy: z.number().int().min(1).max(100),
-    basePrice: z.number().min(0),
     roomSize: z.number().min(0),
     smokingRoom: z.boolean(),
     accessibleRoom: z.boolean(),
@@ -120,7 +121,6 @@ const ROOM_FORM_DEFAULTS: RoomTypeFormValues = {
     maxAdults: 2,
     maxChildren: 0,
     maxOccupancy: 2,
-    basePrice: 100,
     roomSize: 28,
     smokingRoom: false,
     accessibleRoom: false,
@@ -142,7 +142,6 @@ function valuesFromRoomType(rt: RoomType): RoomTypeFormValues {
         maxAdults: rt.maxAdults,
         maxChildren: rt.maxChildren,
         maxOccupancy: rt.maxOccupancy,
-        basePrice: Number(rt.basePrice),
         roomSize: rt.roomSize ?? 0,
         smokingRoom: rt.smokingRoom,
         accessibleRoom: rt.accessibleRoom,
@@ -463,6 +462,14 @@ function RoomTypeCardView({ room, propertySlug, onEdit }: { room: RoomType; prop
 
                 <div className="flex justify-between items-center gap-1.5 flex-wrap">
                     <span className="text-[0.7rem] text-muted-foreground">{card.capacity}</span>
+                    {card.startingFromPrice > 0 ? (
+                        <span className="text-[0.7rem] text-muted-foreground">
+                            From: <span className="font-semibold text-foreground">{formatPrice(card.startingFromPrice)}</span>
+                            {card.activeRatePlanCode && <span className="opacity-70"> / {card.activeRatePlanCode}</span>}
+                        </span>
+                    ) : (
+                        <span className="text-[0.7rem] text-muted-foreground italic">No rate plan</span>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -517,7 +524,13 @@ function mapRoomTypeToCard(rt: RoomType): RoomTypeCard {
         internalCode: rt.internalCode,
         location: `Floor ${floorLabel}`,
         details: `${bedsCount} Bed${bedsCount === 1 ? '' : 's'} • ${roomSizeLabel}`,
-        basePrice: Number(rt.basePrice),
+        startingFromPrice: (() => {
+            const raw = rt.ratePlans?.[0]?.defaultPrice ?? null
+            if (raw == null) return 0
+            const num = typeof raw === 'string' ? Number(raw) : raw
+            return Number.isFinite(num) ? num : 0
+        })(),
+        activeRatePlanCode: rt.ratePlans.length ? rt.ratePlans[0].code : null,
         totalUnits: rt.units.length,
         capacity: `${rt.maxAdults} Adult${rt.maxAdults === 1 ? '' : 's'}${rt.maxChildren > 0 ? `, ${rt.maxChildren} Child${rt.maxChildren === 1 ? '' : 'ren'}` : ''}`,
         status: rt.status,
@@ -618,13 +631,6 @@ function RoomTypeForm({
                                 {(field) => (
                                     <field.FormTextarea label="Description" placeholder="Describe the room type for OTA listings..." />
                                 )}
-                            </form.AppField>
-                        </Section>
-
-                        <Section>
-                            <SectionLabel>Pricing</SectionLabel>
-                            <form.AppField name="basePrice">
-                                {(field) => <field.FormInputNumber label="Base price / night" placeholder="e.g. 100" min={0} step="0.01" />}
                             </form.AppField>
                         </Section>
 

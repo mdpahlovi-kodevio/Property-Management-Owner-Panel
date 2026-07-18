@@ -73,7 +73,15 @@ export interface RoomType {
     maxAdults: number
     maxChildren: number
     maxOccupancy: number
-    basePrice: number
+    ratePlans: {
+        id: string
+        code: string
+        name: string
+        status: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED'
+        defaultPrice: number
+        defaultMinLOS: number | null
+        defaultMaxLOS: number | null
+    }[]
     roomSize: number | null
     smokingRoom: boolean
     accessibleRoom: boolean
@@ -195,7 +203,17 @@ export const PROPERTIES: Property[] = [
                 maxAdults: 2,
                 maxChildren: 1,
                 maxOccupancy: 3,
-                basePrice: 450,
+                ratePlans: [
+                    {
+                        id: 'rp_001',
+                        code: 'BAR',
+                        name: 'Standard Rate',
+                        status: 'ACTIVE',
+                        defaultPrice: 450,
+                        defaultMinLOS: null,
+                        defaultMaxLOS: null,
+                    },
+                ],
                 roomSize: 72,
                 smokingRoom: false,
                 accessibleRoom: false,
@@ -319,7 +337,17 @@ export const PROPERTIES: Property[] = [
                 maxAdults: 2,
                 maxChildren: 0,
                 maxOccupancy: 2,
-                basePrice: 8500,
+                ratePlans: [
+                    {
+                        id: 'rp_002',
+                        code: 'BAR',
+                        name: 'Standard Rate',
+                        status: 'ACTIVE',
+                        defaultPrice: 8500,
+                        defaultMinLOS: null,
+                        defaultMaxLOS: null,
+                    },
+                ],
                 roomSize: 32,
                 smokingRoom: false,
                 accessibleRoom: false,
@@ -375,7 +403,17 @@ export const PROPERTIES: Property[] = [
                 maxAdults: 2,
                 maxChildren: 1,
                 maxOccupancy: 3,
-                basePrice: 14500,
+                ratePlans: [
+                    {
+                        id: 'rp_003',
+                        code: 'BAR',
+                        name: 'Standard Rate',
+                        status: 'ACTIVE',
+                        defaultPrice: 14500,
+                        defaultMinLOS: null,
+                        defaultMaxLOS: null,
+                    },
+                ],
                 roomSize: 55,
                 smokingRoom: false,
                 accessibleRoom: false,
@@ -502,7 +540,17 @@ export const PROPERTIES: Property[] = [
                 maxAdults: 2,
                 maxChildren: 0,
                 maxOccupancy: 2,
-                basePrice: 280,
+                ratePlans: [
+                    {
+                        id: 'rp_004',
+                        code: 'BAR',
+                        name: 'Standard Rate',
+                        status: 'ACTIVE',
+                        defaultPrice: 280,
+                        defaultMinLOS: null,
+                        defaultMaxLOS: null,
+                    },
+                ],
                 roomSize: 24,
                 smokingRoom: false,
                 accessibleRoom: false,
@@ -557,7 +605,17 @@ export const PROPERTIES: Property[] = [
                 maxAdults: 2,
                 maxChildren: 1,
                 maxOccupancy: 3,
-                basePrice: 420,
+                ratePlans: [
+                    {
+                        id: 'rp_005',
+                        code: 'BAR',
+                        name: 'Standard Rate',
+                        status: 'ACTIVE',
+                        defaultPrice: 420,
+                        defaultMinLOS: null,
+                        defaultMaxLOS: null,
+                    },
+                ],
                 roomSize: 42,
                 smokingRoom: false,
                 accessibleRoom: false,
@@ -663,7 +721,17 @@ export const PROPERTIES: Property[] = [
                 maxAdults: 2,
                 maxChildren: 0,
                 maxOccupancy: 2,
-                basePrice: 320,
+                ratePlans: [
+                    {
+                        id: 'rp_006',
+                        code: 'BAR',
+                        name: 'Standard Rate',
+                        status: 'ACTIVE',
+                        defaultPrice: 320,
+                        defaultMinLOS: null,
+                        defaultMaxLOS: null,
+                    },
+                ],
                 roomSize: 28,
                 smokingRoom: false,
                 accessibleRoom: false,
@@ -707,7 +775,17 @@ export const PROPERTIES: Property[] = [
                 maxAdults: 2,
                 maxChildren: 2,
                 maxOccupancy: 4,
-                basePrice: 540,
+                ratePlans: [
+                    {
+                        id: 'rp_007',
+                        code: 'BAR',
+                        name: 'Standard Rate',
+                        status: 'ACTIVE',
+                        defaultPrice: 540,
+                        defaultMinLOS: null,
+                        defaultMaxLOS: null,
+                    },
+                ],
                 roomSize: 48,
                 smokingRoom: false,
                 accessibleRoom: false,
@@ -815,7 +893,17 @@ export const PROPERTIES: Property[] = [
                 maxAdults: 1,
                 maxChildren: 0,
                 maxOccupancy: 1,
-                basePrice: 650,
+                ratePlans: [
+                    {
+                        id: 'rp_008',
+                        code: 'BAR',
+                        name: 'Standard Rate',
+                        status: 'ACTIVE',
+                        defaultPrice: 650,
+                        defaultMinLOS: null,
+                        defaultMaxLOS: null,
+                    },
+                ],
                 roomSize: 4,
                 smokingRoom: false,
                 accessibleRoom: false,
@@ -862,7 +950,17 @@ export const PROPERTIES: Property[] = [
                 maxAdults: 2,
                 maxChildren: 0,
                 maxOccupancy: 2,
-                basePrice: 1800,
+                ratePlans: [
+                    {
+                        id: 'rp_009',
+                        code: 'BAR',
+                        name: 'Standard Rate',
+                        status: 'ACTIVE',
+                        defaultPrice: 1800,
+                        defaultMinLOS: null,
+                        defaultMaxLOS: null,
+                    },
+                ],
                 roomSize: 12,
                 smokingRoom: false,
                 accessibleRoom: false,
@@ -964,7 +1062,17 @@ export const PROPERTIES: Property[] = [
                 maxAdults: 6,
                 maxChildren: 2,
                 maxOccupancy: 8,
-                basePrice: 680,
+                ratePlans: [
+                    {
+                        id: 'rp_010',
+                        code: 'BAR',
+                        name: 'Standard Rate',
+                        status: 'ACTIVE',
+                        defaultPrice: 680,
+                        defaultMinLOS: null,
+                        defaultMaxLOS: null,
+                    },
+                ],
                 roomSize: 210,
                 smokingRoom: false,
                 accessibleRoom: false,
@@ -1033,8 +1141,10 @@ export function getPropertyById(id: string): Property | undefined {
     return PROPERTIES.find((p) => p.id === id)
 }
 
-export function getPriceRange<T extends { roomTypes: { basePrice: string | number }[] }>(property: T) {
-    const prices = property.roomTypes.map((rt) => Number(rt.basePrice))
+export function getPriceRange<T extends { roomTypes: { ratePlans: { defaultPrice: number | string }[] }[] }>(property: T) {
+    const prices = property.roomTypes
+        .flatMap((rt) => rt.ratePlans.map((rp) => Number(rp.defaultPrice)))
+        .filter((n) => Number.isFinite(n) && n > 0)
 
     if (prices.length === 0) {
         return { min: 0, max: 0 }

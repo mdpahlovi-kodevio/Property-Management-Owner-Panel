@@ -1,13 +1,47 @@
+import { useAppForm } from '@/components/form/form-context'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Spinner } from '@/components/ui/spinner'
-import { propertyApi, resolveImage, roomTypeApi, type RoomType, type RoomTypeStatus } from '@/lib/api'
+import {
+    propertyApi,
+    ratePlanApi,
+    RatePlanStatusOptions,
+    resolveImage,
+    roomTypeApi,
+    type CreateRatePlanPayload,
+    type FillDailyRatePlanPayload,
+    type RatePlan,
+    type RatePlanListItem,
+    type RatePlanStatus,
+    type RoomType,
+    type RoomTypeStatus,
+    type UpdateRatePlanPayload,
+} from '@/lib/api'
 import { formatPrice } from '@/lib/properties'
 import { capitalize, cn } from '@/lib/utils'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, notFound, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Bath, BedDouble, Calendar, CheckCircle2, CreditCard, Key, Maximize2, Plus, Shield, Users } from 'lucide-react'
+import {
+    ArrowLeft,
+    Bath,
+    BedDouble,
+    Calendar,
+    CheckCircle2,
+    CreditCard,
+    Edit,
+    Key,
+    Maximize2,
+    Plus,
+    Shield,
+    Tag,
+    Trash2,
+    Users,
+} from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
+import * as z from 'zod'
 
 export const Route = createFileRoute('/__main/property_/$propertySlug_/room/$roomSlug')({
     loader: async ({ params }) => {
@@ -66,8 +100,17 @@ const ROOM_STATUS_BADGE: Record<RoomTypeStatus, string> = {
     ARCHIVED: 'bg-rose-500 hover:bg-rose-600',
 }
 
+// Status badge styling per RatePlanStatus
+const RATE_PLAN_STATUS_BADGE: Record<RatePlanStatus, string> = {
+    ACTIVE: 'bg-emerald-500/90 text-white border-white/20',
+    DRAFT: 'bg-amber-500/90 text-white border-white/20',
+    INACTIVE: 'bg-slate-500/90 text-white border-white/20',
+    ARCHIVED: 'bg-rose-500/90 text-white border-white/20',
+}
+
 function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomType: RoomType }) {
     const navigate = useNavigate()
+    const queryClient = useQueryClient()
 
     // Images come back as a flat array with a `thumbnail` flag.
     const sortedImages = [...rt.images].sort((a, b) => a.sortOrder - b.sortOrder)
@@ -80,8 +123,67 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
 
     const bedsCount = rt.beds.reduce((s, b) => s + b.quantity, 0)
     const floors = rt.units.length > 0 ? Array.from(new Set(rt.units.map((u) => u.floor).filter(Boolean))).join(', ') : '—'
-    const basePrice = Number(rt.basePrice)
     const roomSizeLabel = rt.roomSize != null ? `${rt.roomSize} sqm` : '—'
+
+    const startingPrice = (() => {
+        const raw = rt.ratePlans?.[0]?.defaultPrice ?? null
+        if (raw == null) return 0
+        const num = typeof raw === 'string' ? Number(raw) : raw
+        return Number.isFinite(num) ? num : 0
+    })()
+
+    // ── Rate plan queries + mutations ────────────────────────────────
+    const ratePlansQuery = useQuery({
+        queryKey: ['rate-plans', { roomTypeId: rt.id }],
+        queryFn: () => ratePlanApi.list({ roomTypeId: rt.id, limit: 100 }),
+    })
+
+    const createRatePlan = useMutation({
+        mutationFn: (payload: CreateRatePlanPayload) => ratePlanApi.create(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['rate-plans', { roomTypeId: rt.id }] })
+            // Also invalidate the room type so the new plan shows in the loader data.
+            queryClient.invalidateQueries({ queryKey: ['room-type', rt.propertyId, rt.internalCode] })
+            queryClient.invalidateQueries({ queryKey: ['room-types', rt.propertyId] })
+            toast.success('Rate plan created')
+        },
+        onError: (error: Error) => toast.error(error.message),
+    })
+
+    const updateRatePlan = useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: UpdateRatePlanPayload }) => ratePlanApi.update(id, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['rate-plans', { roomTypeId: rt.id }] })
+            queryClient.invalidateQueries({ queryKey: ['room-type', rt.propertyId, rt.internalCode] })
+            toast.success('Rate plan updated')
+        },
+        onError: (error: Error) => toast.error(error.message),
+    })
+
+    const deleteRatePlan = useMutation({
+        mutationFn: (id: string) => ratePlanApi.remove(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['rate-plans', { roomTypeId: rt.id }] })
+            queryClient.invalidateQueries({ queryKey: ['room-type', rt.propertyId, rt.internalCode] })
+            toast.success('Rate plan removed')
+        },
+        onError: (error: Error) => toast.error(error.message),
+    })
+
+    const fillDaily = useMutation({
+        mutationFn: (payload: FillDailyRatePlanPayload) => ratePlanApi.fillDaily(payload),
+        onSuccess: (res) => {
+            toast.success(`Filled ${res.data.days} day(s) of pricing`)
+        },
+        onError: (error: Error) => toast.error(error.message),
+    })
+
+    // ── Local dialog state ───────────────────────────────────────────
+    const [isCreateOpen, setIsCreateOpen] = useState(false)
+    const [editingRatePlan, setEditingRatePlan] = useState<RatePlanListItem | null>(null)
+    const [fillDailyFor, setFillDailyFor] = useState<RatePlanListItem | null>(null)
+
+    const ratePlans = ratePlansQuery.data?.data ?? []
 
     return (
         <>
@@ -100,9 +202,9 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
             {/* ── Key Metrics ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <MetricCard
-                    title="Base Price"
-                    value={formatPrice(basePrice)}
-                    subtitle="Per night rate"
+                    title="Starting Rate"
+                    value={startingPrice > 0 ? formatPrice(startingPrice) : '—'}
+                    subtitle={rt.ratePlans.length ? `From ${rt.ratePlans[0].code}` : 'No rate plan yet'}
                     icon={<CreditCard className="size-4 text-primary" />}
                 />
                 <MetricCard
@@ -112,10 +214,13 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                     icon={<Key className="size-4 text-primary" />}
                 />
                 <MetricCard
-                    title="Avg. Occupancy"
-                    value="—"
-                    subtitle="Analytics coming soon"
-                    icon={<Calendar className="size-4 text-primary" />}
+                    title="Rate Plans"
+                    value={ratePlans.length.toString()}
+                    subtitle={(() => {
+                        const active = ratePlans.filter((rp) => rp.status === 'ACTIVE').length
+                        return `${active} active`
+                    })()}
+                    icon={<Tag className="size-4 text-primary" />}
                 />
                 <MetricCard
                     title="Est. Revenue"
@@ -262,8 +367,27 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                     </Card>
                 </div>
 
-                {/* ── Right Column: Units Management ── */}
+                {/* ── Right Column: Units & Rate Plans Management ── */}
                 <div className="space-y-6">
+                    <RatePlansCard
+                        ratePlans={ratePlans}
+                        isLoading={ratePlansQuery.isLoading}
+                        onCreate={() => {
+                            setEditingRatePlan(null)
+                            setIsCreateOpen(true)
+                        }}
+                        onEdit={(rp) => {
+                            setEditingRatePlan(rp)
+                            setIsCreateOpen(true)
+                        }}
+                        onDelete={(rp) => {
+                            if (confirm(`Remove rate plan "${rp.name}"? This archives it (soft delete).`)) {
+                                deleteRatePlan.mutate(rp.id)
+                            }
+                        }}
+                        onFillDaily={(rp) => setFillDailyFor(rp)}
+                    />
+
                     <Card>
                         <CardHeader>
                             <div className="flex items-center justify-between">
@@ -319,7 +443,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                                             })
                                         }
                                     >
-                                        <Plus className="size-4" />
+                                        <Edit className="size-4" />
                                         Edit room type
                                     </Button>
                                 </div>
@@ -342,11 +466,121 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                     </Card>
                 </div>
             </div>
+
+            {/* ══════════════════════════════════════════════════
+                CREATE / EDIT RATE PLAN DIALOG
+            ══════════════════════════════════════════════════ */}
+            <Dialog
+                open={isCreateOpen}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setIsCreateOpen(false)
+                        setEditingRatePlan(null)
+                    }
+                }}
+            >
+                <DialogContent className="sm:max-w-140">
+                    <DialogHeader>
+                        <DialogTitle>{editingRatePlan ? 'Edit rate plan' : 'Create rate plan'}</DialogTitle>
+                        <DialogDescription>
+                            {editingRatePlan
+                                ? `Editing "${editingRatePlan.name}" (${editingRatePlan.code})`
+                                : `Add a new rate plan for "${rt.name}"`}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <RatePlanForm
+                        key={editingRatePlan?.id ?? 'new'}
+                        defaultValues={editingRatePlan ? valuesFromRatePlan(editingRatePlan) : defaultRatePlanValues}
+                        onSubmit={async (values) => {
+                            const payload: CreateRatePlanPayload | UpdateRatePlanPayload = {
+                                propertyId: rt.propertyId,
+                                roomTypeId: rt.id,
+                                name: values.name,
+                                code: values.code,
+                                description: values.description?.trim() ? values.description : undefined,
+                                status: values.status,
+                                defaultPrice: values.defaultPrice,
+                                defaultMinLOS: values.defaultMinLOS,
+                                defaultMaxLOS: values.defaultMaxLOS,
+                                defaultClosedToArrival: values.defaultClosedToArrival,
+                                defaultClosedToDeparture: values.defaultClosedToDeparture,
+                            }
+
+                            if (editingRatePlan) {
+                                await updateRatePlan.mutateAsync({ id: editingRatePlan.id, payload })
+                            } else {
+                                await createRatePlan.mutateAsync(payload as CreateRatePlanPayload)
+                            }
+                            setIsCreateOpen(false)
+                            setEditingRatePlan(null)
+                        }}
+                        onCancel={() => {
+                            setIsCreateOpen(false)
+                            setEditingRatePlan(null)
+                        }}
+                        submitLabel={
+                            createRatePlan.isPending || updateRatePlan.isPending
+                                ? 'Saving...'
+                                : editingRatePlan
+                                  ? 'Save changes'
+                                  : 'Create rate plan'
+                        }
+                    />
+                </DialogContent>
+            </Dialog>
+
+            {/* ══════════════════════════════════════════════════
+                FILL DAILY RATES DIALOG
+            ══════════════════════════════════════════════════ */}
+            <Dialog
+                open={!!fillDailyFor}
+                onOpenChange={(open) => {
+                    if (!open) setFillDailyFor(null)
+                }}
+            >
+                <DialogContent className="sm:max-w-130">
+                    <DialogHeader>
+                        <DialogTitle>Configure daily rates</DialogTitle>
+                        <DialogDescription>
+                            {fillDailyFor
+                                ? `Override the price and restrictions for "${fillDailyFor.name}" across a date range. Leave a field blank to keep the plan's default.`
+                                : ''}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {fillDailyFor && (
+                        <FillDailyForm
+                            defaultPrice={
+                                typeof fillDailyFor.defaultPrice === 'string'
+                                    ? Number(fillDailyFor.defaultPrice)
+                                    : fillDailyFor.defaultPrice
+                            }
+                            onSubmit={async (values) => {
+                                await fillDaily.mutateAsync({
+                                    ratePlanId: fillDailyFor.id,
+                                    fromDate: values.fromDate,
+                                    toDate: values.toDate,
+                                    ...(values.price !== undefined && { price: values.price }),
+                                    ...(values.minLOS !== undefined && { minLOS: values.minLOS }),
+                                    ...(values.maxLOS !== undefined && { maxLOS: values.maxLOS }),
+                                    ...(values.closedToArrival !== undefined && { closedToArrival: values.closedToArrival }),
+                                    ...(values.closedToDeparture !== undefined && { closedToDeparture: values.closedToDeparture }),
+                                    ...(values.stopSell !== undefined && { stopSell: values.stopSell }),
+                                })
+                                setFillDailyFor(null)
+                            }}
+                            onCancel={() => setFillDailyFor(null)}
+                            submitLabel={fillDaily.isPending ? 'Filling...' : 'Apply to range'}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
         </>
     )
 }
 
-// ─── Sub-components ─────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────
 
 function MetricCard({ title, value, subtitle, icon }: { title: string; value: string; subtitle: string; icon: React.ReactNode }) {
     return (
@@ -405,5 +639,372 @@ function StatusToggle({ label, active, icon }: { label: string; active: boolean;
                 )}
             </div>
         </div>
+    )
+}
+
+// ─── Rate Plans Card (right column) ───────────────────────────────
+
+function RatePlansCard({
+    ratePlans,
+    isLoading,
+    onCreate,
+    onEdit,
+    onDelete,
+    onFillDaily,
+}: {
+    ratePlans: RatePlanListItem[]
+    isLoading: boolean
+    onCreate: () => void
+    onEdit: (rp: RatePlanListItem) => void
+    onDelete: (rp: RatePlanListItem) => void
+    onFillDaily: (rp: RatePlanListItem) => void
+}) {
+    return (
+        <Card>
+            <CardHeader>
+                <div className="flex items-center justify-between">
+                    <CardTitle className="text-base font-bold flex items-center gap-2">
+                        <Tag className="size-4 text-primary" />
+                        Rate Plans
+                    </CardTitle>
+                    <Button size="sm" onClick={onCreate}>
+                        <Plus className="size-4" />
+                        Add
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                    <div className="flex justify-center py-8">
+                        <Spinner className="size-5" />
+                    </div>
+                ) : ratePlans.length === 0 ? (
+                    <div className="rounded-lg border border-dashed p-6 text-center">
+                        <Tag className="size-10 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-sm font-medium">No rate plans yet</p>
+                        <p className="text-xs text-muted-foreground mt-1 mb-4">A rate plan defines a sellable price for this room type.</p>
+                        <Button size="sm" variant="outline" onClick={onCreate}>
+                            <Plus className="size-4" />
+                            Create your first rate plan
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {ratePlans.map((rp) => {
+                            const price = typeof rp.defaultPrice === 'string' ? Number(rp.defaultPrice) : rp.defaultPrice
+                            return (
+                                <div key={rp.id} className="rounded-lg border bg-card p-4 hover:border-primary/30 transition-colors">
+                                    <div className="flex items-start justify-between gap-3 mb-2">
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                <Badge variant="outline" className="font-mono text-[10px] bg-muted">
+                                                    {rp.code}
+                                                </Badge>
+                                                <span
+                                                    className={cn(
+                                                        'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border',
+                                                        RATE_PLAN_STATUS_BADGE[rp.status],
+                                                    )}
+                                                >
+                                                    {rp.status}
+                                                </span>
+                                            </div>
+                                            <div className="font-semibold text-sm leading-tight truncate">{rp.name}</div>
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            <div className="text-lg font-black tracking-tight">{formatPrice(price)}</div>
+                                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                                                per night
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {(rp.defaultMinLOS || rp.defaultMaxLOS || rp.defaultClosedToArrival || rp.defaultClosedToDeparture) && (
+                                        <div className="flex flex-wrap gap-1.5 mb-3">
+                                            {rp.defaultMinLOS && (
+                                                <span className="text-[10px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
+                                                    Min stay {rp.defaultMinLOS}n
+                                                </span>
+                                            )}
+                                            {rp.defaultMaxLOS && (
+                                                <span className="text-[10px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
+                                                    Max stay {rp.defaultMaxLOS}n
+                                                </span>
+                                            )}
+                                            {rp.defaultClosedToArrival && (
+                                                <span className="text-[10px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
+                                                    Closed to arrival
+                                                </span>
+                                            )}
+                                            {rp.defaultClosedToDeparture && (
+                                                <span className="text-[10px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
+                                                    Closed to departure
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center gap-1.5 -ml-1">
+                                        <Button size="sm" variant="ghost" onClick={() => onEdit(rp)}>
+                                            <Edit className="size-3.5" />
+                                            Edit
+                                        </Button>
+                                        <Button size="sm" variant="ghost" onClick={() => onFillDaily(rp)}>
+                                            <Calendar className="size-3.5" />
+                                            Daily rates
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                                            onClick={() => onDelete(rp)}
+                                        >
+                                            <Trash2 className="size-3.5" />
+                                            Remove
+                                        </Button>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    )
+}
+
+// ─── Rate Plan Form (create / edit) ───────────────────────────────
+
+const ratePlanFormSchema = z.object({
+    name: z.string().min(2, 'Name is required').max(128),
+    code: z
+        .string()
+        .min(1, 'Code is required')
+        .max(64)
+        .regex(/^[A-Z0-9_-]+$/i, 'Use letters, numbers, hyphens or underscores'),
+    description: z.string().max(5000),
+    status: z.enum(RatePlanStatusOptions),
+    defaultPrice: z.number().min(0, 'Default price is required'),
+    defaultMinLOS: z.number().int().min(1).max(365).optional(),
+    defaultMaxLOS: z.number().int().min(1).max(365).optional(),
+    defaultClosedToArrival: z.boolean(),
+    defaultClosedToDeparture: z.boolean(),
+})
+
+type RatePlanFormValues = z.infer<typeof ratePlanFormSchema>
+
+const defaultRatePlanValues: RatePlanFormValues = {
+    name: '',
+    code: 'BAR',
+    description: '',
+    status: 'ACTIVE',
+    defaultPrice: 100,
+    defaultMinLOS: undefined,
+    defaultMaxLOS: undefined,
+    defaultClosedToArrival: false,
+    defaultClosedToDeparture: false,
+}
+
+function valuesFromRatePlan(rp: RatePlanListItem | RatePlan): RatePlanFormValues {
+    return {
+        name: rp.name,
+        code: rp.code,
+        description: rp.description ?? '',
+        status: rp.status,
+        defaultPrice: typeof rp.defaultPrice === 'string' ? Number(rp.defaultPrice) : rp.defaultPrice,
+        defaultMinLOS: rp.defaultMinLOS ?? undefined,
+        defaultMaxLOS: rp.defaultMaxLOS ?? undefined,
+        defaultClosedToArrival: rp.defaultClosedToArrival,
+        defaultClosedToDeparture: rp.defaultClosedToDeparture,
+    }
+}
+
+function RatePlanForm({
+    defaultValues,
+    onSubmit,
+    onCancel,
+    submitLabel,
+}: {
+    defaultValues: RatePlanFormValues
+    onSubmit: (values: RatePlanFormValues) => Promise<void>
+    onCancel: () => void
+    submitLabel: string
+}) {
+    const form = useAppForm({
+        defaultValues,
+        validators: { onChange: ratePlanFormSchema },
+        onSubmit: async ({ value }) => await onSubmit(value),
+    })
+
+    return (
+        <form
+            onSubmit={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                form.handleSubmit()
+            }}
+            className="flex flex-col gap-4"
+        >
+            <form.AppField name="name">
+                {(field) => <field.FormInput label="Plan name" placeholder="e.g. Best Available Rate" />}
+            </form.AppField>
+            <div className="grid grid-cols-2 gap-3">
+                <form.AppField name="code">{(field) => <field.FormInput label="Code" placeholder="e.g. BAR" />}</form.AppField>
+                <form.AppField name="status">
+                    {(field) => (
+                        <field.FormSelect label="Status" options={RatePlanStatusOptions.map((v) => ({ value: v, label: capitalize(v) }))} />
+                    )}
+                </form.AppField>
+            </div>
+            <form.AppField name="description">
+                {(field) => <field.FormTextarea label="Description" placeholder="Internal notes (not shown to guests)..." rows={2} />}
+            </form.AppField>
+
+            <form.AppField name="defaultPrice">
+                {(field) => <field.FormInputNumber label="Default price / night" placeholder="e.g. 120" min={0} step="0.01" />}
+            </form.AppField>
+
+            <div className="grid grid-cols-2 gap-3">
+                <form.AppField name="defaultMinLOS">
+                    {(field) => (
+                        <field.FormInputNumber label="Min length of stay (nights)" placeholder="e.g. 2" min={1} max={365} step="1" />
+                    )}
+                </form.AppField>
+                <form.AppField name="defaultMaxLOS">
+                    {(field) => (
+                        <field.FormInputNumber label="Max length of stay (nights)" placeholder="Optional" min={1} max={365} step="1" />
+                    )}
+                </form.AppField>
+            </div>
+            <form.AppField name="defaultClosedToArrival">
+                {(field) => (
+                    <field.FormSwitch
+                        label="Closed to arrival by default"
+                        description="Guests cannot check in on nights using the default price"
+                    />
+                )}
+            </form.AppField>
+            <form.AppField name="defaultClosedToDeparture">
+                {(field) => (
+                    <field.FormSwitch
+                        label="Closed to departure by default"
+                        description="Guests cannot check out on nights using the default price"
+                    />
+                )}
+            </form.AppField>
+
+            <div className="flex items-center justify-end gap-2">
+                <Button type="button" variant="outline" onClick={onCancel}>
+                    Cancel
+                </Button>
+                <form.AppForm>
+                    <form.FormSubmit label={submitLabel} />
+                </form.AppForm>
+            </div>
+        </form>
+    )
+}
+
+// ─── Fill Daily Rates Form ────────────────────────────────────────
+
+const fillDailySchema = z
+    .object({
+        fromDate: z.string().min(1, 'From date is required'),
+        toDate: z.string().min(1, 'To date is required'),
+        price: z.number().min(0).optional(),
+        minLOS: z.number().int().min(1).max(365).optional(),
+        maxLOS: z.number().int().min(1).max(365).optional(),
+        closedToArrival: z.boolean().optional(),
+        closedToDeparture: z.boolean().optional(),
+        stopSell: z.boolean().optional(),
+    })
+    .refine((v) => new Date(v.toDate) >= new Date(v.fromDate), {
+        message: 'To date must be on or after from date',
+        path: ['toDate'],
+    })
+
+type FillDailyValues = z.infer<typeof fillDailySchema>
+
+function FillDailyForm({
+    defaultPrice,
+    onSubmit,
+    onCancel,
+    submitLabel,
+}: {
+    defaultPrice: number
+    onSubmit: (values: FillDailyValues) => Promise<void>
+    onCancel: () => void
+    submitLabel: string
+}) {
+    // Default the wizard to a 30-day window starting today.
+    const today = new Date()
+    const monthOut = new Date(today)
+    monthOut.setDate(monthOut.getDate() + 29)
+    const isoDate = (d: Date) => d.toISOString().slice(0, 10)
+
+    const form = useAppForm({
+        defaultValues: {
+            fromDate: isoDate(today),
+            toDate: isoDate(monthOut),
+            price: defaultPrice,
+            minLOS: undefined,
+            maxLOS: undefined,
+            closedToArrival: false,
+            closedToDeparture: false,
+            stopSell: false,
+        } as FillDailyValues,
+        validators: { onChange: fillDailySchema },
+        onSubmit: async ({ value }) => await onSubmit(value),
+    })
+
+    return (
+        <form
+            onSubmit={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                form.handleSubmit()
+            }}
+            className="flex flex-col gap-4"
+        >
+            <form.AppField name="fromDate">{(field) => <field.FormInput type="date" label="From date" />}</form.AppField>
+            <form.AppField name="toDate">{(field) => <field.FormInput type="date" label="To date" />}</form.AppField>
+
+            <form.AppField name="price">
+                {(field) => (
+                    <field.FormInputNumber
+                        label={`Price / night (default ${defaultPrice})`}
+                        placeholder={String(defaultPrice)}
+                        min={0}
+                        step="0.01"
+                    />
+                )}
+            </form.AppField>
+            <div className="grid grid-cols-2 gap-3">
+                <form.AppField name="minLOS">
+                    {(field) => <field.FormInputNumber label="Min LOS" placeholder="Optional" min={1} max={365} step="1" />}
+                </form.AppField>
+                <form.AppField name="maxLOS">
+                    {(field) => <field.FormInputNumber label="Max LOS" placeholder="Optional" min={1} max={365} step="1" />}
+                </form.AppField>
+            </div>
+            <form.AppField name="closedToArrival">
+                {(field) => <field.FormSwitch label="Closed to arrival" description="Block check-in on these nights" />}
+            </form.AppField>
+            <form.AppField name="closedToDeparture">
+                {(field) => <field.FormSwitch label="Closed to departure" description="Block check-out on these nights" />}
+            </form.AppField>
+            <form.AppField name="stopSell">
+                {(field) => <field.FormSwitch label="Stop-sell" description="Mark these nights as unavailable for sale" />}
+            </form.AppField>
+
+            <div className="flex items-center justify-end gap-2">
+                <Button type="button" variant="outline" onClick={onCancel}>
+                    Cancel
+                </Button>
+                <form.AppForm>
+                    <form.FormSubmit label={submitLabel} />
+                </form.AppForm>
+            </div>
+        </form>
     )
 }

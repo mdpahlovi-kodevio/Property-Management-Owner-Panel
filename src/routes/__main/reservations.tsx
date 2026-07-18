@@ -590,7 +590,12 @@ function ReservationForm({
                     const nights = nightsBetween(checkInDate, checkOutDate)
                     if (nights <= 0) return null
 
-                    const nightly = Number(room.basePrice) || 0
+                    const nightly = (() => {
+                        const raw = room.ratePlans?.[0]?.defaultPrice ?? null
+                        if (raw == null) return 0
+                        const num = typeof raw === 'string' ? Number(raw) : raw
+                        return Number.isFinite(num) ? num : 0
+                    })()
                     const roomTotal = nightly * nights
                     const selectedAddons = property.addons.filter((a) => addonIds.includes(a.id))
                     const addonTotal = selectedAddons.reduce((sum, a) => sum + (Number(a.price) || 0), 0)

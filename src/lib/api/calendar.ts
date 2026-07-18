@@ -10,7 +10,6 @@ export interface CalendarApiUnit {
         id: string
         name: string
         internalCode: string
-        basePrice: string | number
         maxOccupancy: number
         property: {
             id: string
@@ -18,6 +17,7 @@ export interface CalendarApiUnit {
             slug: string
             currency: string
         }
+        ratePlans: { id: string; defaultPrice: string | number }[]
     }
 }
 
@@ -75,12 +75,14 @@ export const calendarApi = {
 }
 
 export function mapApiUnitToCalendarUnit(api: CalendarApiUnit): CalendarUnit {
-    const basePrice = typeof api.roomType.basePrice === 'string' ? parseFloat(api.roomType.basePrice) : api.roomType.basePrice
+    const priceRaw = api.roomType.ratePlans[0]?.defaultPrice
+    const ratePerNight = typeof priceRaw === 'string' ? parseFloat(priceRaw) : (priceRaw ?? 0)
+
     return {
         id: api.id,
         name: api.roomNumber,
         floor: api.floor,
-        ratePerNight: Number.isFinite(basePrice) ? basePrice : 0,
+        ratePerNight: Number.isFinite(ratePerNight) ? ratePerNight : 0,
         capacity: api.roomType.maxOccupancy,
         roomTypeId: api.roomTypeId,
         roomTypeName: api.roomType.name,
