@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { cn } from '@/lib/utils'
-import { Check, ChevronDown, Search, UserPlus, X } from 'lucide-react'
+import { Check, ChevronDown, Loader2, Search, UserPlus, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import * as z from 'zod'
 import { useAppForm, useFieldContext } from './form-context'
@@ -22,6 +22,10 @@ type FormSearchableSelectProps = {
     /** Allow adding a new guest inline */
     allowAddNew?: boolean
     addNewLabel?: string
+    /** Fires after an existing option is picked. Use to sync additional parent fields. */
+    onSelect?: (option: Option) => void
+    /** Fires after a new entry is added to the local list. Use to sync additional parent fields. Awaited before the panel closes. */
+    onCreateNew?: (value: z.infer<typeof newGuestSchema>) => void | Promise<void>
 }
 
 export function FormSearchableSelect({
@@ -32,6 +36,8 @@ export function FormSearchableSelect({
     disabled,
     allowAddNew = false,
     addNewLabel = 'Add new guest',
+    onSelect,
+    onCreateNew,
 }: FormSearchableSelectProps) {
     const field = useFieldContext<string>()
     const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid
@@ -40,9 +46,14 @@ export function FormSearchableSelect({
     const [search, setSearch] = useState('')
     const [options, setOptions] = useState<Option[]>(initialOptions)
     const [showAddNew, setShowAddNew] = useState(false)
+    const [isCreating, setIsCreating] = useState(false)
 
     const containerRef = useRef<HTMLDivElement>(null)
     const searchRef = useRef<HTMLInputElement>(null)
+
+    useEffect(() => {
+        setOptions(initialOptions)
+    }, [initialOptions])
 
     // Sub-form for adding a new guest (mirrors the guest form pattern in user-management.tsx)
     // Lives outside a <form> wrapper because we're already nested inside the parent's form.
@@ -50,9 +61,7 @@ export function FormSearchableSelect({
         defaultValues: { name: '', email: '' },
         validators: { onChange: newGuestSchema },
         onSubmit: async ({ value }) => {
-            const { name, email } = value
-
-            if (options.some((o) => o.value === email)) {
+            if (options.some((o) => o.value === value.email)) {
                 newGuestForm.setFieldMeta('email', (prev) => ({
                     ...prev,
                     isValid: false,
@@ -61,17 +70,28 @@ export function FormSearchableSelect({
                 return
             }
 
-            setOptions((prev) => [...prev, { value: email, label: `${name} (${email})` }])
-            field.handleChange(email)
-            field.handleBlur()
-            setOpen(false)
-            setSearch('')
-            setShowAddNew(false)
-            newGuestForm.reset()
+            setIsCreating(true)
+            try {
+                setOptions((prev) => [...prev, { value: value.email, label: `${value.name} (${value.email})` }])
+                field.handleChange(value.email)
+                field.handleBlur()
+
+                if (onCreateNew) {
+                    await onCreateNew(value)
+                }
+
+                setOpen(false)
+                setSearch('')
+                setShowAddNew(false)
+                newGuestForm.reset()
+            } finally {
+                setIsCreating(false)
+            }
         },
     })
 
     const closeAddNewPanel = () => {
+        if (isCreating) return
         setShowAddNew(false)
         newGuestForm.reset()
     }
@@ -86,13 +106,15 @@ export function FormSearchableSelect({
             if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
                 setOpen(false)
                 setSearch('')
-                setShowAddNew(false)
-                newGuestForm.reset()
+                if (!isCreating) {
+                    setShowAddNew(false)
+                    newGuestForm.reset()
+                }
             }
         }
         document.addEventListener('mousedown', handler)
         return () => document.removeEventListener('mousedown', handler)
-    }, [newGuestForm])
+    }, [newGuestForm, isCreating])
 
     // Focus search when opened
     useEffect(() => {
@@ -101,12 +123,13 @@ export function FormSearchableSelect({
         }
     }, [open, showAddNew])
 
-    const handleSelect = (value: string) => {
-        field.handleChange(value)
+    const handleSelect = (option: Option) => {
+        field.handleChange(option.value)
         field.handleBlur()
         setOpen(false)
         setSearch('')
         setShowAddNew(false)
+        onSelect?.(option)
     }
 
     const handleClear = (e: React.MouseEvent) => {
@@ -202,7 +225,7 @@ export function FormSearchableSelect({
                                                 <button
                                                     key={option.value}
                                                     type="button"
-                                                    onClick={() => handleSelect(option.value)}
+                                                    onClick={() => handleSelect(option)}
                                                     className={cn(
                                                         'flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors',
                                                         'hover:bg-accent hover:text-accent-foreground',
@@ -242,14 +265,22 @@ export function FormSearchableSelect({
                                     <button
                                         type="button"
                                         onClick={closeAddNewPanel}
-                                        className="text-muted-foreground hover:text-foreground rounded-md p-0.5 transition-colors"
+                                        disabled={isCreating}
+                                        className="text-muted-foreground hover:text-foreground rounded-md p-0.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <X className="h-4 w-4" />
                                     </button>
                                 </div>
 
                                 <newGuestForm.AppField name="name">
-                                    {(subField) => <subField.FormInput size="sm" label="Full Name" placeholder="e.g. John Smith" />}
+                                    {(subField) => (
+                                        <subField.FormInput
+                                            size="sm"
+                                            label="Full Name"
+                                            placeholder="e.g. John Smith"
+                                            disabled={isCreating}
+                                        />
+                                    )}
                                 </newGuestForm.AppField>
 
                                 <newGuestForm.AppField name="email">
@@ -259,12 +290,13 @@ export function FormSearchableSelect({
                                             type="email"
                                             label="Email Address"
                                             placeholder="e.g. john@example.com"
+                                            disabled={isCreating}
                                         />
                                     )}
                                 </newGuestForm.AppField>
 
                                 <div className="flex gap-2 pt-1">
-                                    <Button size="sm" type="button" variant="outline" onClick={closeAddNewPanel}>
+                                    <Button size="sm" type="button" variant="outline" onClick={closeAddNewPanel} disabled={isCreating}>
                                         Cancel
                                     </Button>
                                     <newGuestForm.Subscribe selector={(state) => state.canSubmit}>
@@ -273,8 +305,9 @@ export function FormSearchableSelect({
                                                 size="sm"
                                                 type="button"
                                                 onClick={() => newGuestForm.handleSubmit()}
-                                                disabled={!canSubmit}
+                                                disabled={!canSubmit || isCreating}
                                             >
+                                                {isCreating && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                                                 Add Guest
                                             </Button>
                                         )}

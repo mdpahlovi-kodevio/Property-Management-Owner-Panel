@@ -125,16 +125,22 @@ export interface ListBookingParams {
     propertyId?: string
 }
 
+export interface CreateBookingGuest {
+    name: string
+    email: string
+    phone?: string
+}
+
 export interface CreateBookingPayload {
     propertyId: string
     roomTypeId: string
     unitId: string
-    guestId: string
     checkInDate: string
     checkOutDate: string
     adults: number
     children?: number
     addonIds?: string[]
+    guest: CreateBookingGuest
 }
 
 export interface CancelBookingPayload {

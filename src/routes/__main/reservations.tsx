@@ -33,15 +33,19 @@ export const Route = createFileRoute('/__main/reservations')({
 /** Form schema — mirrors the backend's `CreateBookingDto` for owners. */
 const reservationSchema = z
     .object({
-        guestId: z.string().min(1, 'Select a guest'),
         propertyId: z.string().min(1, 'Select a property'),
         roomTypeId: z.string().min(1, 'Select a room type'),
         unitId: z.string().min(1, 'Select a room'),
-        checkInDate: z.string().min(1, 'Check-in date is required'),
-        checkOutDate: z.string().min(1, 'Check-out date is required'),
-        adults: z.number().int().min(1, 'At least 1 adult is required').max(50),
-        children: z.number().int().min(0, 'Children cannot be negative').max(50),
+        checkInDate: z.string().min(1, 'Pick a check-in date'),
+        checkOutDate: z.string().min(1, 'Pick a check-out date'),
+        adults: z.number().int().min(1).max(50),
+        children: z.number().int().min(0).max(50),
         addonIds: z.array(z.string()),
+        guest: z.object({
+            name: z.string().min(2, 'Enter your full name'),
+            email: z.email('Enter your email address'),
+            phone: z.string().optional(),
+        }),
     })
     .refine((d) => new Date(d.checkOutDate) > new Date(d.checkInDate), {
         message: 'Check-out must be after check-in',
@@ -95,7 +99,6 @@ function tomorrowStr() {
 type ReservationFormValues = z.infer<typeof reservationSchema>
 
 const defaultFormValues: ReservationFormValues = {
-    guestId: '',
     propertyId: '',
     roomTypeId: '',
     unitId: '',
@@ -104,6 +107,11 @@ const defaultFormValues: ReservationFormValues = {
     adults: 2,
     children: 0,
     addonIds: [],
+    guest: {
+        name: '',
+        email: '',
+        phone: '',
+    },
 }
 
 function RouteComponent() {
@@ -237,12 +245,12 @@ function RouteComponent() {
             propertyId: values.propertyId,
             roomTypeId: values.roomTypeId,
             unitId: values.unitId,
-            guestId: values.guestId,
             checkInDate: values.checkInDate,
             checkOutDate: values.checkOutDate,
             adults: values.adults,
             children: values.children,
             addonIds: values.addonIds,
+            guest: values.guest,
         })
     }
 
@@ -374,46 +382,29 @@ function ReservationForm({
             }}
             className="space-y-4"
         >
-            {/* Guest */}
-            <form.Subscribe
-                selector={(state) => state.values.propertyId}
-                children={(selectedPropertyId) => {
-                    const selectedProperty = properties.find((rt) => rt.id === selectedPropertyId)
-                    const guestOptions = guests
-                        .filter((guest) => (selectedProperty ? guest.websiteId === selectedProperty.websiteId : true))
-                        .map((guest) => ({
-                            value: guest.id,
-                            label: `${guest.user.name} (${guest.user.email})`,
-                        }))
-
-                    return (
-                        <form.AppField name="guestId">
-                            {(field) => (
-                                <field.FormSelect
-                                    label={t('reservations.form.guest', 'Guest')}
-                                    placeholder={t('reservations.form.guestPlaceholder', 'Select a guest...')}
-                                    options={guestOptions}
-                                />
-                            )}
-                        </form.AppField>
-                    )
-                }}
-            />
-
             {/* Property */}
             <form.Subscribe
-                selector={(state) => state.values.guestId}
-                children={(selectedGuestId) => {
-                    const selectedGuest = guests.find((rt) => rt.id === selectedGuestId)
+                selector={(state) => state.values.guest}
+                children={(selectedGuest) => {
+                    const guest = guests.find((rt) => rt.user.email === selectedGuest.email)
                     const propertyOptions = properties
-                        .filter((p) => (selectedGuest ? p.websiteId === selectedGuest.websiteId : true))
+                        .filter((p) => (guest ? p.websiteId === guest.websiteId : true))
                         .map((p) => ({
                             value: p.id,
                             label: p.name,
                         }))
 
                     return (
-                        <form.AppField name="propertyId">
+                        <form.AppField
+                            name="propertyId"
+                            listeners={{
+                                onChange: () => {
+                                    form.setFieldValue('roomTypeId', '')
+                                    form.setFieldValue('unitId', '')
+                                    form.setFieldValue('addonIds', [])
+                                },
+                            }}
+                        >
                             {(field) => (
                                 <field.FormSelect
                                     label={t('reservations.form.property', 'Property')}
@@ -438,7 +429,14 @@ function ReservationForm({
                         }))
 
                     return (
-                        <form.AppField name="roomTypeId">
+                        <form.AppField
+                            name="roomTypeId"
+                            listeners={{
+                                onChange: () => {
+                                    form.setFieldValue('unitId', '')
+                                },
+                            }}
+                        >
                             {(field) => (
                                 <field.FormSelect
                                     label={t('reservations.form.roomType', 'Room type')}
@@ -472,6 +470,53 @@ function ReservationForm({
                                     placeholder={t('reservations.form.unitPlaceholder', 'Select room')}
                                     options={unitOptions}
                                     disabled={!selectedRoomTypeId}
+                                />
+                            )}
+                        </form.AppField>
+                    )
+                }}
+            />
+
+            {/* Guest */}
+            <form.Subscribe
+                selector={(state) => state.values.propertyId}
+                children={(selectedPropertyId) => {
+                    const selectedProperty = properties.find((rt) => rt.id === selectedPropertyId)
+                    const guestOptions = guests
+                        .filter((guest) => (selectedProperty ? guest.websiteId === selectedProperty.websiteId : true))
+                        .map((guest) => ({
+                            value: guest.user.email,
+                            label: `${guest.user.name} (${guest.user.email})`,
+                        }))
+
+                    return (
+                        <form.AppField name="guest.email">
+                            {(field) => (
+                                <field.FormSearchableSelect
+                                    label={t('reservations.form.guest', 'Guest')}
+                                    placeholder={t('reservations.form.guestPlaceholder', 'Select a guest...')}
+                                    searchPlaceholder={t('reservations.form.guestSearch', 'Search guests...')}
+                                    options={guestOptions}
+                                    disabled={!selectedPropertyId}
+                                    allowAddNew
+                                    addNewLabel={t('reservations.form.guestAddNew', 'Add new guest')}
+                                    onSelect={(option) => {
+                                        const picked = guests.find((g) => g.user.email === option.value)
+                                        if (picked) {
+                                            form.setFieldValue('guest', {
+                                                name: picked.user.name,
+                                                email: picked.user.email,
+                                                phone: picked.user.phone ?? '',
+                                            })
+                                        }
+                                    }}
+                                    onCreateNew={async (value) => {
+                                        form.setFieldValue('guest', {
+                                            name: value.name,
+                                            email: value.email,
+                                            phone: '',
+                                        })
+                                    }}
                                 />
                             )}
                         </form.AppField>
