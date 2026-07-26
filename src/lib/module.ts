@@ -79,6 +79,10 @@ export const MODULES = {
         path: '/support',
         permissions: COMMON_PERMISSIONS,
     },
+    guestSupport: {
+        path: '/guest-support',
+        permissions: COMMON_PERMISSIONS,
+    },
 } as const
 
 // ---------- 3. Types ----------

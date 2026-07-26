@@ -192,7 +192,12 @@
         "role-management": "Rollenverwaltung",
         "reviews": "Bewertungen",
         "reports": "Berichte",
-        "support": "Support"
+        "support": "Support",
+        "guestSupport": "Gäste-Support"
+    },
+    "guestSupport": {
+        "title": "Gäste-Support",
+        "description": "Verwalten Sie Support-Anfragen Ihrer Gäste"
     },
     "settings": {
         "title": "Einstellungen",

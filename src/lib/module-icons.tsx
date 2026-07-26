@@ -8,6 +8,7 @@ import {
     IdCardLanyard,
     LayoutDashboard,
     MessageCircleMore,
+    MessageSquareWarning,
     ShieldUser,
     Star,
     User,
@@ -33,4 +34,5 @@ export const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
     reviews: Star,
     reports: FileText,
     support: Headphones,
+    guestSupport: MessageSquareWarning,
 }

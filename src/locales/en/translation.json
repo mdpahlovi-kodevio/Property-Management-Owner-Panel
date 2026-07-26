@@ -192,7 +192,12 @@
         "role-management": "Role Management",
         "reviews": "Reviews",
         "reports": "Reports",
-        "support": "Support"
+        "support": "Support",
+        "guestSupport": "Guest Support"
+    },
+    "guestSupport": {
+        "title": "Guest Support",
+        "description": "Manage support requests from your guests"
     },
     "settings": {
         "title": "Settings",

@@ -192,7 +192,12 @@
         "role-management": "Rolbeheer",
         "reviews": "Beoordelingen",
         "reports": "Rapporten",
-        "support": "Ondersteuning"
+        "support": "Ondersteuning",
+        "guestSupport": "Gastondersteuning"
+    },
+    "guestSupport": {
+        "title": "Gastondersteuning",
+        "description": "Beheer ondersteuningsverzoeken van uw gasten"
     },
     "settings": {
         "title": "Instellingen",
