@@ -7,7 +7,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { StatCard } from '@/components/ui/stat-card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { guestSupportApi } from '@/lib/api'
-import type { GuestSupportTicketCategory, GuestSupportTicketPriority } from '@/lib/api'
+import type { GuestSupportTicketCategory, GuestSupportTicketPriority, ListGuestSupportParams } from '@/lib/api'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { CheckCheck, CircleCheckBig, Clock, MessageSquare, Search, SearchX, User, X } from 'lucide-react'
@@ -17,7 +17,7 @@ export const Route = createFileRoute('/__main/guest-support/')({
     component: RouteComponent,
 })
 
-const TABS = ['All', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const
+const TABS = ['All', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'SPAM'] as const
 type Tab = (typeof TABS)[number]
 
 const STATUS_LABELS: Record<string, string> = {
@@ -25,18 +25,17 @@ const STATUS_LABELS: Record<string, string> = {
     IN_PROGRESS: 'In Progress',
     RESOLVED: 'Resolved',
     CLOSED: 'Closed',
+    SPAM: 'Spam',
 }
 
 const CATEGORIES: { value: GuestSupportTicketCategory; label: string }[] = [
     { value: 'GENERAL', label: 'General' },
-    { value: 'BOOKING_ISSUE', label: 'Booking Issue' },
-    { value: 'CHECK_IN_CHECK_OUT', label: 'Check-in / Check-out' },
-    { value: 'CLEANLINESS', label: 'Cleanliness' },
-    { value: 'AMENITIES', label: 'Amenities' },
-    { value: 'BILLING', label: 'Billing' },
-    { value: 'MAINTENANCE', label: 'Maintenance' },
-    { value: 'COMPLAINT', label: 'Complaint' },
-    { value: 'SPECIAL_REQUEST', label: 'Special Request' },
+    { value: 'ACCOUNT', label: 'Account' },
+    { value: 'BOOKING_PROBLEM', label: 'Booking Problem' },
+    { value: 'PAYMENT_BILLING', label: 'Payment & Billing' },
+    { value: 'PROPERTY_COMPLAINT', label: 'Property Complaint' },
+    { value: 'SAFETY_SECURITY', label: 'Safety & Security' },
+    { value: 'TECHNICAL', label: 'Technical' },
     { value: 'OTHER', label: 'Other' },
 ]
 
@@ -57,6 +56,8 @@ const getStatusClasses = (status: string) => {
             return 'text-slate-600 bg-slate-500/10'
         case 'CLOSED':
             return 'text-green-600 bg-green-500/10'
+        case 'SPAM':
+            return 'text-red-600 bg-red-500/10'
         default:
             return 'text-slate-600 bg-slate-500/10'
     }
@@ -100,7 +101,7 @@ function RouteComponent() {
     const [selectedPriority, setSelectedPriority] = useState<string>('all')
 
     const queryParams = useMemo(() => {
-        const params: Record<string, string | number | boolean | undefined> = { page, limit }
+        const params: ListGuestSupportParams = { page, limit }
         if (activeTab !== 'All') params.status = activeTab
         if (searchQuery.trim()) params.search = searchQuery.trim()
         if (selectedCategory !== 'all') params.category = selectedCategory
@@ -150,7 +151,7 @@ function RouteComponent() {
                     <Input
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search by guest, property, booking..."
+                        placeholder="Search guest, property, or subject..."
                         className="pl-9 pr-8"
                     />
                     {searchQuery && (
@@ -274,13 +275,9 @@ function RouteComponent() {
                                         {ticket.guestName}
                                     </span>
                                     <span className="text-border">|</span>
-                                    <span className="truncate">{ticket.propertyName}</span>
-                                    {ticket.category && (
-                                        <>
-                                            <span className="text-border">|</span>
-                                            <span className="truncate">{ticket.category.replace(/_/g, ' ')}</span>
-                                        </>
-                                    )}
+                                    <span className="truncate">{ticket.propertyName ?? ticket.websiteName}</span>
+                                    <span className="text-border">|</span>
+                                    <span className="truncate">{ticket.category.replace(/_/g, ' ')}</span>
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">
                                     <Clock className="w-3 h-3" />
