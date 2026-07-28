@@ -24,6 +24,7 @@ import { Route as _mainInboxRouteImport } from './routes/__main/inbox'
 import { Route as _mainEmployeesRouteImport } from './routes/__main/employees'
 import { Route as _mainChannelManagerRouteImport } from './routes/__main/channel-manager'
 import { Route as _mainCalendarRouteImport } from './routes/__main/calendar'
+import { Route as _mainAnalyticsRouteImport } from './routes/__main/analytics'
 import { Route as _authVerificationRouteImport } from './routes/__auth/verification'
 import { Route as _authSigninRouteImport } from './routes/__auth/signin'
 import { Route as _authResetPasswordRouteImport } from './routes/__auth/reset-password'
@@ -110,6 +111,11 @@ const _mainCalendarRoute = _mainCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => _mainRouteRoute,
 } as any)
+const _mainAnalyticsRoute = _mainAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => _mainRouteRoute,
+} as any)
 const _authVerificationRoute = _authVerificationRouteImport.update({
   id: '/verification',
   path: '/verification',
@@ -179,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof _authResetPasswordRoute
   '/signin': typeof _authSigninRoute
   '/verification': typeof _authVerificationRoute
+  '/analytics': typeof _mainAnalyticsRoute
   '/calendar': typeof _mainCalendarRoute
   '/channel-manager': typeof _mainChannelManagerRoute
   '/employees': typeof _mainEmployeesRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof _authResetPasswordRoute
   '/signin': typeof _authSigninRoute
   '/verification': typeof _authVerificationRoute
+  '/analytics': typeof _mainAnalyticsRoute
   '/calendar': typeof _mainCalendarRoute
   '/channel-manager': typeof _mainChannelManagerRoute
   '/employees': typeof _mainEmployeesRoute
@@ -235,6 +243,7 @@ export interface FileRoutesById {
   '/__auth/reset-password': typeof _authResetPasswordRoute
   '/__auth/signin': typeof _authSigninRoute
   '/__auth/verification': typeof _authVerificationRoute
+  '/__main/analytics': typeof _mainAnalyticsRoute
   '/__main/calendar': typeof _mainCalendarRoute
   '/__main/channel-manager': typeof _mainChannelManagerRoute
   '/__main/employees': typeof _mainEmployeesRoute
@@ -265,6 +274,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signin'
     | '/verification'
+    | '/analytics'
     | '/calendar'
     | '/channel-manager'
     | '/employees'
@@ -292,6 +302,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signin'
     | '/verification'
+    | '/analytics'
     | '/calendar'
     | '/channel-manager'
     | '/employees'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/__auth/reset-password'
     | '/__auth/signin'
     | '/__auth/verification'
+    | '/__main/analytics'
     | '/__main/calendar'
     | '/__main/channel-manager'
     | '/__main/employees'
@@ -455,6 +467,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof _mainCalendarRouteImport
       parentRoute: typeof _mainRouteRoute
     }
+    '/__main/analytics': {
+      id: '/__main/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof _mainAnalyticsRouteImport
+      parentRoute: typeof _mainRouteRoute
+    }
     '/__auth/verification': {
       id: '/__auth/verification'
       path: '/verification'
@@ -561,6 +580,7 @@ const _authRouteRouteWithChildren = _authRouteRoute._addFileChildren(
 )
 
 interface _mainRouteRouteChildren {
+  _mainAnalyticsRoute: typeof _mainAnalyticsRoute
   _mainCalendarRoute: typeof _mainCalendarRoute
   _mainChannelManagerRoute: typeof _mainChannelManagerRoute
   _mainEmployeesRoute: typeof _mainEmployeesRoute
@@ -585,6 +605,7 @@ interface _mainRouteRouteChildren {
 }
 
 const _mainRouteRouteChildren: _mainRouteRouteChildren = {
+  _mainAnalyticsRoute: _mainAnalyticsRoute,
   _mainCalendarRoute: _mainCalendarRoute,
   _mainChannelManagerRoute: _mainChannelManagerRoute,
   _mainEmployeesRoute: _mainEmployeesRoute,

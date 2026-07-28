@@ -31,6 +31,10 @@ export const MODULES = {
         path: '/',
         permissions: ['stat-cards', 'revenue-overview', 'recent-bookings'],
     },
+    analytics: {
+        path: '/analytics',
+        permissions: ['view'],
+    },
     reservations: {
         path: '/reservations',
         permissions: COMMON_PERMISSIONS,

@@ -1,5 +1,6 @@
 import {
     Calendar1,
+    ChartNoAxesCombined,
     CircleCheck,
     CreditCard,
     FileText,
@@ -22,6 +23,7 @@ import type { ModuleKey } from './module'
  */
 export const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
     dashboard: LayoutDashboard,
+    analytics: ChartNoAxesCombined,
     reservations: CircleCheck,
     calendar: Calendar1,
     inbox: MessageCircleMore,

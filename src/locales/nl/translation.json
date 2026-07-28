@@ -181,6 +181,7 @@
     },
     "navigation": {
         "dashboard": "Dashboard",
+        "analytics": "Analyses",
         "reservations": "Reserveringen",
         "calendar": "Kalender",
         "inbox": "Postvak IN",

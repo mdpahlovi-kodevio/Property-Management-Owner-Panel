@@ -181,6 +181,7 @@
     },
     "navigation": {
         "dashboard": "Dashboard",
+        "analytics": "Analytics",
         "reservations": "Reservations",
         "calendar": "Calendar",
         "inbox": "Inbox",
