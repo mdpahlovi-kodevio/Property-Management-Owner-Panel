@@ -373,7 +373,15 @@ function AnalyticsPage() {
                                         <CartesianGrid vertical={false} stroke="#e7eaf3" />
                                         <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={9} />
                                         <YAxis tickLine={false} axisLine={false} fontSize={10} />
-                                        <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
+                                        <Tooltip
+                                            formatter={(value) => {
+                                                if (typeof value === 'number') {
+                                                    return `$${value.toLocaleString()}`
+                                                }
+
+                                                return `${value ?? ''}`
+                                            }}
+                                        />
                                         <Bar name="Direct" dataKey="direct" fill="#6366f1" radius={[3, 3, 0, 0]} />
                                         <Bar name="Booking.com" dataKey="booking" fill="#20c77a" radius={[3, 3, 0, 0]} />
                                         <Bar name="Airbnb" dataKey="airbnb" fill="#f4a51c" radius={[3, 3, 0, 0]} />

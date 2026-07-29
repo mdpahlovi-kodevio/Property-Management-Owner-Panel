@@ -7,6 +7,9 @@ import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 const config = defineConfig({
+    preview: {
+        allowedHosts: ['owner.bookingisyours.com'],
+    },
     resolve: { tsconfigPaths: true },
     plugins: [devtools(), tailwindcss(), tanstackRouter({ target: 'react', autoCodeSplitting: true }), viteReact()],
 })

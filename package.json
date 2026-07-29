@@ -6,9 +6,9 @@
         "#/*": "./src/*"
     },
     "scripts": {
-        "dev": "vite dev --port 3000",
+        "dev": "vite dev --port 3020",
         "build": "vite build",
-        "preview": "vite preview",
+        "preview": "vite preview --port 3020 --host",
         "lint": "eslint",
         "format": "prettier --write . && eslint --fix",
         "check": "prettier --check ."
