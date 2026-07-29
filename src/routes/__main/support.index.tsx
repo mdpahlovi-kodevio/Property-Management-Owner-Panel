@@ -185,7 +185,7 @@ function RouteComponent() {
     return (
         <>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <PageHeader title="Support" description="Manage your Support" className="mb-0" />
+                <PageHeader title="Support Requests" description="Manage your Support requests to Admin" className="mb-0" />
                 <div className="relative w-full sm:w-80">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/75" />
                     <Input
