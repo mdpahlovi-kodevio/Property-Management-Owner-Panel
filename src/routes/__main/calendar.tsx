@@ -105,7 +105,7 @@ function RouteComponent() {
     }
 
     return (
-        <>
+        <div className="flex h-[calc(100dvh-7rem)] min-h-0 flex-col gap-6 overflow-hidden">
             <PageHeader title="Calender" description="Manage your Schedules via Calender" />
             <StatCardsGrid
                 cards={[
@@ -115,7 +115,7 @@ function RouteComponent() {
                     { icon: Wrench, label: 'Maintenance', value: stats.maintenance, color: 'slate' },
                 ]}
             />
-            <Card className="border-0 shadow-sm overflow-hidden">
+            <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-0 shadow-sm">
                 <CardHeader className="pb-3 border-b border-border/60">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2">
@@ -185,7 +185,7 @@ function RouteComponent() {
                     </div>
                 </CardHeader>
 
-                <CardContent className="p-0 overflow-x-auto">
+                <CardContent className="min-h-0 flex-1 overflow-auto p-0">
                     {isRefreshing || (isLoading && units.length === 0) ? (
                         <div className="p-4 flex flex-col gap-2">
                             {Array.from({ length: 6 }).map((_, i) => (
@@ -198,9 +198,9 @@ function RouteComponent() {
                             Failed to load calendar data. Please try again.
                         </div>
                     ) : (
-                        <div className="min-w-180">
-                            <div className="flex border-b border-border/60 bg-muted/40">
-                                <div className="w-40 shrink-0 px-3 py-2 border-r border-border/60 flex items-center gap-1.5">
+                            <div className="min-w-180">
+                            <div className="sticky top-0 z-20 flex border-b border-border/60 bg-white dark:bg-card">
+                                <div className="sticky left-0 z-30 w-40 shrink-0 px-3 py-2 border-r border-border/60 flex items-center gap-1.5 bg-white dark:bg-card">
                                     <BedDouble className="size-3.5 text-muted-foreground" />
                                     <span className="text-xs font-semibold text-muted-foreground">Rooms</span>
                                 </div>
@@ -316,6 +316,6 @@ function RouteComponent() {
             )}
 
             {editingBlock && <BlockDialog mode="edit" units={units} block={editingBlock} onClose={() => setEditingBlock(null)} />}
-        </>
+        </div>
     )
 }

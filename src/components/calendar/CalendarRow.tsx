@@ -76,7 +76,7 @@ export function CalendarRow({
 
     return (
         <div className="flex border-b border-border/60 last:border-b-0 hover:bg-muted/20 transition-colors">
-            <div className="w-40 shrink-0 flex items-center gap-2 px-3 py-2 border-r border-border/60 bg-card">
+            <div className="sticky left-0 z-10 w-40 shrink-0 flex items-center gap-2 px-3 py-2 border-r border-border/60 bg-card">
                 <span className="text-muted-foreground shrink-0">{getUnitIcon(unit.roomTypeName)}</span>
                 <div className="min-w-0 flex-1">
                     <p className="text-xs font-semibold truncate">{unit.name}</p>
