@@ -39,33 +39,6 @@ export interface SupportTicketMessage {
     sender: SupportTicketUser
     message: string
     createdAt: string
-    attachments: SupportTicketAttachment[]
-}
-
-export interface SupportTicketAttachment {
-    id: string
-    fileName: string
-    fileUrl: string
-    mimeType: string
-    fileSize: number
-    createdAt: string
-}
-
-export interface SupportTicketStatusHistory {
-    id: string
-    fromStatus: string | null
-    toStatus: string
-    reason: string | null
-    createdAt: string
-    actor: { id: string; name: string } | null
-}
-
-export interface SupportTicketInternalNote {
-    id: string
-    authorId: string
-    author: SupportTicketUser
-    note: string
-    createdAt: string
 }
 
 export interface SupportTicket {
@@ -91,9 +64,6 @@ export interface SupportTicket {
     owner: { id: string; companyName: string | null; userId: string }
     createdBy: SupportTicketUser
     assignedTo: { id: string; user: SupportTicketUser } | null
-    attachments: SupportTicketAttachment[]
-    statusHistory: SupportTicketStatusHistory[]
-    internalNotes: SupportTicketInternalNote[]
 }
 
 export interface SupportMessagePage {
@@ -117,12 +87,10 @@ export interface CreateTicketPayload {
     description: string
     category?: SupportTicketCategory
     priority?: SupportTicketPriority
-    attachments?: { fileName: string; fileUrl: string; mimeType: string; fileSize: number }[]
 }
 
 export interface SendMessagePayload {
     message: string
-    attachments?: { fileName: string; fileUrl: string; mimeType: string; fileSize: number }[]
 }
 
 // ── API ─────────────────────────────────────────────────────────────────────

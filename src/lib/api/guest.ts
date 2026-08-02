@@ -15,6 +15,7 @@ export interface GuestWebsite {
     id: string
     name: string
     subdomain: string
+    customDomain: string | null
 }
 
 export interface Guest {

@@ -1,17 +1,23 @@
 import type { Paginated } from './base'
 import { request, toQuery } from './base'
 
-export type GuestSupportTicketStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'SPAM'
-export type GuestSupportTicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
-export type GuestSupportTicketCategory =
-    | 'GENERAL'
-    | 'ACCOUNT'
-    | 'BOOKING_PROBLEM'
-    | 'PAYMENT_BILLING'
-    | 'PROPERTY_COMPLAINT'
-    | 'SAFETY_SECURITY'
-    | 'TECHNICAL'
-    | 'OTHER'
+export const GuestSupportTicketCategoryOptions = [
+    'GENERAL',
+    'ACCOUNT',
+    'BOOKING_PROBLEM',
+    'PAYMENT_BILLING',
+    'PROPERTY_COMPLAINT',
+    'SAFETY_SECURITY',
+    'TECHNICAL',
+    'OTHER',
+] as const
+export type GuestSupportTicketCategory = (typeof GuestSupportTicketCategoryOptions)[number]
+
+export const GuestSupportTicketPriorityOptions = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const
+export type GuestSupportTicketPriority = (typeof GuestSupportTicketPriorityOptions)[number]
+
+export const GuestSupportTicketStatusOptions = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'SPAM'] as const
+export type GuestSupportTicketStatus = (typeof GuestSupportTicketStatusOptions)[number]
 
 export interface GuestSupportTicket {
     id: string

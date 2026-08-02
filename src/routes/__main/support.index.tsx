@@ -1,50 +1,44 @@
+import { useAppForm } from '@/components/form/form-context'
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import { DataTableFooter } from '@/components/ui/data-table'
-import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PageHeader } from '@/components/ui/page-header'
+import { SearchInput } from '@/components/ui/search-input'
 import { Spinner } from '@/components/ui/spinner'
 import { StatCard } from '@/components/ui/stat-card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
-import { supportApi } from '@/lib/api'
-import type { SupportTicketCategory, SupportTicketPriority } from '@/lib/api'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { useSearchParams } from '@/hooks/use-search-params'
+import type { CreateTicketPayload, SupportTicket, SupportTicketCategory, SupportTicketPriority } from '@/lib/api'
+import { supportApi, SupportTicketCategoryOptions, SupportTicketPriorityOptions } from '@/lib/api'
+import { capitalize } from '@/lib/utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckCheck, CircleCheckBig, Clock, MessageSquare, Plus, Search, SearchX, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { CheckCheck, CircleCheckBig, Clock, MessageSquare, Plus, SearchX } from 'lucide-react'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+import { z } from 'zod'
+
+const TABS = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const
+
+const searchSchema = z.object({
+    page: z.number().default(1),
+    limit: z.number().default(10),
+    search: z.string().optional(),
+    status: z.enum(TABS).optional(),
+})
 
 export const Route = createFileRoute('/__main/support/')({
+    validateSearch: searchSchema,
     component: RouteComponent,
 })
 
-const TABS = ['All', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const
-
-type Tab = (typeof TABS)[number]
-
-const CATEGORIES: { value: SupportTicketCategory; label: string }[] = [
-    { value: 'GENERAL', label: 'General' },
-    { value: 'ACCOUNT', label: 'Account' },
-    { value: 'BILLING', label: 'Billing' },
-    { value: 'SUBSCRIPTION', label: 'Subscription' },
-    { value: 'PROPERTY_MANAGEMENT', label: 'Property Management' },
-    { value: 'WEBSITE_BUILDER', label: 'Website Builder' },
-    { value: 'BOOKING_SYSTEM', label: 'Booking System' },
-    { value: 'PAYMENT_GATEWAY', label: 'Payment Gateway' },
-    { value: 'TECHNICAL', label: 'Technical' },
-    { value: 'BUG_REPORT', label: 'Bug Report' },
-    { value: 'FEATURE_REQUEST', label: 'Feature Request' },
-]
-
-const PRIORITIES: { value: SupportTicketPriority; label: string }[] = [
-    { value: 'LOW', label: 'Low' },
-    { value: 'MEDIUM', label: 'Medium' },
-    { value: 'HIGH', label: 'High' },
-    { value: 'URGENT', label: 'Urgent' },
-]
+const ticketSchema = z.object({
+    title: z.string().min(2, 'Enter a subject'),
+    description: z.string().min(10, 'Please describe your issue in at least 10 characters'),
+    category: z.enum(SupportTicketCategoryOptions),
+    priority: z.enum(SupportTicketPriorityOptions),
+})
 
 const STATUS_LABELS: Record<string, string> = {
     OPEN: 'Open',
@@ -101,124 +95,115 @@ function formatTimeAgo(dateString: string): string {
 }
 
 function RouteComponent() {
+    const { t } = useTranslation()
     const queryClient = useQueryClient()
-    const [activeTab, setActiveTab] = useState<Tab>('All')
-    const [searchQuery, setSearchQuery] = useState('')
-    const [page, setPage] = useState(1)
-    const [limit, setLimit] = useState(10)
+    const query = Route.useSearch()
+    const mergeSearch = useSearchParams()
     const [isNewRequestOpen, setIsNewRequestOpen] = useState(false)
 
-    // New ticket form state
-    const [newTitle, setNewTitle] = useState('')
-    const [newCategory, setNewCategory] = useState<SupportTicketCategory>('GENERAL')
-    const [newPriority, setNewPriority] = useState<SupportTicketPriority>('MEDIUM')
-    const [newDescription, setNewDescription] = useState('')
-
-    const queryParams = useMemo(() => {
-        const params: Record<string, string | number | boolean | undefined> = {
-            page,
-            limit,
-        }
-        if (activeTab !== 'All') params.status = activeTab
-        if (searchQuery.trim()) params.search = searchQuery.trim()
-        return params
-    }, [page, limit, activeTab, searchQuery])
-
     const { data, isLoading } = useQuery({
-        queryKey: ['support-tickets', queryParams],
-        queryFn: () => supportApi.listTickets(queryParams),
+        queryKey: ['support-tickets', query],
+        queryFn: () => supportApi.listTickets(query),
     })
 
     const tickets = data?.data ?? []
-    const meta = data?.meta
+    const total = data?.meta.total ?? 0
 
-    // Reset page when filters change
-    useEffect(() => {
-        setPage(1)
-    }, [activeTab, searchQuery])
-
-    const { data: openCount } = useQuery({
-        queryKey: ['support-tickets-count', 'OPEN'],
-        queryFn: () => supportApi.listTickets({ limit: 1, page: 1, status: 'OPEN' }).then((r) => r.meta.total),
+    // Cache-shared with the list query (same page/limit/status); `search` is
+    // omitted so the stat card always reflects the true status total.
+    const { data: openTickets } = useQuery({
+        queryKey: ['support-tickets', { page: 1, limit: 10, status: 'OPEN' }],
+        queryFn: () => supportApi.listTickets({ page: 1, limit: 10, status: 'OPEN' }),
     })
 
-    const { data: inProgressCount } = useQuery({
-        queryKey: ['support-tickets-count', 'IN_PROGRESS'],
-        queryFn: () => supportApi.listTickets({ limit: 1, page: 1, status: 'IN_PROGRESS' }).then((r) => r.meta.total),
+    const { data: inProgressTickets } = useQuery({
+        queryKey: ['support-tickets', { page: 1, limit: 10, status: 'IN_PROGRESS' }],
+        queryFn: () => supportApi.listTickets({ page: 1, limit: 10, status: 'IN_PROGRESS' }),
     })
 
-    const { data: resolvedCount } = useQuery({
-        queryKey: ['support-tickets-count', 'RESOLVED'],
-        queryFn: () => supportApi.listTickets({ limit: 1, page: 1, status: 'RESOLVED' }).then((r) => r.meta.total),
+    const { data: resolvedTickets } = useQuery({
+        queryKey: ['support-tickets', { page: 1, limit: 10, status: 'RESOLVED' }],
+        queryFn: () => supportApi.listTickets({ page: 1, limit: 10, status: 'RESOLVED' }),
     })
 
-    const { data: closedCount } = useQuery({
-        queryKey: ['support-tickets-count', 'CLOSED'],
-        queryFn: () => supportApi.listTickets({ limit: 1, page: 1, status: 'CLOSED' }).then((r) => r.meta.total),
+    const { data: closedTickets } = useQuery({
+        queryKey: ['support-tickets', { page: 1, limit: 10, status: 'CLOSED' }],
+        queryFn: () => supportApi.listTickets({ page: 1, limit: 10, status: 'CLOSED' }),
     })
 
     const createMutation = useMutation({
-        mutationFn: () =>
-            supportApi.createTicket({
-                title: newTitle,
-                description: newDescription,
-                category: newCategory,
-                priority: newPriority,
-            }),
+        mutationFn: (payload: CreateTicketPayload) => supportApi.createTicket(payload),
         onSuccess: () => {
-            toast.success('Support ticket created successfully')
-            setIsNewRequestOpen(false)
-            setNewTitle('')
-            setNewDescription('')
-            setNewCategory('GENERAL')
-            setNewPriority('MEDIUM')
             queryClient.invalidateQueries({ queryKey: ['support-tickets'] })
-            queryClient.invalidateQueries({ queryKey: ['support-tickets-count'] })
+            toast.success(t('support.createdSuccess', 'Support ticket created successfully'))
+            setIsNewRequestOpen(false)
         },
         onError: (err: Error) => {
-            toast.error(err.message || 'Failed to create support ticket')
+            toast.error(err.message || t('support.createError', 'Failed to create support ticket'))
         },
     })
 
-    const total = meta?.total ?? 0
+    const handleCreate = async (values: z.infer<typeof ticketSchema>) => {
+        await createMutation.mutateAsync({
+            title: values.title,
+            description: values.description,
+            category: values.category,
+            priority: values.priority,
+        })
+    }
 
     return (
         <>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <PageHeader title="Support Requests" description="Manage your Support requests to Admin" className="mb-0" />
-                <div className="relative w-full sm:w-80">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/75" />
-                    <Input
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search tickets..."
-                        className="pl-9 pr-8"
-                    />
-                    {searchQuery && (
-                        <button
-                            type="button"
-                            onClick={() => setSearchQuery('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            <X className="h-3 w-3" />
-                        </button>
-                    )}
-                </div>
+                <PageHeader
+                    title={t('support.title', 'Support Requests')}
+                    description={t('support.description', 'Manage your Support requests to Admin')}
+                    className="mb-0"
+                />
+                <SearchInput
+                    value={query.search ?? ''}
+                    placeholder={t('support.searchPlaceholder', 'Search tickets...')}
+                    className="w-full sm:w-80"
+                />
             </div>
 
-            {/* Stat Cards Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard label="Open" value={openCount ?? '-'} icon={MessageSquare} color="blue" />
-                <StatCard label="In Progress" value={inProgressCount ?? '-'} icon={Clock} color="orange" />
-                <StatCard label="Resolved" value={resolvedCount ?? '-'} icon={CheckCheck} color="emerald" />
-                <StatCard label="Closed" value={closedCount ?? '-'} icon={CircleCheckBig} color="slate" />
+                <StatCard label={t('support.statOpen', 'Open')} value={openTickets?.meta.total ?? '-'} icon={MessageSquare} color="blue" />
+                <StatCard
+                    label={t('support.statInProgress', 'In Progress')}
+                    value={inProgressTickets?.meta.total ?? '-'}
+                    icon={Clock}
+                    color="orange"
+                />
+                <StatCard
+                    label={t('support.statResolved', 'Resolved')}
+                    value={resolvedTickets?.meta.total ?? '-'}
+                    icon={CheckCheck}
+                    color="emerald"
+                />
+                <StatCard
+                    label={t('support.statClosed', 'Closed')}
+                    value={closedTickets?.meta.total ?? '-'}
+                    icon={CircleCheckBig}
+                    color="slate"
+                />
             </div>
 
-            {/* Navigation and search control row */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <ButtonGroup>
+                    <Button
+                        key="all"
+                        variant={!query.status ? 'default' : 'outline'}
+                        onClick={() => mergeSearch({ status: undefined, page: 1 })}
+                    >
+                        All
+                    </Button>
                     {TABS.map((tab) => (
-                        <Button key={tab} variant={activeTab === tab ? 'default' : 'outline'} onClick={() => setActiveTab(tab)}>
+                        <Button
+                            key={tab}
+                            variant={query.status === tab ? 'default' : 'outline'}
+                            onClick={() => mergeSearch({ status: tab, page: 1 })}
+                        >
                             {STATUS_LABELS[tab] ?? tab}
                         </Button>
                     ))}
@@ -226,18 +211,17 @@ function RouteComponent() {
 
                 <Button onClick={() => setIsNewRequestOpen(true)}>
                     <Plus className="h-4 w-4" />
-                    New Request
+                    {t('support.newRequestBtn', 'New Request')}
                 </Button>
             </div>
 
-            {/* List of Support Requests */}
             {isLoading ? (
                 <div className="flex items-center justify-center py-16">
                     <Spinner className="h-8 w-8" />
                 </div>
             ) : (
                 <div className="flex flex-col gap-4">
-                    {tickets.map((ticket, index) => (
+                    {tickets.map((ticket: SupportTicket, index) => (
                         <Link
                             key={ticket.id}
                             to="/support/$id"
@@ -276,20 +260,20 @@ function RouteComponent() {
                                 <SearchX className="h-6 w-6" />
                             </div>
                             <div className="max-w-xs">
-                                <h3 className="font-semibold text-foreground">No support requests found</h3>
+                                <h3 className="font-semibold text-foreground">{t('support.emptyTitle', 'No support requests found')}</h3>
                                 <p className="text-sm text-muted-foreground">
-                                    No records matched your search query or active filters. Try clearing your parameters!
+                                    {t(
+                                        'support.emptyDesc',
+                                        'No records matched your search query or active filters. Try clearing your parameters!',
+                                    )}
                                 </p>
                             </div>
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => {
-                                    setSearchQuery('')
-                                    setActiveTab('All')
-                                }}
+                                onClick={() => mergeSearch({ search: '', status: undefined, page: 1, limit: 10 })}
                             >
-                                Reset Filters
+                                {t('support.resetFilters', 'Reset Filters')}
                             </Button>
                         </div>
                     )}
@@ -298,99 +282,117 @@ function RouteComponent() {
 
             {total > 0 && (
                 <DataTableFooter
-                    page={page}
-                    limit={limit}
+                    page={query.page}
+                    limit={query.limit}
                     total={total}
-                    onPageChange={setPage}
-                    onLimitChange={setLimit}
-                    noun="support requests"
+                    onPageChange={(page) => mergeSearch({ page })}
+                    onLimitChange={(limit) => mergeSearch({ page: 1, limit })}
+                    noun={t('support.noun', 'support requests')}
                 />
             )}
 
-            {/* New Support Request Dialog */}
-            <Dialog open={isNewRequestOpen} onOpenChange={setIsNewRequestOpen}>
-                <DialogContent className="w-[95%] sm:max-w-150 bg-white p-8 rounded-lg gap-6">
-                    <DialogHeader className="text-left mb-2">
-                        <DialogTitle className="text-[22px] font-bold text-slate-900 mb-2">Submit Support Request</DialogTitle>
-                        <DialogDescription className="text-[15px] text-slate-600 font-medium">
-                            Describe your issue and we'll get back to you shortly
+            <Dialog
+                open={isNewRequestOpen}
+                onOpenChange={(open) => {
+                    if (!open) setIsNewRequestOpen(false)
+                }}
+            >
+                <DialogContent className="sm:max-w-150">
+                    <DialogHeader>
+                        <DialogTitle>{t('support.newRequestTitle', 'Submit Support Request')}</DialogTitle>
+                        <DialogDescription>
+                            {t('support.newRequestDesc', "Describe your issue and we'll get back to you shortly")}
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="flex flex-col gap-6">
-                        <div className="space-y-2.5">
-                            <Label className="text-base font-semibold text-slate-900">Subject</Label>
-                            <Input
-                                placeholder="Enter subject"
-                                className="h-12 rounded-lg border-slate-200 text-[15px]"
-                                value={newTitle}
-                                onChange={(e) => setNewTitle(e.target.value)}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2.5">
-                                <Label className="text-base font-semibold text-slate-900">Category</Label>
-                                <Select value={newCategory} onValueChange={(v) => setNewCategory(v as SupportTicketCategory)}>
-                                    <SelectTrigger className="h-12 rounded-lg border-slate-200 text-[15px]">
-                                        <SelectValue placeholder="Select category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {CATEGORIES.map((cat) => (
-                                            <SelectItem key={cat.value} value={cat.value}>
-                                                {cat.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2.5">
-                                <Label className="text-base font-semibold text-slate-900">Priority</Label>
-                                <Select value={newPriority} onValueChange={(v) => setNewPriority(v as SupportTicketPriority)}>
-                                    <SelectTrigger className="h-12 rounded-lg border-slate-200 text-[15px]">
-                                        <SelectValue placeholder="Select priority" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {PRIORITIES.map((p) => (
-                                            <SelectItem key={p.value} value={p.value}>
-                                                {p.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2.5">
-                            <Label className="text-base font-semibold text-slate-900">Description</Label>
-                            <Textarea
-                                placeholder="Describe your issue in detail..."
-                                className="min-h-35 rounded-lg border-slate-200 text-[15px] resize-none"
-                                value={newDescription}
-                                onChange={(e) => setNewDescription(e.target.value)}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 mt-4">
-                            <Button
-                                variant="outline"
-                                onClick={() => setIsNewRequestOpen(false)}
-                                className="h-12 rounded-lg font-semibold text-[15px] border-slate-200 text-slate-600 hover:bg-slate-50"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                className="h-12 rounded-lg font-semibold text-[15px] bg-[#243E8B] hover:bg-[#1D3270] text-white"
-                                disabled={!newTitle.trim() || !newDescription.trim() || createMutation.isPending}
-                                onClick={() => createMutation.mutate()}
-                            >
-                                {createMutation.isPending ? 'Submitting...' : 'Submit Request'}
-                            </Button>
-                        </div>
-                    </div>
+                    <NewTicketForm key="new" onSubmit={handleCreate} onCancel={() => setIsNewRequestOpen(false)} />
                 </DialogContent>
             </Dialog>
         </>
+    )
+}
+
+function NewTicketForm({
+    onSubmit,
+    onCancel,
+}: {
+    onSubmit: (values: z.infer<typeof ticketSchema>) => Promise<void>
+    onCancel: () => void
+}) {
+    const { t } = useTranslation()
+
+    const form = useAppForm({
+        defaultValues: {
+            title: '',
+            description: '',
+            category: 'GENERAL' as SupportTicketCategory,
+            priority: 'MEDIUM' as SupportTicketPriority,
+        },
+        validators: { onChange: ticketSchema },
+        onSubmit: async ({ value }) => {
+            await onSubmit(value)
+        },
+    })
+
+    const categoryOptions = SupportTicketCategoryOptions.map((c) => ({ value: c, label: capitalize(c) }))
+    const priorityOptions = SupportTicketPriorityOptions.map((p) => ({ value: p, label: capitalize(p) }))
+
+    return (
+        <form
+            onSubmit={(e) => {
+                e.preventDefault()
+                form.handleSubmit()
+            }}
+            className="space-y-4"
+        >
+            <form.AppField name="title">
+                {(field) => (
+                    <field.FormInput
+                        label={t('support.subject', 'Subject')}
+                        placeholder={t('support.subjectPlaceholder', 'Enter subject')}
+                    />
+                )}
+            </form.AppField>
+
+            <div className="grid grid-cols-2 gap-4">
+                <form.AppField name="category">
+                    {(field) => (
+                        <field.FormSelect
+                            label={t('support.category', 'Category')}
+                            placeholder={t('support.selectCategory', 'Select category')}
+                            options={categoryOptions}
+                        />
+                    )}
+                </form.AppField>
+
+                <form.AppField name="priority">
+                    {(field) => (
+                        <field.FormSelect
+                            label={t('support.priority', 'Priority')}
+                            placeholder={t('support.selectPriority', 'Select priority')}
+                            options={priorityOptions}
+                        />
+                    )}
+                </form.AppField>
+            </div>
+
+            <form.AppField name="description">
+                {(field) => (
+                    <field.FormTextarea
+                        label={t('support.descriptionLabel', 'Description')}
+                        placeholder={t('support.descriptionPlaceholder', 'Describe your issue in detail...')}
+                    />
+                )}
+            </form.AppField>
+
+            <DialogFooter>
+                <Button type="button" variant="outline" onClick={onCancel} className="px-4 py-2 text-sm cursor-pointer">
+                    {t('nav.cancel', 'Cancel')}
+                </Button>
+                <form.AppForm>
+                    <form.FormSubmit label={t('support.submitRequest', 'Submit Request')} />
+                </form.AppForm>
+            </DialogFooter>
+        </form>
     )
 }

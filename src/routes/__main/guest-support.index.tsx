@@ -1,24 +1,41 @@
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import { DataTableFooter } from '@/components/ui/data-table'
-import { Input } from '@/components/ui/input'
 import { PageHeader } from '@/components/ui/page-header'
+import { SearchInput } from '@/components/ui/search-input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
 import { StatCard } from '@/components/ui/stat-card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { guestSupportApi } from '@/lib/api'
-import type { GuestSupportTicketCategory, GuestSupportTicketPriority, ListGuestSupportParams } from '@/lib/api'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { useSearchParams } from '@/hooks/use-search-params'
+import type { GuestSupportTicket } from '@/lib/api'
+import {
+    guestSupportApi,
+    GuestSupportTicketCategoryOptions,
+    GuestSupportTicketPriorityOptions,
+    GuestSupportTicketStatusOptions,
+} from '@/lib/api'
+import { capitalize } from '@/lib/utils'
 import { useQuery } from '@tanstack/react-query'
-import { CheckCheck, CircleCheckBig, Clock, MessageSquare, Search, SearchX, User, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { CheckCheck, CircleCheckBig, Clock, MessageSquare, SearchX, User, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { z } from 'zod'
 
-export const Route = createFileRoute('/__main/guest-support/')({
-    component: RouteComponent,
+const TABS = ['All', ...GuestSupportTicketStatusOptions] as const
+
+const searchSchema = z.object({
+    page: z.number().default(1),
+    limit: z.number().default(10),
+    search: z.string().optional(),
+    status: z.enum(GuestSupportTicketStatusOptions).optional(),
+    category: z.enum(GuestSupportTicketCategoryOptions).optional(),
+    priority: z.enum(GuestSupportTicketPriorityOptions).optional(),
 })
 
-const TABS = ['All', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'SPAM'] as const
-type Tab = (typeof TABS)[number]
+export const Route = createFileRoute('/__main/guest-support/')({
+    validateSearch: searchSchema,
+    component: RouteComponent,
+})
 
 const STATUS_LABELS: Record<string, string> = {
     OPEN: 'Open',
@@ -27,24 +44,6 @@ const STATUS_LABELS: Record<string, string> = {
     CLOSED: 'Closed',
     SPAM: 'Spam',
 }
-
-const CATEGORIES: { value: GuestSupportTicketCategory; label: string }[] = [
-    { value: 'GENERAL', label: 'General' },
-    { value: 'ACCOUNT', label: 'Account' },
-    { value: 'BOOKING_PROBLEM', label: 'Booking Problem' },
-    { value: 'PAYMENT_BILLING', label: 'Payment & Billing' },
-    { value: 'PROPERTY_COMPLAINT', label: 'Property Complaint' },
-    { value: 'SAFETY_SECURITY', label: 'Safety & Security' },
-    { value: 'TECHNICAL', label: 'Technical' },
-    { value: 'OTHER', label: 'Other' },
-]
-
-const PRIORITIES: { value: GuestSupportTicketPriority; label: string }[] = [
-    { value: 'LOW', label: 'Low' },
-    { value: 'MEDIUM', label: 'Medium' },
-    { value: 'HIGH', label: 'High' },
-    { value: 'URGENT', label: 'Urgent' },
-]
 
 const getStatusClasses = (status: string) => {
     switch (status) {
@@ -93,121 +92,138 @@ function formatTimeAgo(dateString: string): string {
 }
 
 function RouteComponent() {
-    const [activeTab, setActiveTab] = useState<Tab>('All')
-    const [searchQuery, setSearchQuery] = useState('')
-    const [page, setPage] = useState(1)
-    const [limit, setLimit] = useState(10)
-    const [selectedCategory, setSelectedCategory] = useState<string>('all')
-    const [selectedPriority, setSelectedPriority] = useState<string>('all')
-
-    const queryParams = useMemo(() => {
-        const params: ListGuestSupportParams = { page, limit }
-        if (activeTab !== 'All') params.status = activeTab
-        if (searchQuery.trim()) params.search = searchQuery.trim()
-        if (selectedCategory !== 'all') params.category = selectedCategory
-        if (selectedPriority !== 'all') params.priority = selectedPriority
-        return params
-    }, [page, limit, activeTab, searchQuery, selectedCategory, selectedPriority])
+    const { t } = useTranslation()
+    const query = Route.useSearch()
+    const mergeSearch = useSearchParams()
 
     const { data, isLoading } = useQuery({
-        queryKey: ['guest-support-tickets', queryParams],
-        queryFn: () => guestSupportApi.listTickets(queryParams),
+        queryKey: ['guest-support-tickets', query],
+        queryFn: () => guestSupportApi.listTickets(query),
     })
 
     const tickets = data?.data ?? []
-    const meta = data?.meta
+    const total = data?.meta.total ?? 0
 
-    useEffect(() => {
-        setPage(1)
-    }, [activeTab, searchQuery, selectedCategory, selectedPriority])
-
-    const { data: openCount } = useQuery({
-        queryKey: ['guest-support-count', 'OPEN'],
-        queryFn: () => guestSupportApi.listTickets({ limit: 1, page: 1, status: 'OPEN' }).then((r) => r.meta.total),
-    })
-    const { data: inProgressCount } = useQuery({
-        queryKey: ['guest-support-count', 'IN_PROGRESS'],
-        queryFn: () => guestSupportApi.listTickets({ limit: 1, page: 1, status: 'IN_PROGRESS' }).then((r) => r.meta.total),
-    })
-    const { data: resolvedCount } = useQuery({
-        queryKey: ['guest-support-count', 'RESOLVED'],
-        queryFn: () => guestSupportApi.listTickets({ limit: 1, page: 1, status: 'RESOLVED' }).then((r) => r.meta.total),
-    })
-    const { data: closedCount } = useQuery({
-        queryKey: ['guest-support-count', 'CLOSED'],
-        queryFn: () => guestSupportApi.listTickets({ limit: 1, page: 1, status: 'CLOSED' }).then((r) => r.meta.total),
+    // Cache-shared with the list query (same page/limit/status); `search`,
+    // `category` and `priority` are omitted so stat cards always reflect the
+    // true status totals.
+    const { data: openTickets } = useQuery({
+        queryKey: ['guest-support-tickets', { page: 1, limit: 10, status: 'OPEN' }],
+        queryFn: () => guestSupportApi.listTickets({ page: 1, limit: 10, status: 'OPEN' }),
     })
 
-    const total = meta?.total ?? 0
-    const hasActiveFilters = selectedCategory !== 'all' || selectedPriority !== 'all'
+    const { data: inProgressTickets } = useQuery({
+        queryKey: ['guest-support-tickets', { page: 1, limit: 10, status: 'IN_PROGRESS' }],
+        queryFn: () => guestSupportApi.listTickets({ page: 1, limit: 10, status: 'IN_PROGRESS' }),
+    })
+
+    const { data: resolvedTickets } = useQuery({
+        queryKey: ['guest-support-tickets', { page: 1, limit: 10, status: 'RESOLVED' }],
+        queryFn: () => guestSupportApi.listTickets({ page: 1, limit: 10, status: 'RESOLVED' }),
+    })
+
+    const { data: closedTickets } = useQuery({
+        queryKey: ['guest-support-tickets', { page: 1, limit: 10, status: 'CLOSED' }],
+        queryFn: () => guestSupportApi.listTickets({ page: 1, limit: 10, status: 'CLOSED' }),
+    })
+
+    const hasActiveFilters = query.category !== undefined || query.priority !== undefined
 
     return (
         <>
-            {/* Header + Search */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <PageHeader title="Guest Support" description="Manage support requests from your guests" className="mb-0" />
-                <div className="relative w-full sm:w-80">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/75" />
-                    <Input
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search guest, property, or subject..."
-                        className="pl-9 pr-8"
-                    />
-                    {searchQuery && (
-                        <button
-                            type="button"
-                            onClick={() => setSearchQuery('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            <X className="h-3 w-3" />
-                        </button>
-                    )}
-                </div>
+                <PageHeader
+                    title={t('guestSupport.title', 'Guest Support')}
+                    description={t('guestSupport.description', 'Manage support requests from your guests')}
+                    className="mb-0"
+                />
+                <SearchInput
+                    value={query.search ?? ''}
+                    placeholder={t('guestSupport.searchPlaceholder', 'Search guest, property, or subject...')}
+                    className="w-full sm:w-80"
+                />
             </div>
 
-            {/* Stat Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard label="Open" value={openCount ?? '-'} icon={MessageSquare} color="blue" />
-                <StatCard label="In Progress" value={inProgressCount ?? '-'} icon={Clock} color="orange" />
-                <StatCard label="Resolved" value={resolvedCount ?? '-'} icon={CheckCheck} color="emerald" />
-                <StatCard label="Closed" value={closedCount ?? '-'} icon={CircleCheckBig} color="slate" />
+                <StatCard
+                    label={t('guestSupport.statOpen', 'Open')}
+                    value={openTickets?.meta.total ?? '-'}
+                    icon={MessageSquare}
+                    color="blue"
+                />
+                <StatCard
+                    label={t('guestSupport.statInProgress', 'In Progress')}
+                    value={inProgressTickets?.meta.total ?? '-'}
+                    icon={Clock}
+                    color="orange"
+                />
+                <StatCard
+                    label={t('guestSupport.statResolved', 'Resolved')}
+                    value={resolvedTickets?.meta.total ?? '-'}
+                    icon={CheckCheck}
+                    color="emerald"
+                />
+                <StatCard
+                    label={t('guestSupport.statClosed', 'Closed')}
+                    value={closedTickets?.meta.total ?? '-'}
+                    icon={CircleCheckBig}
+                    color="slate"
+                />
             </div>
 
-            {/* Tabs + Filters */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <ButtonGroup>
                     {TABS.map((tab) => (
-                        <Button key={tab} variant={activeTab === tab ? 'default' : 'outline'} onClick={() => setActiveTab(tab)}>
+                        <Button
+                            key={tab}
+                            variant={tab === 'All' ? (!query.status ? 'default' : 'outline') : query.status === tab ? 'default' : 'outline'}
+                            onClick={() => mergeSearch({ status: tab === 'All' ? undefined : tab, page: 1 })}
+                        >
                             {STATUS_LABELS[tab] ?? tab}
                         </Button>
                     ))}
                 </ButtonGroup>
 
                 <div className="flex items-center gap-3">
-                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <Select
+                        value={query.category ?? 'all'}
+                        onValueChange={(value) =>
+                            mergeSearch({
+                                category: value === 'all' ? undefined : value,
+                                page: 1,
+                            })
+                        }
+                    >
                         <SelectTrigger className="w-44">
-                            <SelectValue placeholder="All Categories" />
+                            <SelectValue placeholder={t('guestSupport.allCategories', 'All Categories')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Categories</SelectItem>
-                            {CATEGORIES.map((cat) => (
-                                <SelectItem key={cat.value} value={cat.value}>
-                                    {cat.label}
+                            <SelectItem value="all">{t('guestSupport.allCategories', 'All Categories')}</SelectItem>
+                            {GuestSupportTicketCategoryOptions.map((c) => (
+                                <SelectItem key={c} value={c}>
+                                    {capitalize(c)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
 
-                    <Select value={selectedPriority} onValueChange={setSelectedPriority}>
+                    <Select
+                        value={query.priority ?? 'all'}
+                        onValueChange={(value) =>
+                            mergeSearch({
+                                priority: value === 'all' ? undefined : value,
+                                page: 1,
+                            })
+                        }
+                    >
                         <SelectTrigger className="w-36">
-                            <SelectValue placeholder="All Priorities" />
+                            <SelectValue placeholder={t('guestSupport.allPriorities', 'All Priorities')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Priorities</SelectItem>
-                            {PRIORITIES.map((p) => (
-                                <SelectItem key={p.value} value={p.value}>
-                                    {p.label}
+                            <SelectItem value="all">{t('guestSupport.allPriorities', 'All Priorities')}</SelectItem>
+                            {GuestSupportTicketPriorityOptions.map((p) => (
+                                <SelectItem key={p} value={p}>
+                                    {capitalize(p)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -218,26 +234,22 @@ function RouteComponent() {
                             variant="ghost"
                             size="sm"
                             className="h-8 text-xs text-muted-foreground"
-                            onClick={() => {
-                                setSelectedCategory('all')
-                                setSelectedPriority('all')
-                            }}
+                            onClick={() => mergeSearch({ category: undefined, priority: undefined, page: 1 })}
                         >
                             <X className="h-3 w-3 mr-1" />
-                            Clear
+                            {t('guestSupport.clear', 'Clear')}
                         </Button>
                     )}
                 </div>
             </div>
 
-            {/* Ticket Cards */}
             {isLoading ? (
                 <div className="flex items-center justify-center py-16">
                     <Spinner className="h-8 w-8" />
                 </div>
             ) : (
                 <div className="flex flex-col gap-3">
-                    {tickets.map((ticket, index) => (
+                    {tickets.map((ticket: GuestSupportTicket, index) => (
                         <Link
                             key={ticket.id}
                             to="/guest-support/$id"
@@ -245,7 +257,6 @@ function RouteComponent() {
                             className="group flex flex-col border rounded-xl gap-3 p-4 transition-all duration-200 hover:shadow-md hover:border-primary/20 hover:-translate-y-px"
                             style={{ animationDelay: `${index * 60}ms` }}
                         >
-                            {/* Top row: reference + title + badges */}
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex flex-col gap-1 min-w-0">
                                     <div className="flex items-center gap-2">
@@ -267,7 +278,6 @@ function RouteComponent() {
                                 </div>
                             </div>
 
-                            {/* Bottom row: guest + property + category + time */}
                             <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground">
                                 <div className="flex items-center gap-3 min-w-0">
                                     <span className="flex items-center gap-1 truncate">
@@ -293,22 +303,28 @@ function RouteComponent() {
                                 <SearchX className="h-8 w-8" />
                             </div>
                             <div className="max-w-xs">
-                                <h3 className="font-semibold text-foreground text-base">No guest support tickets found</h3>
+                                <h3 className="font-semibold text-foreground text-base">
+                                    {t('guestSupport.emptyTitle', 'No guest support tickets found')}
+                                </h3>
                                 <p className="text-sm text-muted-foreground mt-1">
-                                    No records matched your search or filters. Try adjusting your criteria.
+                                    {t('guestSupport.emptyDesc', 'No records matched your search or filters. Try adjusting your criteria.')}
                                 </p>
                             </div>
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => {
-                                    setSearchQuery('')
-                                    setActiveTab('All')
-                                    setSelectedCategory('all')
-                                    setSelectedPriority('all')
-                                }}
+                                onClick={() =>
+                                    mergeSearch({
+                                        search: '',
+                                        status: undefined,
+                                        category: undefined,
+                                        priority: undefined,
+                                        page: 1,
+                                        limit: 10,
+                                    })
+                                }
                             >
-                                Reset Filters
+                                {t('guestSupport.resetFilters', 'Reset Filters')}
                             </Button>
                         </div>
                     )}
@@ -317,12 +333,12 @@ function RouteComponent() {
 
             {total > 0 && (
                 <DataTableFooter
-                    page={page}
-                    limit={limit}
+                    page={query.page}
+                    limit={query.limit}
                     total={total}
-                    onPageChange={setPage}
-                    onLimitChange={setLimit}
-                    noun="guest support tickets"
+                    onPageChange={(page) => mergeSearch({ page })}
+                    onLimitChange={(limit) => mergeSearch({ page: 1, limit })}
+                    noun={t('guestSupport.noun', 'guest support tickets')}
                 />
             )}
         </>
