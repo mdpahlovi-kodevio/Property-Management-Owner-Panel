@@ -2,31 +2,19 @@ import { useAppForm, useFieldContext } from '@/components/form/form-context'
 import { Button } from '@/components/ui/button'
 import { DataTableFooter } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { FieldLabel, FieldSeparator } from '@/components/ui/field'
+import { FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { SearchInput } from '@/components/ui/search-input'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { useSearchParams } from '@/hooks/use-search-params'
-import {
-    BathroomTypeOptions,
-    BedTypeOptions,
-    propertyApi,
-    resolveImage,
-    roomTypeApi,
-    RoomTypeStatusOptions,
-    type BathroomType,
-    type BedType,
-    type CreateRoomTypePayload,
-    type RoomType,
-    type RoomTypeStatus,
-    type UpdateRoomTypePayload,
-} from '@/lib/api'
+import type { BathroomType, CreateRoomTypePayload, RoomType, RoomTypeListItem, RoomTypeStatus, UpdateRoomTypePayload } from '@/lib/api'
+import { BathroomTypeOptions, BedTypeOptions, propertyApi, resolveImage, roomTypeApi, RoomTypeStatusOptions } from '@/lib/api'
 import { formatPrice } from '@/lib/properties'
 import { capitalize, cn, GetRoomAmenities } from '@/lib/utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Edit, Eye, MapPin, Plus, RotateCw, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Edit, Eye, MapPin, Plus, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import * as z from 'zod'
@@ -173,8 +161,8 @@ function RouteComponent() {
         queryFn: () => propertyApi.getBySlug(propertySlug),
     })
 
-    const propertyId = propertyData?.data?.id
-    const propertyName = propertyData?.data?.name
+    const propertyId = propertyData?.data.id
+    const propertyName = propertyData?.data.name
 
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [activeTab, setActiveTab] = useState<RoomTab>('Details')
@@ -201,7 +189,7 @@ function RouteComponent() {
     const updateMutation = useMutation({
         mutationFn: ({ id, payload }: { id: string; payload: UpdateRoomTypePayload }) => roomTypeApi.update(id, payload),
         onSuccess: (response) => {
-            queryClient.invalidateQueries({ queryKey: ['room-type', propertyId, response?.data?.internalCode] })
+            queryClient.invalidateQueries({ queryKey: ['room-type', propertyId, response.data.internalCode] })
             toast.success('Room type updated successfully!')
             closeDialog()
         },
@@ -328,7 +316,7 @@ function RouteComponent() {
                     <DialogHeader>
                         <DialogTitle>{editingRoom ? 'Edit room type' : 'Create room type'}</DialogTitle>
                         <DialogDescription>
-                            {editingRoom ? `Editing "${editingRoom?.name ?? ''}"` : 'Add a new room type to this property'}
+                            {editingRoom ? `Editing "${editingRoom.name}"` : 'Add a new room type to this property'}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -356,7 +344,7 @@ function RoomTypeCardItem({
 }: {
     propertyId: string
     propertySlug: string
-    item: import('@/lib/api/room-type').RoomTypeListItem
+    item: RoomTypeListItem
     onEdit: (room: RoomType) => void
 }) {
     const { data, isLoading } = useQuery({
@@ -514,7 +502,7 @@ const ROOM_STATUS_BADGE: Record<RoomTypeStatus, string> = {
 function mapRoomTypeToCard(rt: RoomType): RoomTypeCard {
     const bedsCount = rt.beds.reduce((s, b) => s + b.quantity, 0)
     const floorLabel = rt.units.length > 0 ? Array.from(new Set(rt.units.map((u) => u.floor).filter(Boolean))).join(', ') : '—'
-    const cover = rt.images.find((i) => i.thumbnail) ?? rt.images[0]
+    const cover = rt.images.find((i) => i.thumbnail) ?? rt.images.at(0)
     const roomSizeLabel = rt.roomSize != null ? `${rt.roomSize} sqm` : '—'
 
     return {
@@ -525,7 +513,7 @@ function mapRoomTypeToCard(rt: RoomType): RoomTypeCard {
         location: `Floor ${floorLabel}`,
         details: `${bedsCount} Bed${bedsCount === 1 ? '' : 's'} • ${roomSizeLabel}`,
         startingFromPrice: (() => {
-            const raw = rt.ratePlans?.[0]?.defaultPrice ?? null
+            const raw = rt.ratePlans.at(0)?.defaultPrice ?? null
             if (raw == null) return 0
             const num = typeof raw === 'string' ? Number(raw) : raw
             return Number.isFinite(num) ? num : 0
@@ -716,7 +704,7 @@ function RoomTypeForm({
                                             type="button"
                                             size="sm"
                                             variant="outline"
-                                            onClick={() => field.pushValue({ bedType: 'KING' as BedType, quantity: 1 })}
+                                            onClick={() => field.pushValue({ bedType: 'KING', quantity: 1 })}
                                             className="self-start"
                                         >
                                             <Plus className="size-3.5" />
@@ -867,10 +855,6 @@ function RoomUnitsEditor() {
     const [singleFloor, setSingleFloor] = useState('')
     const [floorTouched, setFloorTouched] = useState(false)
 
-    const [genCount, setGenCount] = useState(10)
-    const [genStart, setGenStart] = useState(201)
-    const [genFloor, setGenFloor] = useState('')
-
     // ── Helpers operating on the field value ──
     const addUnique = (incoming: RoomUnitValue[]) => {
         const existing = new Set(units.map((u) => u.roomNumber))
@@ -893,18 +877,6 @@ function RoomUnitsEditor() {
         setSingleFloor('')
         setFloorTouched(false)
     }
-
-    // ── Bulk generate ──
-    const commitGenerate = () => {
-        const count = Math.min(Math.max(genCount, 1), 200)
-        const generated: RoomUnitValue[] = Array.from({ length: count }, (_, i) => ({
-            roomNumber: String(genStart + i),
-            floor: genFloor.trim() || deriveFloor(String(genStart + i)),
-        }))
-        addUnique(generated)
-    }
-
-    const genPreviewEnd = genStart + Math.min(Math.max(genCount, 1), 200) - 1
 
     return (
         <div className="flex flex-col gap-4">
@@ -983,26 +955,6 @@ function RoomUnitsEditor() {
                         </Button>
                     </div>
                 </div>
-            </div>
-
-            <FieldSeparator>OR</FieldSeparator>
-
-            {/* ═══ Bulk generate ═══ */}
-            <div>
-                <FieldLabel>Generate a range</FieldLabel>
-                <div className="grid grid-cols-3 gap-3">
-                    <Input type="number" min={1} max={200} value={genCount} onChange={(e) => setGenCount(Number(e.target.value) || 1)} />
-                    <Input type="number" value={genStart} onChange={(e) => setGenStart(Number(e.target.value) || 1)} />
-                    <div className="flex items-end gap-3">
-                        <Input placeholder="Floor" value={genFloor} onChange={(e) => setGenFloor(e.target.value)} />
-                        <Button type="button" size="icon" variant="secondary" onClick={commitGenerate}>
-                            <RotateCw />
-                        </Button>
-                    </div>
-                </div>
-                <p className="pt-1 text-xs text-muted-foreground">
-                    Will create {genStart}–{genPreviewEnd} on floor {genFloor.trim() || deriveFloor(String(genStart)) || '—'}
-                </p>
             </div>
         </div>
     )

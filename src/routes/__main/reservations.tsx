@@ -1,13 +1,15 @@
 import { useAppForm } from '@/components/form/form-context'
 import { Button } from '@/components/ui/button'
-import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
+import type { DataTableColumn } from '@/components/ui/data-table'
+import { DataTable } from '@/components/ui/data-table'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useSearchParams } from '@/hooks/use-search-params'
-import { bookingApi, BookingStatusOptions, resolveImage, type Booking, type BookingStatus, type CreateBookingPayload } from '@/lib/api'
+import type { Booking, BookingStatus, CreateBookingPayload } from '@/lib/api'
+import { bookingApi, BookingStatusOptions, resolveImage } from '@/lib/api'
 import { capitalize, cn, GetGuests, GetProperties, GetRoomTypes } from '@/lib/utils'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
@@ -151,7 +153,12 @@ function RouteComponent() {
                 <div className="flex items-center gap-3">
                     <div className="size-8 rounded-full overflow-hidden bg-muted shrink-0">
                         {res.guest.user.image ? (
-                            <img src={resolveImage(res.guest.user.image)} alt={res.guest.user.name} className="size-full object-cover" />
+                            <img
+                                src={resolveImage(res.guest.user.image)}
+                                alt={res.guest.user.name}
+                                crossOrigin="anonymous"
+                                className="size-full object-cover"
+                            />
                         ) : (
                             <div className="size-full flex items-center justify-center text-muted-foreground text-xs font-semibold">
                                 {res.guest.user.name.slice(0, 2).toUpperCase()}
@@ -271,7 +278,7 @@ function RouteComponent() {
 
                 <Select
                     value={query.status ?? 'all'}
-                    onValueChange={(value) => mergeSearch({ status: value === 'all' ? undefined : (value as BookingStatus), page: 1 })}
+                    onValueChange={(value) => mergeSearch({ status: value === 'all' ? undefined : value, page: 1 })}
                 >
                     <SelectTrigger className="min-w-40">
                         <SelectValue placeholder={t('reservations.status', 'Status')} />
@@ -636,7 +643,7 @@ function ReservationForm({
                     if (nights <= 0) return null
 
                     const nightly = (() => {
-                        const raw = room.ratePlans?.[0]?.defaultPrice ?? null
+                        const raw = room.ratePlans.at(0)?.defaultPrice ?? null
                         if (raw == null) return 0
                         const num = typeof raw === 'string' ? Number(raw) : raw
                         return Number.isFinite(num) ? num : 0

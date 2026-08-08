@@ -139,7 +139,12 @@ function RouteComponent() {
                 render: (guest) => (
                     <>
                         <div className="size-8 rounded-full overflow-hidden shrink-0 bg-slate-100">
-                            <img src={resolveImage(guest.user.image)} alt={guest.user.name} className="size-full object-cover" />
+                            <img
+                                src={resolveImage(guest.user.image)}
+                                alt={guest.user.name}
+                                crossOrigin="anonymous"
+                                className="size-full object-cover"
+                            />
                         </div>
                         <span className="text-foreground">{guest.user.name}</span>
                     </>
@@ -278,9 +283,7 @@ function RouteComponent() {
                         </DialogTitle>
                         <DialogDescription>
                             {isEditMode
-                                ? t('user-management.editDesc', 'Modify details for {{name}}.', {
-                                      name: editingGuest?.user.name || 'Guest',
-                                  })
+                                ? t('user-management.editDesc', 'Modify details for {{name}}.', { name: editingGuest.user.name })
                                 : t('user-management.addDesc', 'Enter the details of the new guest to register them on your website.')}
                         </DialogDescription>
                     </DialogHeader>

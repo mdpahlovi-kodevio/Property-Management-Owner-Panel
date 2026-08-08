@@ -7,17 +7,8 @@ import { SearchInput } from '@/components/ui/search-input'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { useSearchParams } from '@/hooks/use-search-params'
-import {
-    AddonStateOptions,
-    propertyApi,
-    PropertyStatusOptions,
-    PropertyTypeOptions,
-    resolveImage,
-    type CreatePropertyPayload,
-    type Property,
-    type PropertyListItem,
-    type UpdatePropertyPayload,
-} from '@/lib/api'
+import type { CreatePropertyPayload, Property, PropertyListItem, UpdatePropertyPayload } from '@/lib/api'
+import { AddonStateOptions, propertyApi, PropertyStatusOptions, PropertyTypeOptions, resolveImage } from '@/lib/api'
 import { capitalize, cn, GetPropertyAmenities, GetWebsites } from '@/lib/utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
@@ -82,7 +73,7 @@ function mapPropertyToCard(p: Property): PropertyCard {
     const totalRooms = p.roomTypes.reduce((sum, rt) => sum + rt.units.length, 0)
     const totalBeds = p.roomTypes.reduce((sum, rt) => sum + rt.beds.reduce((s, b) => s + b.quantity, 0), 0)
     const maxGuests = p.roomTypes.length ? Math.max(...p.roomTypes.map((rt) => rt.maxOccupancy)) : 0
-    const cover = p.images.find((i) => i.thumbnail) ?? p.images[0]
+    const cover = p.images.find((i) => i.thumbnail) ?? p.images.at(0)
 
     return {
         id: p.id,
@@ -129,6 +120,7 @@ const propertyFormSchema = z.object({
     longitude: z.number(),
     checkInTime: z.string().min(2, 'Check-in time is required'),
     checkOutTime: z.string().min(2, 'Check-out time is required'),
+    taxRate: z.number().min(0).max(100).optional(),
     websiteId: z.string().optional(),
     amenities: z.array(z.string()),
     policy: z.object({
@@ -195,6 +187,7 @@ function valuesFromProperty(p: Property): PropertyFormValues {
         longitude: p.longitude ?? 0,
         checkInTime: p.checkInTime,
         checkOutTime: p.checkOutTime,
+        ...(p.taxRate != null ? { taxRate: Number(p.taxRate) } : {}),
         ...(p.websiteId ? { websiteId: p.websiteId } : {}),
         amenities: p.amenities.map((a) => a.amenity.id),
         // Only petsAllowed has a backend home; the other toggles are UI-only.
@@ -272,7 +265,7 @@ function RouteComponent() {
     const updateMutation = useMutation({
         mutationFn: ({ id, payload }: { id: string; payload: UpdatePropertyPayload }) => propertyApi.update(id, payload),
         onSuccess: (response) => {
-            queryClient.invalidateQueries({ queryKey: ['property', response?.data?.slug] })
+            queryClient.invalidateQueries({ queryKey: ['property', response.data.slug] })
             toast.success(t('properties.updatedSuccess', 'Property updated successfully!'))
             closeDialog()
         },
@@ -364,7 +357,7 @@ function RouteComponent() {
                         <DialogTitle>{editingProperty ? t('properties.editProperty') : t('properties.createProperty')}</DialogTitle>
                         <DialogDescription>
                             {editingProperty
-                                ? t('properties.editing', `Editing "{{name}}"`, { name: editingProperty?.name ?? '' })
+                                ? t('properties.editing', `Editing "{{name}}"`, { name: editingProperty.name })
                                 : t('properties.addDesc')}
                         </DialogDescription>
                     </DialogHeader>
@@ -659,16 +652,15 @@ function PropertyForm({
                         </Section>
 
                         <Section>
-                            <SectionLabel>Property Amenities</SectionLabel>
-                            <form.AppField name="amenities">
+                            <SectionLabel>Taxes</SectionLabel>
+                            <form.AppField name="taxRate">
                                 {(field) => (
-                                    <field.FormTags
-                                        label=""
-                                        options={amenities.map((amenity) => ({
-                                            value: amenity.id,
-                                            label: amenity.name,
-                                            icon: amenity.icon ?? undefined,
-                                        }))}
+                                    <field.FormInputNumber
+                                        label="Sales tax / VAT (%)"
+                                        placeholder="e.g. 12 — empty or 0 means no tax"
+                                        min={0}
+                                        max={100}
+                                        step="0.01"
                                     />
                                 )}
                             </form.AppField>
@@ -720,6 +712,22 @@ function PropertyForm({
                 {/* ════════ POLICIES ════════ */}
                 {activeTab === 'Policies' && (
                     <div className="flex flex-col gap-6">
+                        <Section>
+                            <SectionLabel>Property Amenities</SectionLabel>
+                            <form.AppField name="amenities">
+                                {(field) => (
+                                    <field.FormTags
+                                        label=""
+                                        options={amenities.map((amenity) => ({
+                                            value: amenity.id,
+                                            label: amenity.name,
+                                            icon: amenity.icon ?? undefined,
+                                        }))}
+                                    />
+                                )}
+                            </form.AppField>
+                        </Section>
+
                         <Section>
                             <SectionLabel>Guest Policies</SectionLabel>
                             <div className="rounded-lg border overflow-hidden divide-y">

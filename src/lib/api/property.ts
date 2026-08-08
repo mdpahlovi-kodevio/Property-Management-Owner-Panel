@@ -76,6 +76,7 @@ export interface Property {
     longitude: number | null
     checkInTime: string
     checkOutTime: string
+    taxRate: string | number | null
     currency: string | null
     rating: number
     reviewCount: number
@@ -137,6 +138,7 @@ export interface CreatePropertyPayload {
     longitude?: number
     checkInTime: string
     checkOutTime: string
+    taxRate?: number
     websiteId?: string
     policy?: PropertyPolicyPayload
     images?: PropertyImagePayload[]

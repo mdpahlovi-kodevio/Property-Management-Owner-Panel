@@ -91,6 +91,20 @@ export interface FillDailyRatePlanPayload {
     closedToArrival?: boolean
     closedToDeparture?: boolean
     stopSell?: boolean
+    /** 0 = Sunday … 6 = Saturday; omit to fill every day in the range. */
+    weekdays?: number[]
+}
+
+/** One calendar day with effective values (daily override or plan defaults). */
+export interface RatePlanCalendarDay {
+    date: string
+    price: string | number
+    source: 'daily' | 'default'
+    minLOS: number | null
+    maxLOS: number | null
+    closedToArrival: boolean
+    closedToDeparture: boolean
+    stopSell: boolean
 }
 
 export interface ListDailyRatePlanParams {
@@ -141,5 +155,10 @@ export const ratePlanApi = {
     listDaily: (params: ListDailyRatePlanParams) =>
         request<{ data: RatePlanDaily[] }>(
             `/owner/rate-plan/daily/list${toQuery(params as unknown as Record<string, string | number | boolean | undefined>)}`,
+        ),
+
+    calendar: (params: ListDailyRatePlanParams) =>
+        request<{ data: { ratePlanId: string; days: RatePlanCalendarDay[] } }>(
+            `/owner/rate-plan/daily/calendar${toQuery(params as unknown as Record<string, string | number | boolean | undefined>)}`,
         ),
 }

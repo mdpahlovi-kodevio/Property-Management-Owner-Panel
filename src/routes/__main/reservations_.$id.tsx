@@ -7,16 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator'
 import { Spinner } from '@/components/ui/spinner'
 import { Textarea } from '@/components/ui/textarea'
-import {
-    bookingApi,
-    BookingStatusOptions,
-    paymentApi,
-    resolveImage,
-    type Booking,
-    type BookingStatus,
-    type CreatePaymentPayload,
-    type UpdatePaymentPayload,
-} from '@/lib/api'
+import type { Booking, BookingStatus, CreatePaymentPayload, UpdatePaymentPayload } from '@/lib/api'
+import { bookingApi, BookingStatusOptions, paymentApi, resolveImage } from '@/lib/api'
 import { capitalize, cn } from '@/lib/utils'
 import { useMutation } from '@tanstack/react-query'
 import { createFileRoute, Link, notFound, useNavigate, useRouter } from '@tanstack/react-router'
@@ -51,7 +43,6 @@ export const Route = createFileRoute('/__main/reservations_/$id')({
     loader: async ({ params }) => {
         try {
             const res = await bookingApi.findOne(params.id)
-            if (!res.data) throw notFound()
             return { booking: res.data }
         } catch {
             throw notFound()
@@ -438,6 +429,7 @@ function ReservationDetailsComponent() {
                                         <img
                                             src={resolveImage(booking.guest.user.image)}
                                             alt={booking.guest.user.name}
+                                            crossOrigin="anonymous"
                                             className="size-full object-cover"
                                         />
                                     ) : (
@@ -912,7 +904,7 @@ function StatusChangeDialog({
     }, [currentStatus])
 
     const form = useAppForm({
-        defaultValues: { status: availableTargets[0] ?? ('CONFIRMED' as BookingStatus), reason: '' },
+        defaultValues: { status: availableTargets[0] ?? 'CONFIRMED', reason: '' },
         validators: { onChange: statusChangeSchema },
         onSubmit: async ({ value }) => onConfirm(value),
     })

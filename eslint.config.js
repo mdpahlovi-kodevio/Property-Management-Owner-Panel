@@ -8,6 +8,18 @@ const require = createRequire(import.meta.url)
 export default [
     ...tanstackConfig,
     {
+        // Wire typed linting (no-unnecessary-condition etc.) to this project's tsconfig.
+        // tanstackConfig sets the legacy `project: true`; it must be disabled when
+        // using projectService (the two are mutually exclusive in typescript-eslint).
+        languageOptions: {
+            parserOptions: {
+                project: false,
+                projectService: true,
+                tsconfigRootDir: import.meta.dirname,
+            },
+        },
+    },
+    {
         rules: {
             'import/no-cycle': 'off',
             'import/order': 'off',

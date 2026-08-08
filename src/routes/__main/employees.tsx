@@ -142,7 +142,12 @@ function RouteComponent() {
                 render: (emp) => (
                     <>
                         <div className="size-8 rounded-full overflow-hidden">
-                            <img src={resolveImage(emp.user.image)} alt={emp.user.name} className="size-full object-cover" />
+                            <img
+                                src={resolveImage(emp.user.image)}
+                                alt={emp.user.name}
+                                crossOrigin="anonymous"
+                                className="size-full object-cover"
+                            />
                         </div>
                         {emp.user.name}
                     </>

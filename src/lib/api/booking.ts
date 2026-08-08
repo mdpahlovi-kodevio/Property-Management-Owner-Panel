@@ -57,6 +57,12 @@ export interface BookingStatusHistoryEntry {
     createdAt: string
 }
 
+export interface BookingNight {
+    date: string
+    price: string
+    source: 'daily' | 'default'
+}
+
 export interface Booking {
     id: string
     propertyId: string
@@ -111,6 +117,7 @@ export interface Booking {
     }
     guest: BookingGuest
     addons: BookingAddon[]
+    nightlyBreakdown: BookingNight[]
     payments: BookingPayment[]
     statusHistory: BookingStatusHistoryEntry[]
 }

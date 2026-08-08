@@ -1,24 +1,21 @@
 import { useAppForm } from '@/components/form/form-context'
+import { RatePlanCalendarDialog } from '@/components/rate-plan/rate-plan-calendar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Spinner } from '@/components/ui/spinner'
-import {
-    propertyApi,
-    ratePlanApi,
-    RatePlanStatusOptions,
-    resolveImage,
-    roomTypeApi,
-    type CreateRatePlanPayload,
-    type FillDailyRatePlanPayload,
-    type RatePlan,
-    type RatePlanListItem,
-    type RatePlanStatus,
-    type RoomType,
-    type RoomTypeStatus,
-    type UpdateRatePlanPayload,
+import type {
+    CreateRatePlanPayload,
+    FillDailyRatePlanPayload,
+    RatePlan,
+    RatePlanListItem,
+    RatePlanStatus,
+    RoomType,
+    RoomTypeStatus,
+    UpdateRatePlanPayload,
 } from '@/lib/api'
+import { propertyApi, ratePlanApi, RatePlanStatusOptions, resolveImage, roomTypeApi } from '@/lib/api'
 import { formatPrice } from '@/lib/properties'
 import { capitalize, cn } from '@/lib/utils'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -28,6 +25,7 @@ import {
     Bath,
     BedDouble,
     Calendar,
+    CalendarDays,
     CheckCircle2,
     CreditCard,
     Edit,
@@ -51,12 +49,8 @@ export const Route = createFileRoute('/__main/property_/$propertySlug_/room/$roo
         try {
             const propertyRes = await propertyApi.getBySlug(propertySlug)
             const property = propertyRes.data
-            if (!property) throw notFound()
-
             const roomTypeRes = await roomTypeApi.getBySlug(property.id, roomSlug)
             const roomType = roomTypeRes.data
-            if (!roomType) throw notFound()
-
             return { property, roomType }
         } catch {
             throw notFound()
@@ -126,7 +120,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
     const roomSizeLabel = rt.roomSize != null ? `${rt.roomSize} sqm` : '—'
 
     const startingPrice = (() => {
-        const raw = rt.ratePlans?.[0]?.defaultPrice ?? null
+        const raw = rt.ratePlans.at(0)?.defaultPrice
         if (raw == null) return 0
         const num = typeof raw === 'string' ? Number(raw) : raw
         return Number.isFinite(num) ? num : 0
@@ -182,6 +176,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
     const [isCreateOpen, setIsCreateOpen] = useState(false)
     const [editingRatePlan, setEditingRatePlan] = useState<RatePlanListItem | null>(null)
     const [fillDailyFor, setFillDailyFor] = useState<RatePlanListItem | null>(null)
+    const [calendarFor, setCalendarFor] = useState<RatePlanListItem | null>(null)
 
     const ratePlans = ratePlansQuery.data?.data ?? []
 
@@ -386,6 +381,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                             }
                         }}
                         onFillDaily={(rp) => setFillDailyFor(rp)}
+                        onViewCalendar={(rp) => setCalendarFor(rp)}
                     />
 
                     <Card>
@@ -485,7 +481,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                         <DialogDescription>
                             {editingRatePlan
                                 ? `Editing "${editingRatePlan.name}" (${editingRatePlan.code})`
-                                : `Add a new rate plan for "${rt.name}"`}
+                                : `Add a new rate plan for "${rt.name}". Only one rate plan per room type can be ACTIVE at a time.`}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -498,7 +494,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                                 roomTypeId: rt.id,
                                 name: values.name,
                                 code: values.code,
-                                description: values.description?.trim() ? values.description : undefined,
+                                description: values.description.trim() ? values.description : undefined,
                                 status: values.status,
                                 defaultPrice: values.defaultPrice,
                                 defaultMinLOS: values.defaultMinLOS,
@@ -544,7 +540,7 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                         <DialogTitle>Configure daily rates</DialogTitle>
                         <DialogDescription>
                             {fillDailyFor
-                                ? `Override the price and restrictions for "${fillDailyFor.name}" across a date range. Leave a field blank to keep the plan's default.`
+                                ? `Adjust price and restrictions for "${fillDailyFor.name}" across a date range. Blank fields and "Keep existing" options leave each night's current value untouched.`
                                 : ''}
                         </DialogDescription>
                     </DialogHeader>
@@ -564,9 +560,10 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                                     ...(values.price !== undefined && { price: values.price }),
                                     ...(values.minLOS !== undefined && { minLOS: values.minLOS }),
                                     ...(values.maxLOS !== undefined && { maxLOS: values.maxLOS }),
-                                    ...(values.closedToArrival !== undefined && { closedToArrival: values.closedToArrival }),
-                                    ...(values.closedToDeparture !== undefined && { closedToDeparture: values.closedToDeparture }),
-                                    ...(values.stopSell !== undefined && { stopSell: values.stopSell }),
+                                    ...(values.closedToArrival !== 'keep' && { closedToArrival: values.closedToArrival === 'on' }),
+                                    ...(values.closedToDeparture !== 'keep' && { closedToDeparture: values.closedToDeparture === 'on' }),
+                                    ...(values.stopSell !== 'keep' && { stopSell: values.stopSell === 'on' }),
+                                    ...(values.weekdays.length > 0 && { weekdays: values.weekdays }),
                                 })
                                 setFillDailyFor(null)
                             }}
@@ -576,6 +573,18 @@ function RoomTypeAdminDetails({ property, roomType: rt }: { property: any; roomT
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* ══════════════════════════════════════════════════
+                RATE CALENDAR DIALOG (read-only, hands off to fill)
+            ══════════════════════════════════════════════════ */}
+            <RatePlanCalendarDialog
+                ratePlan={calendarFor}
+                onClose={() => setCalendarFor(null)}
+                onFillRange={(rp) => {
+                    setCalendarFor(null)
+                    setFillDailyFor(rp)
+                }}
+            />
         </>
     )
 }
@@ -651,6 +660,7 @@ function RatePlansCard({
     onEdit,
     onDelete,
     onFillDaily,
+    onViewCalendar,
 }: {
     ratePlans: RatePlanListItem[]
     isLoading: boolean
@@ -658,6 +668,7 @@ function RatePlansCard({
     onEdit: (rp: RatePlanListItem) => void
     onDelete: (rp: RatePlanListItem) => void
     onFillDaily: (rp: RatePlanListItem) => void
+    onViewCalendar: (rp: RatePlanListItem) => void
 }) {
     return (
         <Card>
@@ -749,6 +760,10 @@ function RatePlansCard({
                                             <Edit className="size-3.5" />
                                             Edit
                                         </Button>
+                                        <Button size="sm" variant="ghost" onClick={() => onViewCalendar(rp)}>
+                                            <CalendarDays className="size-3.5" />
+                                            Calendar
+                                        </Button>
                                         <Button size="sm" variant="ghost" onClick={() => onFillDaily(rp)}>
                                             <Calendar className="size-3.5" />
                                             Daily rates
@@ -797,7 +812,7 @@ const defaultRatePlanValues: RatePlanFormValues = {
     name: '',
     code: 'BAR',
     description: '',
-    status: 'ACTIVE',
+    status: 'DRAFT',
     defaultPrice: 100,
     defaultMinLOS: undefined,
     defaultMaxLOS: undefined,
@@ -907,6 +922,18 @@ function RatePlanForm({
 
 // ─── Fill Daily Rates Form ────────────────────────────────────────
 
+// Tri-state: "keep" leaves each night's stored value untouched (server PATCH semantics); "on"/"off" overwrite the range.
+const triState = z.enum(['keep', 'on', 'off'])
+type TriState = z.infer<typeof triState>
+
+const triStateOptions: { value: TriState; label: string }[] = [
+    { value: 'keep', label: 'Keep existing' },
+    { value: 'on', label: 'Yes' },
+    { value: 'off', label: 'No' },
+]
+
+const WEEKDAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+
 const fillDailySchema = z
     .object({
         fromDate: z.string().min(1, 'From date is required'),
@@ -914,13 +941,18 @@ const fillDailySchema = z
         price: z.number().min(0).optional(),
         minLOS: z.number().int().min(1).max(365).optional(),
         maxLOS: z.number().int().min(1).max(365).optional(),
-        closedToArrival: z.boolean().optional(),
-        closedToDeparture: z.boolean().optional(),
-        stopSell: z.boolean().optional(),
+        closedToArrival: triState,
+        closedToDeparture: triState,
+        stopSell: triState,
+        weekdays: z.array(z.number().int().min(0).max(6)),
     })
     .refine((v) => new Date(v.toDate) >= new Date(v.fromDate), {
         message: 'To date must be on or after from date',
         path: ['toDate'],
+    })
+    .refine((v) => v.minLOS == null || v.maxLOS == null || v.minLOS <= v.maxLOS, {
+        message: 'Min LOS cannot be greater than max LOS',
+        path: ['maxLOS'],
     })
 
 type FillDailyValues = z.infer<typeof fillDailySchema>
@@ -942,17 +974,17 @@ function FillDailyForm({
     monthOut.setDate(monthOut.getDate() + 29)
     const isoDate = (d: Date) => d.toISOString().slice(0, 10)
 
+    const defaultValues: FillDailyValues = {
+        fromDate: isoDate(today),
+        toDate: isoDate(monthOut),
+        closedToArrival: 'keep',
+        closedToDeparture: 'keep',
+        stopSell: 'keep',
+        weekdays: [],
+    }
+
     const form = useAppForm({
-        defaultValues: {
-            fromDate: isoDate(today),
-            toDate: isoDate(monthOut),
-            price: defaultPrice,
-            minLOS: undefined,
-            maxLOS: undefined,
-            closedToArrival: false,
-            closedToDeparture: false,
-            stopSell: false,
-        } as FillDailyValues,
+        defaultValues,
         validators: { onChange: fillDailySchema },
         onSubmit: async ({ value }) => await onSubmit(value),
     })
@@ -969,11 +1001,42 @@ function FillDailyForm({
             <form.AppField name="fromDate">{(field) => <field.FormInput type="date" label="From date" />}</form.AppField>
             <form.AppField name="toDate">{(field) => <field.FormInput type="date" label="To date" />}</form.AppField>
 
+            <form.Subscribe selector={(state) => state.values.weekdays}>
+                {(weekdays) => (
+                    <div className="flex flex-col gap-1.5">
+                        <span className="text-sm font-medium">Weekdays</span>
+                        <div className="flex flex-wrap gap-1.5">
+                            {WEEKDAY_LABELS.map((label, i) => {
+                                const active = weekdays.includes(i)
+                                return (
+                                    <button
+                                        key={label}
+                                        type="button"
+                                        onClick={() =>
+                                            form.setFieldValue('weekdays', active ? weekdays.filter((d) => d !== i) : [...weekdays, i])
+                                        }
+                                        className={cn(
+                                            'h-8 w-9 rounded-md border text-xs font-semibold transition',
+                                            active
+                                                ? 'border-primary bg-primary/10 text-primary'
+                                                : 'text-muted-foreground hover:border-muted-foreground/40',
+                                        )}
+                                    >
+                                        {label}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                        <p className="text-xs text-muted-foreground">No selection = applies to every day in the range.</p>
+                    </div>
+                )}
+            </form.Subscribe>
+
             <form.AppField name="price">
                 {(field) => (
                     <field.FormInputNumber
-                        label={`Price / night (default ${defaultPrice})`}
-                        placeholder={String(defaultPrice)}
+                        label={`Price / night (plan default ${defaultPrice})`}
+                        placeholder="Leave blank to keep current"
                         min={0}
                         step="0.01"
                     />
@@ -988,13 +1051,13 @@ function FillDailyForm({
                 </form.AppField>
             </div>
             <form.AppField name="closedToArrival">
-                {(field) => <field.FormSwitch label="Closed to arrival" description="Block check-in on these nights" />}
+                {(field) => <field.FormSelect label="Closed to arrival (block check-in)" options={triStateOptions} />}
             </form.AppField>
             <form.AppField name="closedToDeparture">
-                {(field) => <field.FormSwitch label="Closed to departure" description="Block check-out on these nights" />}
+                {(field) => <field.FormSelect label="Closed to departure (block check-out)" options={triStateOptions} />}
             </form.AppField>
             <form.AppField name="stopSell">
-                {(field) => <field.FormSwitch label="Stop-sell" description="Mark these nights as unavailable for sale" />}
+                {(field) => <field.FormSelect label="Stop-sell (unavailable for sale)" options={triStateOptions} />}
             </form.AppField>
 
             <div className="flex items-center justify-end gap-2">
