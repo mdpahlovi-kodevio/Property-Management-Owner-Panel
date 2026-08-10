@@ -5,9 +5,11 @@ import { PageHeader } from '@/components/ui/page-header'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { authApi, SessionKey } from '@/lib/api'
+import { useCompactMode } from '@/lib/compact-mode'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { CheckCircle2, Copy, Globe, Phone, Shield, User, XCircle } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import QRCode from 'qrcode'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -239,8 +241,9 @@ function LanguageWatcher({ language, i18n }: { language: string; i18n: any }) {
 
 function GeneralTab() {
     const { t, i18n } = useTranslation()
-    const [darkMode, setDarkMode] = useState(false)
-    const [compactView, setCompactView] = useState(false)
+    const { compactMode, setCompactMode } = useCompactMode()
+    const { resolvedTheme, setTheme } = useTheme()
+    const darkMode = resolvedTheme === 'dark'
 
     const reverseMap: Record<string, string> = { en: 'English', de: 'German', nl: 'Dutch' }
 
@@ -309,14 +312,14 @@ function GeneralTab() {
                         <p className="text-sm font-medium text-foreground">{t('settings.general.darkMode.label')}</p>
                         <p className="text-xs text-muted-foreground">{t('settings.general.darkMode.description')}</p>
                     </div>
-                    <Switch checked={darkMode} onCheckedChange={setDarkMode} />
+                    <Switch checked={darkMode} onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')} />
                 </div>
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-sm font-medium text-foreground">{t('settings.general.compactView.label')}</p>
                         <p className="text-xs text-muted-foreground">{t('settings.general.compactView.description')}</p>
                     </div>
-                    <Switch checked={compactView} onCheckedChange={setCompactView} />
+                    <Switch checked={compactMode} onCheckedChange={setCompactMode} />
                 </div>
             </div>
 

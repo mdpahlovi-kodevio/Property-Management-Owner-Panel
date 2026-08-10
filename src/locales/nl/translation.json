@@ -1,4 +1,14 @@
 {
+    "header": {
+        "compactView": "Compacte weergave",
+        "fullView": "Volledige weergave",
+        "compactModeOn": "Compacte weergave ingeschakeld. Alleen de essentiële modules worden weergegeven.",
+        "compactModeOff": "Volledige weergave hersteld. Alle modules zijn weer beschikbaar.",
+        "darkMode": "Donkere modus",
+        "lightMode": "Lichte modus",
+        "darkModeOn": "Donkere modus ingeschakeld.",
+        "darkModeOff": "Lichte modus hersteld."
+    },
     "auth": {
         "signIn": "Inloggen",
         "signInLink": "Inloggen",
@@ -232,7 +242,7 @@
             },
             "compactView": {
                 "label": "Compacte weergave",
-                "description": "Gebruik een compacte lay-out voor tabellen en lijsten."
+                "description": "Toon alleen essentiële controlemodules in de zijbalk."
             },
             "save": "Wijzigingen opslaan"
         },

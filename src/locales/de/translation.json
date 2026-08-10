@@ -1,4 +1,14 @@
 {
+    "header": {
+        "compactView": "Kompakte Ansicht",
+        "fullView": "Volle Ansicht",
+        "compactModeOn": "Kompakte Ansicht aktiviert. Nur die wichtigsten Module werden angezeigt.",
+        "compactModeOff": "Volle Ansicht wiederhergestellt. Alle Module sind wieder verfügbar.",
+        "darkMode": "Dunkler Modus",
+        "lightMode": "Heller Modus",
+        "darkModeOn": "Dunkler Modus aktiviert.",
+        "darkModeOff": "Heller Modus wiederhergestellt."
+    },
     "auth": {
         "signIn": "Anmelden",
         "signInLink": "Einloggen",
@@ -232,7 +242,7 @@
             },
             "compactView": {
                 "label": "Kompakte Ansicht",
-                "description": "Kompaktes Layout für Tabellen und Listen verwenden."
+                "description": "Nur wichtige Überwachungsmodule in der Seitenleiste anzeigen."
             },
             "save": "Änderungen speichern"
         },

@@ -7,6 +7,16 @@
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Geist:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
+        <script>
+            // Apply the saved theme before first paint to avoid a flash of the wrong theme.
+            ;(function () {
+                try {
+                    if (localStorage.getItem('app-theme') === 'dark') {
+                        document.documentElement.classList.add('dark')
+                    }
+                } catch (e) {}
+            })()
+        </script>
     </head>
     <body>
         <div id="app" class="min-h-screen flex flex-col"></div>

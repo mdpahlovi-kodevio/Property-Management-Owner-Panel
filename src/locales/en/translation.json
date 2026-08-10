@@ -196,6 +196,16 @@
         "support": "Support",
         "guestSupport": "Guest Support"
     },
+    "header": {
+        "compactView": "Compact view",
+        "fullView": "Full view",
+        "compactModeOn": "Compact view enabled. Showing only the essential modules.",
+        "compactModeOff": "Full view restored. All modules are available again.",
+        "darkMode": "Dark mode",
+        "lightMode": "Light mode",
+        "darkModeOn": "Dark mode enabled.",
+        "darkModeOff": "Light mode restored."
+    },
     "guestSupport": {
         "title": "Guest Support",
         "description": "Manage support requests from your guests"
@@ -232,7 +242,7 @@
             },
             "compactView": {
                 "label": "Compact View",
-                "description": "Use compact layout for tables and lists."
+                "description": "Show only essential monitoring modules in the sidebar."
             },
             "save": "Save Changes"
         },

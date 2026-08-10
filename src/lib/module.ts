@@ -5,6 +5,7 @@
  *  - key:         kebab-case key (used for i18n namespaces, API payloads, permission map)
  *  - path:        the URL the module lives at
  *  - permissions: the set of permission keys valid for this module
+ *  - compact:     whether the module is surfaced in compact (owner oversight) mode
  *
  * Order in MODULES = order in the sidebar / role matrix / form-module-map.
  *
@@ -30,62 +31,77 @@ export const MODULES = {
     dashboard: {
         path: '/',
         permissions: ['stat-cards', 'revenue-overview', 'recent-bookings'],
+        compact: true,
     },
     analytics: {
         path: '/analytics',
         permissions: ['view'],
+        compact: true,
     },
     reservations: {
         path: '/reservations',
         permissions: COMMON_PERMISSIONS,
+        compact: true,
     },
     calendar: {
         path: '/calendar',
         permissions: COMMON_PERMISSIONS,
+        compact: true,
     },
     inbox: {
         path: '/inbox',
         permissions: COMMON_PERMISSIONS,
+        compact: true,
     },
     properties: {
         path: '/property',
         permissions: COMMON_PERMISSIONS,
+        compact: false,
     },
     users: {
         path: '/user-management',
         permissions: COMMON_PERMISSIONS,
+        compact: false,
     },
     payments: {
         path: '/payments',
         permissions: COMMON_PERMISSIONS,
+        compact: true,
     },
     'channel-manager': {
         path: '/channel-manager',
         permissions: COMMON_PERMISSIONS,
+        compact: false,
     },
     employees: {
         path: '/employees',
         permissions: COMMON_PERMISSIONS,
+        compact: false,
     },
     'role-management': {
         path: '/role-management',
         permissions: COMMON_PERMISSIONS,
+        compact: false,
     },
     reviews: {
         path: '/reviews',
         permissions: COMMON_PERMISSIONS,
+        compact: true,
     },
     reports: {
         path: '/reports',
         permissions: ['export'],
+        compact: true,
     },
     support: {
         path: '/support',
         permissions: COMMON_PERMISSIONS,
+        compact: true,
     },
     guestSupport: {
         path: '/guest-support',
         permissions: COMMON_PERMISSIONS,
+        compact: false,
     },
 } as const
 
@@ -97,6 +113,9 @@ export type ModulePermission<M extends ModuleKey = ModuleKey> = (typeof MODULES)
 
 // ---------- 4. Iteration / lookup helpers ----------
 export const MODULE_KEYS = Object.keys(MODULES) as ModuleKey[]
+
+/** Modules surfaced in compact ("owner oversight") mode. */
+export const COMPACT_MODULE_KEYS = MODULE_KEYS.filter((key) => MODULES[key].compact)
 
 export const getModule = <M extends ModuleKey>(key: M): (typeof MODULES)[M] => MODULES[key]
 
