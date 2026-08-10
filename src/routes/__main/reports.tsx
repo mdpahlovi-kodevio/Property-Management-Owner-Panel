@@ -1,28 +1,24 @@
 import { Button } from '@/components/ui/button'
-import { Link } from '@tanstack/react-router'
+import type { DataTableColumn } from '@/components/ui/data-table'
 import { DataTable } from '@/components/ui/data-table'
-import type { DataTableColumn } from '@/components/ui/data-table';
 import { PageHeader } from '@/components/ui/page-header'
 import { StatCardsGrid } from '@/components/ui/stat-card'
-import { createFileRoute } from '@tanstack/react-router'
+import type { ArrivalsData, OccupancyData, RevenueData } from '@/lib/reports'
+import {
+    getArrivalsData,
+    getArrivalsStatsCards,
+    getOccupancyData,
+    getOccupancyStatsCards,
+    getRevenueData,
+    getRevenueStatsCards,
+} from '@/lib/reports'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { Filter } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/__main/reports')({
     component: RouteComponent,
 })
-
-import {
-    getOccupancyData,
-    getRevenueData,
-    getArrivalsData,
-    getOccupancyStatsCards,
-    getRevenueStatsCards,
-    getArrivalsStatsCards,
-    type OccupancyData,
-    type RevenueData,
-    type ArrivalsData
-} from '@/lib/reports'
 
 function RouteComponent() {
     const [activeTab, setActiveTab] = useState<'occupancy' | 'revenue' | 'arrivals'>(() => {
@@ -37,41 +33,69 @@ function RouteComponent() {
     const occupancyColumns = useMemo<DataTableColumn<OccupancyData>[]>(
         () => [
             { key: 'date', header: 'Date', render: (r) => <span className="text-muted-foreground">{r.date}</span> },
-            { key: 'availableRooms', header: 'Available Rooms', render: (r) => <span className="text-muted-foreground">{r.availableRooms}</span> },
+            {
+                key: 'availableRooms',
+                header: 'Available Rooms',
+                render: (r) => <span className="text-muted-foreground">{r.availableRooms}</span>,
+            },
             { key: 'occupied', header: 'Occupied', render: (r) => <span className="text-muted-foreground">{r.occupied}</span> },
-            { key: 'occupancyRate', header: 'Occupancy %', render: (r) => <span className="text-muted-foreground">{r.occupancyRate}</span> },
+            {
+                key: 'occupancyRate',
+                header: 'Occupancy %',
+                render: (r) => <span className="text-muted-foreground">{r.occupancyRate}</span>,
+            },
             { key: 'adr', header: 'ADR', render: (r) => <span className="text-muted-foreground">{r.adr}</span> },
             { key: 'revpar', header: 'REVPAR', render: (r) => <span className="text-muted-foreground">{r.revpar}</span> },
             { key: 'revenue', header: 'Revenue', render: (r) => <span className="text-muted-foreground">{r.revenue}</span> },
         ],
-        []
+        [],
     )
 
     const revenueColumns = useMemo<DataTableColumn<RevenueData>[]>(
         () => [
             { key: 'source', header: 'Booking Source', render: (r) => <span className="text-muted-foreground">{r.source}</span> },
             { key: 'bookings', header: 'Total Bookings', render: (r) => <span className="text-muted-foreground">{r.bookings}</span> },
-            { key: 'totalRevenue', header: 'Total Revenue', render: (r) => <span className="text-muted-foreground">{r.totalRevenue}</span> },
-            { key: 'totalEarnings', header: 'Total Earnings', render: (r) => <span className="text-muted-foreground">{r.totalEarnings}</span> },
-            { key: 'expectedPayout', header: 'Expected Payout', render: (r) => <span className="text-muted-foreground">{r.expectedPayout}</span> },
+            {
+                key: 'totalRevenue',
+                header: 'Total Revenue',
+                render: (r) => <span className="text-muted-foreground">{r.totalRevenue}</span>,
+            },
+            {
+                key: 'totalEarnings',
+                header: 'Total Earnings',
+                render: (r) => <span className="text-muted-foreground">{r.totalEarnings}</span>,
+            },
+            {
+                key: 'expectedPayout',
+                header: 'Expected Payout',
+                render: (r) => <span className="text-muted-foreground">{r.expectedPayout}</span>,
+            },
             {
                 key: 'action',
                 header: 'Action',
                 render: (r) => (
-                    <Link to="/reports/$source" params={{ source: r.source.toLowerCase() }} className="inline-flex items-center justify-center whitespace-nowrap bg-[#24357B] hover:bg-[#24357B]/90 text-white rounded-md h-8 px-4 text-xs font-medium">
+                    <Link
+                        to="/reports/$source"
+                        params={{ source: r.source.toLowerCase() }}
+                        className="inline-flex items-center justify-center whitespace-nowrap bg-[#24357B] hover:bg-[#24357B]/90 text-white rounded-md h-8 px-4 text-xs font-medium"
+                    >
                         View
                     </Link>
-                )
+                ),
             },
         ],
-        []
+        [],
     )
 
     const arrivalsColumns = useMemo<DataTableColumn<ArrivalsData>[]>(
         () => [
             { key: 'bookingId', header: 'Booking ID', render: (r) => <span className="text-muted-foreground">{r.bookingId}</span> },
             { key: 'guest', header: 'Guest', render: (r) => <span className="text-muted-foreground">{r.guest}</span> },
-            { key: 'propertyUnit', header: 'Property / Unit', render: (r) => <span className="text-muted-foreground">{r.propertyUnit}</span> },
+            {
+                key: 'propertyUnit',
+                header: 'Property / Unit',
+                render: (r) => <span className="text-muted-foreground">{r.propertyUnit}</span>,
+            },
             { key: 'checkIn', header: 'Check-in', render: (r) => <span className="text-muted-foreground">{r.checkIn}</span> },
             { key: 'checkOut', header: 'Check-out', render: (r) => <span className="text-muted-foreground">{r.checkOut}</span> },
             { key: 'nights', header: 'Nights', render: (r) => <span className="text-muted-foreground">{r.nights}</span> },
@@ -83,10 +107,10 @@ function RouteComponent() {
                     <span className={`text-xs font-medium ${r.status === 'Checked-in' ? 'text-green-500' : 'text-orange-400'}`}>
                         {r.status}
                     </span>
-                )
+                ),
             },
         ],
-        []
+        [],
     )
 
     return (
@@ -122,35 +146,17 @@ function RouteComponent() {
                     Filter
                 </Button>
             </div>
-            {activeTab === 'occupancy' && (
-                <StatCardsGrid
-                    cards={getOccupancyStatsCards()}
-                />
-            )}
+            {activeTab === 'occupancy' && <StatCardsGrid cards={getOccupancyStatsCards()} />}
 
-            {activeTab === 'revenue' && (
-                <StatCardsGrid
-                    cards={getRevenueStatsCards()}
-                />
-            )}
+            {activeTab === 'revenue' && <StatCardsGrid cards={getRevenueStatsCards()} />}
 
-            {activeTab === 'arrivals' && (
-                <StatCardsGrid
-                    cards={getArrivalsStatsCards()}
-                />
-            )}
+            {activeTab === 'arrivals' && <StatCardsGrid cards={getArrivalsStatsCards()} />}
 
-            {activeTab === 'occupancy' && (
-                <DataTable columns={occupancyColumns} data={getOccupancyData()} noun="reports" />
-            )}
+            {activeTab === 'occupancy' && <DataTable columns={occupancyColumns} data={getOccupancyData()} noun="reports" />}
 
-            {activeTab === 'revenue' && (
-                <DataTable columns={revenueColumns} data={getRevenueData()} noun="revenue sources" />
-            )}
+            {activeTab === 'revenue' && <DataTable columns={revenueColumns} data={getRevenueData()} noun="revenue sources" />}
 
-            {activeTab === 'arrivals' && (
-                <DataTable columns={arrivalsColumns} data={getArrivalsData()} noun="arrivals" />
-            )}
+            {activeTab === 'arrivals' && <DataTable columns={arrivalsColumns} data={getArrivalsData()} noun="arrivals" />}
         </>
     )
 }
