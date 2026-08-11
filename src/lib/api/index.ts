@@ -1,4 +1,5 @@
 export * from './amenity'
+export * from './analytics'
 export * from './auth'
 export * from './base'
 export * from './booking'
