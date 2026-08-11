@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/ui/page-header'
 import { SearchInput } from '@/components/ui/search-input'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useSearchParams } from '@/hooks/use-search-params'
 import type { CreatePropertyPayload, Property, PropertyListItem, UpdatePropertyPayload } from '@/lib/api'
 import { AddonStateOptions, propertyApi, PropertyStatusOptions, PropertyTypeOptions, resolveImage } from '@/lib/api'
@@ -556,21 +557,18 @@ function PropertyForm({
 
     return (
         <>
-            <div className="flex bg-muted overflow-x-auto shrink-0">
-                {PROP_TABS.map((tab) => (
-                    <button
-                        key={tab}
-                        type="button"
-                        onClick={() => onActiveTabChange(tab)}
-                        className={cn(
-                            'flex-1 min-w-18 px-3 py-2 text-sm font-semibold whitespace-nowrap border-b-2 transition-all duration-200',
-                            activeTab === tab ? 'border-primary text-primary' : 'border-transparent',
-                        )}
-                    >
-                        {tab}
-                    </button>
-                ))}
-            </div>
+            <Tabs value={activeTab} onValueChange={(v) => onActiveTabChange(v as PropTab)} className="shrink-0">
+                <TabsList
+                    variant="line"
+                    className="h-11 w-full justify-start overflow-x-auto rounded-none bg-muted p-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                >
+                    {PROP_TABS.map((tab) => (
+                        <TabsTrigger key={tab} value={tab} className="min-w-18 flex-1 rounded-none px-3 text-sm font-semibold after:bottom-0">
+                            {tab}
+                        </TabsTrigger>
+                    ))}
+                </TabsList>
+            </Tabs>
 
             <form
                 onSubmit={(e) => {

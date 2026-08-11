@@ -3,11 +3,12 @@ import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/ui/data-table'
 import type { DataTableColumn } from '@/components/ui/data-table'
 import { PageHeader } from '@/components/ui/page-header'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useSearchParams } from '@/hooks/use-search-params'
 import type { ReportPeriod, SourceReportRow } from '@/lib/api'
 import { reportsApi } from '@/lib/api'
 import { formatCurrency, formatSource } from '@/lib/reports'
-import { GetProperties, cn } from '@/lib/utils'
+import { GetProperties } from '@/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
@@ -78,23 +79,18 @@ function RouteComponent() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <PageHeader title="Reports by Source" description={`${formatSource(source)} channel — ${activeTab} breakdown`} />
 
-                <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-lg bg-muted p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    {PERIOD_OPTIONS.map((tab) => (
-                        <Button
-                            key={tab}
-                            variant="ghost"
-                            className={cn(
-                                'h-8 shrink-0 rounded-md px-4 text-sm font-medium capitalize transition-all',
-                                activeTab === tab
-                                    ? 'bg-[#24357B] text-white shadow-sm hover:bg-[#24357B]/90 hover:text-white'
-                                    : 'text-muted-foreground hover:bg-transparent hover:text-foreground',
-                            )}
-                            onClick={() => setActiveTab(tab)}
-                        >
-                            {tab}
-                        </Button>
-                    ))}
-                </div>
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ReportPeriod)}>
+                    <TabsList
+                        variant="primary"
+                        className="h-9 max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    >
+                        {PERIOD_OPTIONS.map((tab) => (
+                            <TabsTrigger key={tab} value={tab} className="h-7 shrink-0 px-4 text-sm capitalize">
+                                {tab}
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
+                </Tabs>
             </div>
 
             <ReportFilterBar

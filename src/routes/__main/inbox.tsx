@@ -7,11 +7,14 @@ import { Spinner } from '@/components/ui/spinner'
 import { inboxApi } from '@/lib/api'
 import type { BookingConversation } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { BedDouble, Building2, CalendarDays, ChevronRight, Clock3, Mail, MessageSquareText } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+
+/** Conversations fetched per scroll batch. */
+const PAGE_SIZE = 20
 
 export const Route = createFileRoute('/__main/inbox')({
     component: RouteComponent,
@@ -45,24 +48,51 @@ function RouteComponent() {
     const { user } = Route.useRouteContext()
     const queryClient = useQueryClient()
     const [activeBookingId, setActiveBookingId] = useState<string | null>(null)
+    // Keep the selected conversation in state so infinite scroll never blanks the thread panel.
+    const [activeConversation, setActiveConversation] = useState<BookingConversation | null>(null)
     const [search, setSearch] = useState('')
+    const listRef = useRef<HTMLDivElement>(null)
+    const sentinelRef = useRef<HTMLDivElement>(null)
 
-    const conversationsQuery = useQuery({
+    const conversationsQuery = useInfiniteQuery({
         queryKey: ['owner-booking-inbox', search],
-        queryFn: () => inboxApi.list({ page: 1, limit: 100, search: search || undefined }),
+        queryFn: ({ pageParam }) => inboxApi.list({ page: pageParam, limit: PAGE_SIZE, search: search || undefined }),
+        initialPageParam: 1,
+        getNextPageParam: (lastPage) => (lastPage.meta.page < lastPage.meta.totalPages ? lastPage.meta.page + 1 : undefined),
         refetchInterval: 15_000,
     })
-    const conversations = conversationsQuery.data?.data ?? []
-    const activeConversation = useMemo(
-        () => conversations.find((conversation) => conversation.bookingId === activeBookingId) ?? null,
-        [activeBookingId, conversations],
-    )
+    const conversations = conversationsQuery.data?.pages.flatMap((page) => page.data) ?? []
+    const { hasNextPage, isFetchingNextPage, fetchNextPage } = conversationsQuery
+
+    // Infinite scroll: fetch the next batch when the sentinel enters the list viewport.
+    useEffect(() => {
+        const sentinel = sentinelRef.current
+        const root = listRef.current
+        if (!sentinel || !root) return
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+                    fetchNextPage()
+                }
+            },
+            { root, rootMargin: '200px' },
+        )
+        observer.observe(sentinel)
+        return () => observer.disconnect()
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+
+    const selectConversation = (conversation: BookingConversation) => {
+        setActiveBookingId(conversation.bookingId)
+        setActiveConversation(conversation)
+    }
 
     useEffect(() => {
-        if (!activeBookingId && conversations[0] && window.innerWidth >= 768) {
-            setActiveBookingId(conversations[0].bookingId)
+        if (!activeConversation && conversations[0] && window.innerWidth >= 768) {
+            const first = conversations[0]
+            setActiveBookingId(first.bookingId)
+            setActiveConversation(first)
         }
-    }, [activeBookingId, conversations])
+    }, [activeConversation, conversations])
 
     const messagesQuery = useQuery({
         queryKey: ['owner-booking-inbox-messages', activeBookingId],
@@ -85,16 +115,20 @@ function RouteComponent() {
             <PageHeader title="Inbox" description="Booking-specific guest requests and stay communication" className="shrink-0" />
 
             <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-xl border bg-card shadow-sm">
-                <aside className={cn('w-full shrink-0 flex-col border-r md:flex md:w-88', activeBookingId ? 'hidden md:flex' : 'flex')}>
+                <aside className={cn('w-full shrink-0 min-h-0 flex-col overflow-hidden border-r md:flex md:w-88', activeBookingId ? 'hidden md:flex' : 'flex')}>
                     <div className="border-b p-3">
                         <Input
                             value={search}
-                            onChange={(event) => setSearch(event.target.value)}
+                            onChange={(event) => {
+                                setSearch(event.target.value)
+                                // New search restarts from page 1 — snap back to the top of the list.
+                                listRef.current?.scrollTo({ top: 0 })
+                            }}
                             placeholder="Search guests or properties..."
                             aria-label="Search guests or properties"
                         />
                     </div>
-                    <div className="flex-1 overflow-y-auto p-2">
+                    <div ref={listRef} className="flex-1 overflow-y-auto p-2">
                         {conversationsQuery.isLoading ? (
                             <div className="grid h-40 place-items-center">
                                 <Spinner />
@@ -114,7 +148,7 @@ function RouteComponent() {
                                     <button
                                         key={conversation.bookingId}
                                         type="button"
-                                        onClick={() => setActiveBookingId(conversation.bookingId)}
+                                        onClick={() => selectConversation(conversation)}
                                         className={cn(
                                             'mb-1 flex w-full items-start gap-3 rounded-xl p-3 text-left transition',
                                             active ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
@@ -166,6 +200,13 @@ function RouteComponent() {
                                 )
                             })
                         )}
+                        {hasNextPage ? (
+                            <div ref={sentinelRef} className="grid h-14 place-items-center">
+                                {isFetchingNextPage && <Spinner className="size-4 text-muted-foreground" />}
+                            </div>
+                        ) : conversations.length > 0 ? (
+                            <div className="py-3 text-center text-[11px] text-muted-foreground">You're all caught up</div>
+                        ) : null}
                     </div>
                 </aside>
 
@@ -180,7 +221,10 @@ function RouteComponent() {
                                 isLoading={messagesQuery.isLoading}
                                 isSending={sendMutation.isPending}
                                 canReply={activeConversation.canReply}
-                                onBack={() => setActiveBookingId(null)}
+                                onBack={() => {
+                                    setActiveBookingId(null)
+                                    setActiveConversation(null)
+                                }}
                                 onSend={(message) => sendMutation.mutate(message)}
                                 emptyText="Send a message about this reservation."
                             />

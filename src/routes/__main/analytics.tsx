@@ -1,25 +1,19 @@
 import { Button } from '@/components/ui/button'
-import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
+import { DataTable  } from '@/components/ui/data-table'
+import type {DataTableColumn} from '@/components/ui/data-table';
 import { PageHeader } from '@/components/ui/page-header'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { StatCardsGrid, type StatCardProps } from '@/components/ui/stat-card'
+import { StatCardsGrid  } from '@/components/ui/stat-card'
+import type {StatCardProps} from '@/components/ui/stat-card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
     analyticsApi,
     bookingApi,
-    reportsApi,
-    type ArrivalRow,
-    type Booking,
-    type OccupancyReport,
-    type OccupancyRow,
-    type OperationsReport,
-    type OverviewReport,
-    type Paginated,
-    type RevenueReport,
-    type RevenueSourceRow,
-    type TrendGranularity,
+    overviewApi,
+    reportsApi
 } from '@/lib/api'
+import type {ArrivalRow, Booking, OccupancyReport, OccupancyRow, OperationsReport, OverviewReport, Paginated, RevenueReport, RevenueSourceRow, TrendGranularity} from '@/lib/api';
 import {
     formatCurrency,
     formatPercent,
@@ -30,11 +24,14 @@ import {
     getOccupancyStatsCards,
     getRevenueStatsCards,
 } from '@/lib/reports'
+import { useSearchParams } from '@/hooks/use-search-params'
 import { GetProperties, cn } from '@/lib/utils'
-import { useQuery, type UseQueryResult } from '@tanstack/react-query'
+import { useQuery  } from '@tanstack/react-query'
+import type {UseQueryResult} from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { BedDouble, CalendarDays, CircleDollarSign, Download, Hotel, TrendingUp } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import * as z from 'zod'
 import {
     Bar,
     BarChart,
@@ -50,7 +47,28 @@ import {
     YAxis,
 } from 'recharts'
 
-export const Route = createFileRoute('/__main/analytics')({ component: AnalyticsPage })
+const searchSchema = z.object({
+    // .min/.catch guard against hand-edited URLs (?limit=0 or non-numeric).
+    page: z.number().min(1).default(1).catch(1),
+    limit: z.number().min(1).default(10).catch(10),
+})
+
+export const Route = createFileRoute('/__main/analytics')({
+    validateSearch: searchSchema,
+    component: AnalyticsPage,
+})
+
+/** Clamps the requested page to the table's actual page count. */
+function safePage(page: number, limit: number, total: number): number {
+    const totalPages = Math.max(1, Math.ceil(total / limit))
+    return Math.min(Math.max(page, 1), totalPages)
+}
+
+/** Client-side slice of a full-array response for the current page. */
+function slicePage<T>(rows: T[], page: number, limit: number): T[] {
+    const from = (page - 1) * limit
+    return rows.slice(from, from + limit)
+}
 
 // ── Period / date helpers ────────────────────────────────────
 
@@ -133,10 +151,21 @@ function AnalyticsPage() {
     }
 
     const properties = GetProperties()
+    const search = Route.useSearch()
+    const mergeSearch = useSearchParams()
     const currency =
         (propertyId !== 'all' ? properties.find((p) => p.id === propertyId)?.currency : undefined) ??
         properties[0]?.currency ??
         'USD'
+
+    const handlePropertyChange = (value: string) => {
+        setPropertyId(value)
+        mergeSearch({ page: 1 })
+    }
+    const handlePeriodChange = (value: PeriodValue) => {
+        setPeriod(value)
+        mergeSearch({ page: 1 })
+    }
 
     const range = useMemo(() => periodRange(PERIOD_OPTIONS.find((p) => p.value === period)!.days), [period])
     const filterParams = useMemo(
@@ -146,7 +175,7 @@ function AnalyticsPage() {
 
     const overviewQuery = useQuery({
         queryKey: ['analytics-overview', filterParams, granularity],
-        queryFn: () => analyticsApi.overview({ ...filterParams, granularity }),
+        queryFn: () => overviewApi.overview({ ...filterParams, granularity }),
         enabled: tab === 'overview',
     })
 
@@ -182,7 +211,7 @@ function AnalyticsPage() {
                     description="Monitor performance Overview, booking channels, occupancy, and guest operations."
                 />
                 <div className="flex flex-wrap gap-2">
-                    <Select value={propertyId} onValueChange={setPropertyId}>
+                    <Select value={propertyId} onValueChange={handlePropertyChange}>
                         <SelectTrigger className="h-9 w-44 text-xs">
                             <Hotel className="mr-2 size-3.5 text-muted-foreground" />
                             <SelectValue />
@@ -196,7 +225,7 @@ function AnalyticsPage() {
                             ))}
                         </SelectContent>
                     </Select>
-                    <Select value={period} onValueChange={(v) => setPeriod(v as PeriodValue)}>
+                    <Select value={period} onValueChange={handlePeriodChange}>
                         <SelectTrigger className="h-9 w-36 text-xs">
                             <CalendarDays className="mr-2 size-3.5 text-muted-foreground" />
                             <SelectValue />
@@ -213,34 +242,22 @@ function AnalyticsPage() {
             </header>
 
             <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
-                <div className="overflow-x-auto rounded-xl border bg-card p-1 shadow-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    <TabsList className="h-10 min-w-max gap-1 bg-muted/60 p-1">
-                        <TabsTrigger
-                            value="overview"
-                            className="h-8 gap-2 px-3 text-xs data-[state=active]:bg-background data-[state=active]:text-foreground"
-                        >
+                <div className="overflow-x-auto rounded-xl border bg-card p-1 shadow-sm scrollbar-auto [&::-webkit-scrollbar]:hidden">
+                    <TabsList variant="primary" className="h-10 min-w-max gap-1 p-1">
+                        <TabsTrigger value="overview" className="h-8 gap-2 px-3 text-xs">
                             <TrendingUp className="size-3.5" />
                             Overview
                         </TabsTrigger>
-                        <TabsTrigger
-                            value="occupancy"
-                            className="h-8 gap-2 px-3 text-xs data-[state=active]:bg-background data-[state=active]:text-foreground"
-                        >
+                        <TabsTrigger value="occupancy" className="h-8 gap-2 px-3 text-xs">
                             <BedDouble className="size-3.5" />
                             Occupancy
                         </TabsTrigger>
-                        <TabsTrigger
-                            value="revenue"
-                            className="h-8 gap-2 px-3 text-xs data-[state=active]:bg-background data-[state=active]:text-foreground"
-                        >
+                        <TabsTrigger value="revenue" className="h-8 gap-2 px-3 text-xs">
                             <CircleDollarSign className="size-3.5" />
                             <span className="sm:hidden">Revenue</span>
                             <span className="hidden sm:inline">Revenue & channels</span>
                         </TabsTrigger>
-                        <TabsTrigger
-                            value="operations"
-                            className="h-8 gap-2 px-3 text-xs data-[state=active]:bg-background data-[state=active]:text-foreground"
-                        >
+                        <TabsTrigger value="operations" className="h-8 gap-2 px-3 text-xs">
                             <CalendarDays className="size-3.5" />
                             <span className="sm:hidden">Operations</span>
                             <span className="hidden sm:inline">Guest operations</span>
@@ -250,10 +267,21 @@ function AnalyticsPage() {
             </Tabs>
 
             {tab === 'overview' && <OverviewTab query={overviewQuery} currency={currency} granularity={granularity} setGranularity={setGranularity} />}
-            {tab === 'occupancy' && <OccupancyTab query={occupancyQuery} currency={currency} range={range} />}
-            {tab === 'revenue' && <RevenueTab query={revenueQuery} currency={currency} range={range} filterParams={filterParams} />}
+            {tab === 'occupancy' && (
+                <OccupancyTab query={occupancyQuery} currency={currency} range={range} page={search.page} limit={search.limit} />
+            )}
+            {tab === 'revenue' && (
+                <RevenueTab
+                    query={revenueQuery}
+                    currency={currency}
+                    range={range}
+                    filterParams={filterParams}
+                    page={search.page}
+                    limit={search.limit}
+                />
+            )}
             {tab === 'operations' && (
-                <OperationsTab query={operationsQuery} recentQuery={recentQuery} currency={currency} range={range} />
+                <OperationsTab query={operationsQuery} recentQuery={recentQuery} currency={currency} range={range} page={search.page} limit={search.limit} />
             )}
         </main>
     )
@@ -317,7 +345,7 @@ function OverviewTab({
     const isLoading = query.isLoading
     const isEmpty = !isLoading && (!trend.length || (m && m.grossBookingValue === 0 && m.confirmedBookings === 0))
 
-    if (query.isError) return <ErrorNote message={query.error?.message} />
+    if (query.isError) return <ErrorNote message={query.error.message} />
 
     return (
         <>
@@ -343,20 +371,16 @@ function OverviewTab({
                         title="Revenue & Booking Pace"
                         subtitle="Daily performance overview"
                         action={
-                            <div className="rounded-md bg-muted p-0.5 text-[10px]">
-                                <button
-                                    onClick={() => setGranularity('daily')}
-                                    className={cn('rounded px-2 py-1 transition-colors', granularity === 'daily' ? 'bg-background shadow-sm' : 'text-muted-foreground')}
-                                >
-                                    Daily
-                                </button>
-                                <button
-                                    onClick={() => setGranularity('weekly')}
-                                    className={cn('rounded px-2 py-1 transition-colors', granularity === 'weekly' ? 'bg-background shadow-sm' : 'text-muted-foreground')}
-                                >
-                                    Weekly
-                                </button>
-                            </div>
+                            <Tabs value={granularity} onValueChange={(v) => setGranularity(v as TrendGranularity)}>
+                                <TabsList variant="primary" className="h-7 p-0.5">
+                                    <TabsTrigger value="daily" className="h-6 px-2.5 text-[10px]">
+                                        Daily
+                                    </TabsTrigger>
+                                    <TabsTrigger value="weekly" className="h-6 px-2.5 text-[10px]">
+                                        Weekly
+                                    </TabsTrigger>
+                                </TabsList>
+                            </Tabs>
                         }
                     >
                         <div className="h-64">
@@ -420,12 +444,26 @@ function OverviewTab({
 
 // ── Occupancy tab ────────────────────────────────────────────
 
-function OccupancyTab({ query, currency, range }: { query: UseQueryResult<OccupancyReport, Error>; currency: string; range: { from: string; to: string } }) {
+function OccupancyTab({
+    query,
+    currency,
+    range,
+    page,
+    limit,
+}: {
+    query: UseQueryResult<OccupancyReport, Error>
+    currency: string
+    range: { from: string; to: string }
+    page: number
+    limit: number
+}) {
     const report = query.data
     const rows: OccupancyRow[] = report?.data ?? []
+    const currentPage = safePage(page, limit, rows.length)
+    const pagedRows = slicePage(rows, currentPage, limit)
     const summary = report?.summary
     const last = rows[rows.length - 1]
-    const availableRooms = last?.availableRooms ?? 0
+    const availableRooms = last.availableRooms
     const peak = rows.reduce<OccupancyRow | null>((a, b) => (b.occupied > (a?.occupied ?? -1) ? b : a), null)
     const low = rows.reduce<OccupancyRow | null>((a, b) => (b.occupied < (a?.occupied ?? Infinity) ? b : a), null)
 
@@ -455,7 +493,7 @@ function OccupancyTab({ query, currency, range }: { query: UseQueryResult<Occupa
         [currency],
     )
 
-    if (query.isError) return <ErrorNote message={query.error?.message} />
+    if (query.isError) return <ErrorNote message={query.error.message} />
 
     return (
         <>
@@ -490,8 +528,9 @@ function OccupancyTab({ query, currency, range }: { query: UseQueryResult<Occupa
                 </Panel>
                 <Panel title="Occupancy Overview" subtitle="Current period breakdown">
                     <div className="space-y-5 pt-4">
-                        <ProgressRow label="Rooms Occupied (today)" value={`${last?.occupied ?? 0} / ${availableRooms}`} percent={last ? (last.occupied / Math.max(availableRooms, 1)) * 100 : 0} color="#6366f1" />
-                        <ProgressRow label="Available tonight" value={`${Math.max(availableRooms - (last?.occupied ?? 0), 0)} / ${availableRooms}`} percent={last ? ((availableRooms - last.occupied) / Math.max(availableRooms, 1)) * 100 : 0} color="#20c77a" />
+                        <ProgressRow label="Rooms Occupied (today)" value={`${last.occupied } / ${availableRooms}`} percent={ (last.occupied / Math.max(availableRooms, 1)) * 100 } color="#6366f1" />
+                        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unnecessary-condition
+                        <ProgressRow label="Available tonight" value={`${Math.max(availableRooms - (last.occupied), 0)} / ${availableRooms}`} percent={ ((availableRooms - last.occupied) / Math.max(availableRooms, 1)) * 100 } color="#20c77a" />
                         <ProgressRow label="Peak Occupancy" value={peak ? `${peak.occupied} / ${peak.availableRooms}` : '—'} percent={peak ? (peak.occupied / Math.max(peak.availableRooms, 1)) * 100 : 0} color="#f4a51c" />
                         <ProgressRow label="Low Occupancy Day" value={low ? `${low.occupied} / ${low.availableRooms}` : '—'} percent={low ? (low.occupied / Math.max(low.availableRooms, 1)) * 100 : 0} color="#f44f75" />
                         <div className="grid grid-cols-2 gap-3 pt-1">
@@ -515,13 +554,13 @@ function OccupancyTab({ query, currency, range }: { query: UseQueryResult<Occupa
                 <DataTable
                     loading={query.isLoading}
                     columns={columns}
-                    data={rows}
+                    data={pagedRows}
                     noun="days"
                     emptyIcon={<BedDouble className="h-6 w-6" />}
-                    page={1}
-                    limit={rows.length || 1}
+                    page={currentPage}
+                    limit={limit}
                     total={rows.length}
-                    limitOptions={[rows.length || 1]}
+                    limitOptions={[10, 25, 50]}
                 />
             </Panel>
         </>
@@ -535,14 +574,20 @@ function RevenueTab({
     currency,
     range,
     filterParams,
+    page,
+    limit,
 }: {
     query: UseQueryResult<RevenueReport, Error>
     currency: string
     range: { from: string; to: string }
     filterParams: { from: string; to: string; propertyId?: string }
+    page: number
+    limit: number
 }) {
     const report = query.data
     const rows: RevenueSourceRow[] = report?.data ?? []
+    const currentPage = safePage(page, limit, rows.length)
+    const pagedRows = slicePage(rows, currentPage, limit)
 
     const barData = rows.map((r) => ({ source: formatSource(r.source), totalRevenue: r.totalRevenue, totalEarnings: r.totalEarnings }))
 
@@ -585,7 +630,7 @@ function RevenueTab({
         [currency, filterParams.from, filterParams.to, filterParams.propertyId],
     )
 
-    if (query.isError) return <ErrorNote message={query.error?.message} />
+    if (query.isError) return <ErrorNote message={query.error.message} />
 
     return (
         <>
@@ -657,13 +702,13 @@ function RevenueTab({
                 <DataTable
                     loading={query.isLoading}
                     columns={columns}
-                    data={rows}
+                    data={pagedRows}
                     noun="revenue sources"
                     emptyIcon={<CircleDollarSign className="h-6 w-6" />}
-                    page={1}
-                    limit={rows.length || 1}
+                    page={currentPage}
+                    limit={limit}
                     total={rows.length}
-                    limitOptions={[rows.length || 1]}
+                    limitOptions={[10, 25, 50]}
                 />
             </Panel>
         </>
@@ -677,11 +722,15 @@ function OperationsTab({
     recentQuery,
     currency,
     range,
+    page,
+    limit,
 }: {
     query: UseQueryResult<OperationsReport, Error>
     recentQuery: UseQueryResult<Paginated<Booking>, Error>
     currency: string
     range: { from: string; to: string }
+    page: number
+    limit: number
 }) {
     const report = query.data
     const arrivals: ArrivalRow[] = report?.arrivals ?? []
@@ -724,6 +773,8 @@ function OperationsTab({
     }, [arrivals])
 
     const sortedArrivals = useMemo(() => [...arrivals].sort((a, b) => a.checkIn.localeCompare(b.checkIn)), [arrivals])
+    const currentPage = safePage(page, limit, sortedArrivals.length)
+    const pagedArrivals = slicePage(sortedArrivals, currentPage, limit)
 
     const arrivalsColumns = useMemo<DataTableColumn<ArrivalRow>[]>(
         () => [
@@ -833,13 +884,13 @@ function OperationsTab({
                 <DataTable
                     loading={query.isLoading}
                     columns={arrivalsColumns}
-                    data={sortedArrivals}
+                    data={pagedArrivals}
                     noun="arrivals"
                     emptyIcon={<CalendarDays className="h-6 w-6" />}
-                    page={1}
-                    limit={sortedArrivals.length || 1}
+                    page={currentPage}
+                    limit={limit}
                     total={sortedArrivals.length}
-                    limitOptions={[sortedArrivals.length || 1]}
+                    limitOptions={[10, 25, 50]}
                 />
             </Panel>
 
@@ -929,7 +980,7 @@ function Panel({ title, subtitle, action, children }: { title: string; subtitle:
 
 function SparkCard({ card, sparkline }: { card: StatCardProps; sparkline: number[] }) {
     const colors = { blue: '#6366f1', emerald: '#20b979', amber: '#f2a721', rose: '#f24f73' }
-    const color = colors[card.color as keyof typeof colors] ?? '#6366f1'
+    const color = colors[card.color as keyof typeof colors]
     const heights = sparkline.length
         ? sparkline.map((v, _i, arr) => {
               const max = Math.max(...arr) || 1
