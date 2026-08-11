@@ -12,10 +12,13 @@ type ConversationThreadProps = {
     currentUserId: string
     messages: GuestSupportMessage[]
     isLoading?: boolean
+    hasOlderMessages?: boolean
+    isLoadingOlder?: boolean
     isSending?: boolean
     canReply?: boolean
     emptyText?: string
     onBack?: () => void
+    onLoadOlder?: () => Promise<unknown>
     onSend: (message: string) => void
 }
 
@@ -33,18 +36,42 @@ export function ConversationThread({
     currentUserId,
     messages,
     isLoading,
+    hasOlderMessages,
+    isLoadingOlder,
     isSending,
     canReply = true,
     emptyText = 'No messages yet',
     onBack,
+    onLoadOlder,
     onSend,
 }: ConversationThreadProps) {
     const [draft, setDraft] = useState('')
-    const endRef = useRef<HTMLDivElement>(null)
+    const scrollRef = useRef<HTMLDivElement>(null)
+    const previousScrollHeightRef = useRef(0)
+    const initializedForTitleRef = useRef<string | null>(null)
 
     useEffect(() => {
-        endRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [messages.length])
+        const container = scrollRef.current
+        if (!container || isLoading || messages.length === 0) return
+
+        if (initializedForTitleRef.current !== title) {
+            initializedForTitleRef.current = title
+            container.scrollTop = container.scrollHeight
+            return
+        }
+
+        if (previousScrollHeightRef.current > 0) {
+            container.scrollTop += container.scrollHeight - previousScrollHeightRef.current
+            previousScrollHeightRef.current = 0
+        }
+    }, [isLoading, messages.length, title])
+
+    const handleScroll = () => {
+        const container = scrollRef.current
+        if (!container || container.scrollTop >= 80 || !hasOlderMessages || isLoadingOlder || !onLoadOlder) return
+        previousScrollHeightRef.current = container.scrollHeight
+        void onLoadOlder()
+    }
 
     const submit = () => {
         const message = draft.trim()
@@ -70,7 +97,11 @@ export function ConversationThread({
                 </div>
             </header>
 
-            <div className="flex-1 space-y-3 overflow-y-auto bg-muted/20 p-5">
+            <div
+                ref={scrollRef}
+                onScroll={handleScroll}
+                className="min-h-0 flex-1 space-y-3 overscroll-contain overflow-y-auto bg-muted/20 p-5"
+            >
                 {isLoading ? (
                     <div className="grid h-full place-items-center">
                         <Spinner />
@@ -78,39 +109,47 @@ export function ConversationThread({
                 ) : messages.length === 0 ? (
                     <div className="grid h-full place-items-center px-8 text-center text-sm text-muted-foreground">{emptyText}</div>
                 ) : (
-                    messages.map((message) => {
-                        const fromCurrentUser = message.senderUserId === currentUserId
-                        return (
-                            <div key={message.id} className={cn('flex gap-2.5', fromCurrentUser ? 'justify-end' : 'justify-start')}>
-                                {!fromCurrentUser && (
-                                    <Avatar size="sm" className="mt-auto shrink-0">
-                                        {message.sender.image && <AvatarImage src={message.sender.image} alt="" />}
-                                        <AvatarFallback className="text-[10px]">{getInitials(message.sender.name)}</AvatarFallback>
-                                    </Avatar>
-                                )}
-                                <div className={cn('max-w-[82%]', fromCurrentUser ? 'text-right' : 'text-left')}>
-                                    {!fromCurrentUser && (
-                                        <p className="mb-1 ml-1 text-[10px] font-semibold text-muted-foreground">{message.sender.name}</p>
-                                    )}
-                                    <div
-                                        className={cn(
-                                            'rounded-2xl px-3.5 py-2.5 text-left text-[13px] leading-relaxed shadow-sm',
-                                            fromCurrentUser
-                                                ? 'rounded-br-sm bg-primary text-primary-foreground'
-                                                : 'rounded-bl-sm border bg-card text-foreground',
-                                        )}
-                                    >
-                                        <p className="whitespace-pre-wrap break-words">{message.message}</p>
-                                    </div>
-                                    <p className="mt-1 px-1 text-[10px] text-muted-foreground">
-                                        {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </p>
-                                </div>
+                    <>
+                        {hasOlderMessages && (
+                            <div className="flex h-8 items-center justify-center text-[11px] text-muted-foreground">
+                                {isLoadingOlder ? <Spinner className="size-4" /> : 'Scroll up for older messages'}
                             </div>
-                        )
-                    })
+                        )}
+                        {messages.map((message) => {
+                            const fromCurrentUser = message.senderUserId === currentUserId
+                            return (
+                                <div key={message.id} className={cn('flex gap-2.5', fromCurrentUser ? 'justify-end' : 'justify-start')}>
+                                    {!fromCurrentUser && (
+                                        <Avatar size="sm" className="mt-auto shrink-0">
+                                            {message.sender.image && <AvatarImage src={message.sender.image} alt="" />}
+                                            <AvatarFallback className="text-[10px]">{getInitials(message.sender.name)}</AvatarFallback>
+                                        </Avatar>
+                                    )}
+                                    <div className={cn('max-w-[82%]', fromCurrentUser ? 'text-right' : 'text-left')}>
+                                        {!fromCurrentUser && (
+                                            <p className="mb-1 ml-1 text-[10px] font-semibold text-muted-foreground">
+                                                {message.sender.name}
+                                            </p>
+                                        )}
+                                        <div
+                                            className={cn(
+                                                'rounded-2xl px-3.5 py-2.5 text-left text-[13px] leading-relaxed shadow-sm',
+                                                fromCurrentUser
+                                                    ? 'rounded-br-sm bg-primary text-primary-foreground'
+                                                    : 'rounded-bl-sm border bg-card text-foreground',
+                                            )}
+                                        >
+                                            <p className="whitespace-pre-wrap break-words">{message.message}</p>
+                                        </div>
+                                        <p className="mt-1 px-1 text-[10px] text-muted-foreground">
+                                            {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </>
                 )}
-                <div ref={endRef} />
             </div>
 
             <footer className="shrink-0 border-t bg-card p-3">

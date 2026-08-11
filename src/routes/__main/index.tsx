@@ -31,63 +31,20 @@ import {
     YAxis,
 } from 'recharts'
 import { PageHeader } from '#/components/ui/page-header'
+import { CHART_DATA_OPTIONS, USER_SPLIT_DATA } from '@/lib/dashboard-mock'
+import type { DashboardTimeframe } from '@/lib/dashboard-mock'
 import { useTranslation } from 'react-i18next'
 
 export const Route = createFileRoute('/__main/')({
     component: RouteComponent,
 })
 
-// Mock chart data for different intervals
-const CHART_DATA_OPTIONS = {
-    '7months': [
-        { name: 'Jan', booking: 4500 },
-        { name: 'Feb', booking: 4800 },
-        { name: 'Mar', booking: 8000 },
-        { name: 'Apr', booking: 5200 },
-        { name: 'May', booking: 8200 },
-        { name: 'Jun', booking: 6500 },
-        { name: 'Jul', booking: 10500 },
-    ],
-    '3months': [
-        { name: 'May', booking: 8200 },
-        { name: 'Jun', booking: 6500 },
-        { name: 'Jul', booking: 10500 },
-    ],
-    '12months': [
-        { name: 'Aug', booking: 3800 },
-        { name: 'Sep', booking: 4200 },
-        { name: 'Oct', booking: 5000 },
-        { name: 'Nov', booking: 5500 },
-        { name: 'Dec', booking: 7200 },
-        { name: 'Jan', booking: 4500 },
-        { name: 'Feb', booking: 4800 },
-        { name: 'Mar', booking: 8000 },
-        { name: 'Apr', booking: 5200 },
-        { name: 'May', booking: 8200 },
-        { name: 'Jun', booking: 6500 },
-        { name: 'Jul', booking: 10500 },
-    ],
-}
-
-const ChartData = [
-    {
-        name: 'Returning User',
-        value: 70,
-        color: '#1E3A8A',
-    },
-    {
-        name: 'New User',
-        value: 30,
-        color: '#D97706',
-    },
-]
-
 function RouteComponent() {
     const { t } = useTranslation()
-    const [timeframe, setTimeframe] = useState<'7months' | '3months' | '12months'>('7months')
+    const [timeframe, setTimeframe] = useState<DashboardTimeframe>('7months')
     const chartData = CHART_DATA_OPTIONS[timeframe]
 
-    const chartDataWithT = ChartData.map((item) => ({
+    const chartDataWithT = USER_SPLIT_DATA.map((item) => ({
         ...item,
         name: item.name === 'Returning User' ? t('dashboard.charts.returningUser') : t('dashboard.charts.newUser'),
     }))
@@ -138,7 +95,7 @@ function RouteComponent() {
                             </CardTitle>
                             <CardDescription>{t('dashboard.charts.bookingChartDesc')}</CardDescription>
                         </div>
-                        <Select value={timeframe} onValueChange={(val) => setTimeframe(val as '7months' | '3months' | '12months')}>
+                        <Select value={timeframe} onValueChange={(val) => setTimeframe(val as DashboardTimeframe)}>
                             <SelectTrigger>
                                 <SelectValue placeholder={t('dashboard.charts.selectPeriod')} />
                             </SelectTrigger>

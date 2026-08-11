@@ -7,14 +7,15 @@ import { Spinner } from '@/components/ui/spinner'
 import { inboxApi } from '@/lib/api'
 import type { BookingConversation } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { BedDouble, Building2, CalendarDays, ChevronRight, Clock3, Mail, MessageSquareText } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 /** Conversations fetched per scroll batch. */
 const PAGE_SIZE = 20
+const MESSAGE_PAGE_SIZE = 25
 
 export const Route = createFileRoute('/__main/inbox')({
     component: RouteComponent,
@@ -52,7 +53,6 @@ function RouteComponent() {
     const [activeConversation, setActiveConversation] = useState<BookingConversation | null>(null)
     const [search, setSearch] = useState('')
     const listRef = useRef<HTMLDivElement>(null)
-    const sentinelRef = useRef<HTMLDivElement>(null)
 
     const conversationsQuery = useInfiniteQuery({
         queryKey: ['owner-booking-inbox', search],
@@ -64,22 +64,14 @@ function RouteComponent() {
     const conversations = conversationsQuery.data?.pages.flatMap((page) => page.data) ?? []
     const { hasNextPage, isFetchingNextPage, fetchNextPage } = conversationsQuery
 
-    // Infinite scroll: fetch the next batch when the sentinel enters the list viewport.
-    useEffect(() => {
-        const sentinel = sentinelRef.current
-        const root = listRef.current
-        if (!sentinel || !root) return
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
-                    fetchNextPage()
-                }
-            },
-            { root, rootMargin: '200px' },
-        )
-        observer.observe(sentinel)
-        return () => observer.disconnect()
-    }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+    // Only fetch after the user reaches the bottom. An intersection sentinel can
+    // stay visible and eagerly drain every page before the list becomes scrollable.
+    const handleConversationScroll = useCallback(() => {
+        const list = listRef.current
+        if (!list || !hasNextPage || isFetchingNextPage) return
+        const distanceFromBottom = list.scrollHeight - list.scrollTop - list.clientHeight
+        if (distanceFromBottom < 120) void fetchNextPage()
+    }, [fetchNextPage, hasNextPage, isFetchingNextPage])
 
     const selectConversation = (conversation: BookingConversation) => {
         setActiveBookingId(conversation.bookingId)
@@ -94,12 +86,15 @@ function RouteComponent() {
         }
     }, [activeConversation, conversations])
 
-    const messagesQuery = useQuery({
+    const messagesQuery = useInfiniteQuery({
         queryKey: ['owner-booking-inbox-messages', activeBookingId],
-        queryFn: () => inboxApi.listMessages(activeBookingId!, { limit: 50 }),
+        queryFn: ({ pageParam }) => inboxApi.listMessages(activeBookingId!, { cursor: pageParam, limit: MESSAGE_PAGE_SIZE }),
+        initialPageParam: undefined as string | undefined,
+        getNextPageParam: (lastPage) => (lastPage.meta.hasMore ? (lastPage.meta.nextCursor ?? undefined) : undefined),
         enabled: Boolean(activeBookingId),
         refetchInterval: 15_000,
     })
+    const messages = useMemo(() => [...(messagesQuery.data?.pages ?? [])].reverse().flatMap((page) => page.data), [messagesQuery.data])
 
     const sendMutation = useMutation({
         mutationFn: (message: string) => inboxApi.sendMessage(activeBookingId!, message),
@@ -111,12 +106,17 @@ function RouteComponent() {
     })
 
     return (
-        <div className="flex h-[calc(100vh-7rem)] min-h-0 flex-1 flex-col gap-6">
+        <div className="flex h-[calc(100dvh-7rem)] min-h-0 flex-col gap-6 overflow-hidden">
             <PageHeader title="Inbox" description="Booking-specific guest requests and stay communication" className="shrink-0" />
 
             <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-xl border bg-card shadow-sm">
-                <aside className={cn('w-full shrink-0 min-h-0 flex-col overflow-hidden border-r md:flex md:w-88', activeBookingId ? 'hidden md:flex' : 'flex')}>
-                    <div className="border-b p-3">
+                <aside
+                    className={cn(
+                        'h-full min-h-0 w-full shrink-0 flex-col overflow-hidden border-r md:flex md:w-88',
+                        activeBookingId ? 'hidden md:flex' : 'flex',
+                    )}
+                >
+                    <div className="shrink-0 border-b p-3">
                         <Input
                             value={search}
                             onChange={(event) => {
@@ -128,7 +128,11 @@ function RouteComponent() {
                             aria-label="Search guests or properties"
                         />
                     </div>
-                    <div ref={listRef} className="flex-1 overflow-y-auto p-2">
+                    <div
+                        ref={listRef}
+                        onScroll={handleConversationScroll}
+                        className="min-h-0 flex-1 overscroll-contain overflow-y-scroll p-2 [scrollbar-gutter:stable]"
+                    >
                         {conversationsQuery.isLoading ? (
                             <div className="grid h-40 place-items-center">
                                 <Spinner />
@@ -201,8 +205,9 @@ function RouteComponent() {
                             })
                         )}
                         {hasNextPage ? (
-                            <div ref={sentinelRef} className="grid h-14 place-items-center">
+                            <div className="grid h-14 place-items-center text-[11px] text-muted-foreground">
                                 {isFetchingNextPage && <Spinner className="size-4 text-muted-foreground" />}
+                                {!isFetchingNextPage && 'Scroll for more'}
                             </div>
                         ) : conversations.length > 0 ? (
                             <div className="py-3 text-center text-[11px] text-muted-foreground">You're all caught up</div>
@@ -214,11 +219,15 @@ function RouteComponent() {
                     <>
                         <div className="flex min-w-0 flex-1 flex-col">
                             <ConversationThread
+                                key={activeBookingId}
                                 title={activeConversation.guest.name}
                                 subtitle={`${activeConversation.bookingReference} · ${activeConversation.propertyName} · Room ${activeConversation.roomNumber}`}
                                 currentUserId={user.id}
-                                messages={messagesQuery.data?.data ?? []}
+                                messages={messages}
                                 isLoading={messagesQuery.isLoading}
+                                hasOlderMessages={messagesQuery.hasNextPage}
+                                isLoadingOlder={messagesQuery.isFetchingNextPage}
+                                onLoadOlder={() => messagesQuery.fetchNextPage()}
                                 isSending={sendMutation.isPending}
                                 canReply={activeConversation.canReply}
                                 onBack={() => {
