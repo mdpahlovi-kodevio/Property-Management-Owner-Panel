@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar'
 import type { Session } from '@/lib/api'
-import { authApi, SessionKey } from '@/lib/api'
+import { authApi, resolveImage, SessionKey } from '@/lib/api'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { BadgeCheckIcon, ChevronsUpDownIcon, LogOutIcon } from 'lucide-react'
@@ -43,6 +43,13 @@ export function NavUser({ user }: { user: Session['user'] }) {
         onError: (error) => toast.error(error.message),
     })
 
+    const initials = (user.name ?? '')
+        .split(/\s+/)
+        .map((part) => part[0] ?? '')
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+
     return (
         <SidebarMenu>
             <SidebarMenuItem>
@@ -53,8 +60,8 @@ export function NavUser({ user }: { user: Session['user'] }) {
                             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:p-1!"
                         >
                             <Avatar className="size-8">
-                                <AvatarImage src={user.image ?? '/profile.png'} alt={user.name} />
-                                <AvatarFallback>CN</AvatarFallback>
+                                <AvatarImage src={resolveImage(user.image)} alt={user.name} />
+                                <AvatarFallback>{initials}</AvatarFallback>
                             </Avatar>
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-medium">{user.name}</span>
@@ -72,8 +79,8 @@ export function NavUser({ user }: { user: Session['user'] }) {
                         <DropdownMenuLabel className="p-0 font-normal">
                             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                                 <Avatar className="h-8 w-8 rounded-lg">
-                                    <AvatarImage src={user.image ?? '/profile.png'} alt={user.name} />
-                                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                                    <AvatarImage src={resolveImage(user.image)} alt={user.name} />
+                                    <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                                 </Avatar>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-medium">{user.name}</span>

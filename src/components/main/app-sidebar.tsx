@@ -27,12 +27,10 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
 
     return (
         <Sidebar collapsible="icon" {...props}>
-            <SidebarHeader>
-                <div className="flex items-center gap-2 overflow-hidden">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg overflow-hidden">
-                        <img src="/logo.png" alt="Logo" className="size-full object-contain" />
-                    </div>
-                    <span className="truncate text-lg font-semibold group-data-[collapsible=icon]:hidden">Obsonlineservices</span>
+            <SidebarHeader className="justify-center">
+                <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
+                    <span className="text-lg font-bold tracking-wide uppercase text-[#16245e] dark:text-indigo-200">Booking Is</span>
+                    <span className="text-lg font-bold tracking-wide uppercase text-[#16245e] dark:text-indigo-200">Yours</span>
                 </div>
             </SidebarHeader>
             <SidebarContent>
