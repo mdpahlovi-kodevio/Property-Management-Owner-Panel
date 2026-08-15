@@ -30,6 +30,7 @@ export interface Session {
         phone: string | null
         banned: boolean
         isDefault: boolean
+        isManager: boolean
         role: string | null
         permissions: Array<{
             module: string

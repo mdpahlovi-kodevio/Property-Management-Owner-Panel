@@ -1,7 +1,9 @@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Switch } from '@/components/ui/switch'
-import { MODULES, MODULE_KEYS, type ModuleKey } from '@/lib/module'
+import type { Session } from '@/lib/api'
+import type { ModuleKey } from '@/lib/module'
+import { isModuleHidden, MODULE_KEYS, MODULES } from '@/lib/module'
 import { formatPermission } from '@/lib/permission'
 import { cn } from '@/lib/utils'
 import { ChevronDown } from 'lucide-react'
@@ -64,7 +66,7 @@ function normalize(raw: unknown): PermissionPayload {
  * 3. COMPONENT
  * ──────────────────────────────────────────────────────────────────────── */
 
-export function FormModuleMap({ label = 'Module Mapped' }: { label?: string }) {
+export function FormModuleMap({ label = 'Module Mapped', user }: { label?: string; user?: Session['user'] }) {
     const field = useFieldContext<PermissionPayload>()
     const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid
 
@@ -72,6 +74,9 @@ export function FormModuleMap({ label = 'Module Mapped' }: { label?: string }) {
 
     // Single source of truth — derived from the field value.
     const value: PermissionPayload = normalize(field.state.value)
+
+    // Modules the current user should not be able to grant (e.g. managers module for manager users).
+    const visibleModuleKeys = MODULE_KEYS.filter((key) => !user || !isModuleHidden(key, user))
 
     /* ── helpers ────────────────────────────────────────────────────────── */
 
@@ -123,7 +128,7 @@ export function FormModuleMap({ label = 'Module Mapped' }: { label?: string }) {
         <Field data-invalid={isInvalid}>
             <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
             <div className="space-y-2">
-                {MODULE_KEYS.map((id) => {
+                {visibleModuleKeys.map((id) => {
                     const enabled = isModuleEnabled(id)
                     const isExpanded = expanded[id] ?? false
                     const availablePermissions = MODULES[id].permissions
@@ -142,7 +147,7 @@ export function FormModuleMap({ label = 'Module Mapped' }: { label?: string }) {
                                     <div onClick={(e) => e.stopPropagation()}>
                                         <Switch
                                             checked={enabled}
-                                            onCheckedChange={(checked) => toggleModule(id, checked as boolean)}
+                                            onCheckedChange={(checked) => toggleModule(id, checked)}
                                             className="data-[state=checked]:bg-green-500"
                                         />
                                     </div>

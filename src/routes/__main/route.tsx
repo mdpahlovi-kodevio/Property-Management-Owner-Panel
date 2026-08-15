@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { authApi, SessionKey } from '@/lib/api'
 import { COMPACT_MODE_STORAGE_KEY, useCompactMode } from '@/lib/compact-mode'
-import { getModuleByPath, MODULE_KEYS, MODULES } from '@/lib/module'
+import { getModuleByPath, isModuleHidden, MODULE_KEYS, MODULES } from '@/lib/module'
 import { checkRoutePermission, getModuleKeyFromPath } from '@/lib/permission'
 import { queryClient } from '@/main'
 import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } from '@tanstack/react-router'
@@ -36,6 +36,13 @@ export const Route = createFileRoute('/__main')({
             if (moduleKey && !MODULES[moduleKey].compact) {
                 throw redirect({ to: '/' })
             }
+        }
+
+        // Role-based module hiding — send the user back to the dashboard when they
+        // try to access a module their role shouldn't see (e.g. managers module for managers).
+        const hiddenModuleKey = getModuleKeyFromPath(location.pathname)
+        if (hiddenModuleKey && isModuleHidden(hiddenModuleKey, session.user)) {
+            throw redirect({ to: '/' })
         }
 
         checkRoutePermission(session.user, location.pathname)
@@ -119,7 +126,7 @@ function RouteComponent() {
                             <DarkModeToggle />
                             <CompactModeToggle />
                             <span className="mr-1 flex items-center gap-2 rounded-md border bg-muted px-3 py-1 text-xs uppercase font-medium text-muted-foreground">
-                                {user.isDefault ? 'Super Admin' : user.role}
+                                {user.isDefault ? (user.isManager ? 'Super Manager' : 'Super Admin') : user.role}
                             </span>
                         </div>
                     </header>

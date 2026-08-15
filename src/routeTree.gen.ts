@@ -20,6 +20,7 @@ import { Route as _mainReservationsRouteImport } from './routes/__main/reservati
 import { Route as _mainReportsRouteImport } from './routes/__main/reports'
 import { Route as _mainPropertyRouteImport } from './routes/__main/property'
 import { Route as _mainPaymentsRouteImport } from './routes/__main/payments'
+import { Route as _mainManagerRouteImport } from './routes/__main/manager'
 import { Route as _mainInboxRouteImport } from './routes/__main/inbox'
 import { Route as _mainEmployeesRouteImport } from './routes/__main/employees'
 import { Route as _mainChannelManagerRouteImport } from './routes/__main/channel-manager'
@@ -89,6 +90,11 @@ const _mainPropertyRoute = _mainPropertyRouteImport.update({
 const _mainPaymentsRoute = _mainPaymentsRouteImport.update({
   id: '/payments',
   path: '/payments',
+  getParentRoute: () => _mainRouteRoute,
+} as any)
+const _mainManagerRoute = _mainManagerRouteImport.update({
+  id: '/manager',
+  path: '/manager',
   getParentRoute: () => _mainRouteRoute,
 } as any)
 const _mainInboxRoute = _mainInboxRouteImport.update({
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/channel-manager': typeof _mainChannelManagerRoute
   '/employees': typeof _mainEmployeesRoute
   '/inbox': typeof _mainInboxRoute
+  '/manager': typeof _mainManagerRoute
   '/payments': typeof _mainPaymentsRoute
   '/property': typeof _mainPropertyRoute
   '/reports': typeof _mainReportsRoute
@@ -218,6 +225,7 @@ export interface FileRoutesByTo {
   '/channel-manager': typeof _mainChannelManagerRoute
   '/employees': typeof _mainEmployeesRoute
   '/inbox': typeof _mainInboxRoute
+  '/manager': typeof _mainManagerRoute
   '/payments': typeof _mainPaymentsRoute
   '/property': typeof _mainPropertyRoute
   '/reports': typeof _mainReportsRoute
@@ -248,6 +256,7 @@ export interface FileRoutesById {
   '/__main/channel-manager': typeof _mainChannelManagerRoute
   '/__main/employees': typeof _mainEmployeesRoute
   '/__main/inbox': typeof _mainInboxRoute
+  '/__main/manager': typeof _mainManagerRoute
   '/__main/payments': typeof _mainPaymentsRoute
   '/__main/property': typeof _mainPropertyRoute
   '/__main/reports': typeof _mainReportsRoute
@@ -279,6 +288,7 @@ export interface FileRouteTypes {
     | '/channel-manager'
     | '/employees'
     | '/inbox'
+    | '/manager'
     | '/payments'
     | '/property'
     | '/reports'
@@ -307,6 +317,7 @@ export interface FileRouteTypes {
     | '/channel-manager'
     | '/employees'
     | '/inbox'
+    | '/manager'
     | '/payments'
     | '/property'
     | '/reports'
@@ -336,6 +347,7 @@ export interface FileRouteTypes {
     | '/__main/channel-manager'
     | '/__main/employees'
     | '/__main/inbox'
+    | '/__main/manager'
     | '/__main/payments'
     | '/__main/property'
     | '/__main/reports'
@@ -437,6 +449,13 @@ declare module '@tanstack/react-router' {
       path: '/payments'
       fullPath: '/payments'
       preLoaderRoute: typeof _mainPaymentsRouteImport
+      parentRoute: typeof _mainRouteRoute
+    }
+    '/__main/manager': {
+      id: '/__main/manager'
+      path: '/manager'
+      fullPath: '/manager'
+      preLoaderRoute: typeof _mainManagerRouteImport
       parentRoute: typeof _mainRouteRoute
     }
     '/__main/inbox': {
@@ -585,6 +604,7 @@ interface _mainRouteRouteChildren {
   _mainChannelManagerRoute: typeof _mainChannelManagerRoute
   _mainEmployeesRoute: typeof _mainEmployeesRoute
   _mainInboxRoute: typeof _mainInboxRoute
+  _mainManagerRoute: typeof _mainManagerRoute
   _mainPaymentsRoute: typeof _mainPaymentsRoute
   _mainPropertyRoute: typeof _mainPropertyRoute
   _mainReportsRoute: typeof _mainReportsRoute
@@ -610,6 +630,7 @@ const _mainRouteRouteChildren: _mainRouteRouteChildren = {
   _mainChannelManagerRoute: _mainChannelManagerRoute,
   _mainEmployeesRoute: _mainEmployeesRoute,
   _mainInboxRoute: _mainInboxRoute,
+  _mainManagerRoute: _mainManagerRoute,
   _mainPaymentsRoute: _mainPaymentsRoute,
   _mainPropertyRoute: _mainPropertyRoute,
   _mainReportsRoute: _mainReportsRoute,

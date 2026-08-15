@@ -9,7 +9,7 @@ import { SearchInput } from '@/components/ui/search-input'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { TrashConfirm } from '@/components/ui/trash-confirm'
 import { useSearchParams } from '@/hooks/use-search-params'
-import type { CreateRolePayload, Role, UpdateRolePayload } from '@/lib/api'
+import type { CreateRolePayload, Role, Session, UpdateRolePayload } from '@/lib/api'
 import { roleApi } from '@/lib/api'
 import { formatPermission } from '@/lib/permission'
 import { useMutation, useQuery } from '@tanstack/react-query'
@@ -45,6 +45,7 @@ const roleSchema = z.object({
 function RouteComponent() {
     const { t } = useTranslation()
     const query = Route.useSearch()
+    const { user } = Route.useRouteContext()
     const mergeSearch = useSearchParams()
     const [isOpen, setIsOpen] = useState(false)
     const [editingRole, setEditingRole] = useState<Role | null>(null)
@@ -272,6 +273,7 @@ function RouteComponent() {
 
                     <RoleForm
                         key={editingRole?.id ?? 'add'}
+                        user={user}
                         defaultValues={
                             editingRole
                                 ? {
@@ -298,11 +300,13 @@ function RouteComponent() {
 }
 
 function RoleForm({
+    user,
     defaultValues,
     onSubmit,
     onCancel,
     submitLabel,
 }: {
+    user: Session['user']
     defaultValues: { name: string; description: string; permissions: any }
     onSubmit: (values: z.infer<typeof roleSchema>) => Promise<void>
     onCancel: () => void
@@ -337,7 +341,7 @@ function RoleForm({
             </form.AppField>
 
             <form.AppField name="permissions">
-                {(field) => <field.FormModuleMap label={t('role-management.moduleMapped', 'Module Mapped')} />}
+                {(field) => <field.FormModuleMap label={t('role-management.moduleMapped', 'Module Mapped')} user={user} />}
             </form.AppField>
 
             <DialogFooter>

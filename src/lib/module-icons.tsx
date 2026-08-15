@@ -1,4 +1,6 @@
+import type { LucideIcon } from 'lucide-react'
 import {
+    Briefcase,
     Calendar1,
     ChartNoAxesCombined,
     CircleCheck,
@@ -13,7 +15,6 @@ import {
     ShieldUser,
     Star,
     User,
-    type LucideIcon,
 } from 'lucide-react'
 import type { ModuleKey } from './module'
 
@@ -33,6 +34,7 @@ export const MODULE_ICONS: Record<ModuleKey, LucideIcon> = {
     'channel-manager': CircleCheck,
     employees: IdCardLanyard,
     'role-management': ShieldUser,
+    managers: Briefcase,
     reviews: Star,
     reports: FileText,
     support: Headphones,

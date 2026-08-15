@@ -5,7 +5,7 @@ import { NavUser } from '@/components/main/nav-user'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
 import type { Session } from '@/lib/api'
 import { useCompactMode } from '@/lib/compact-mode'
-import { COMPACT_MODULE_KEYS, MODULES, MODULE_KEYS } from '@/lib/module'
+import { COMPACT_MODULE_KEYS, isModuleHidden, MODULE_KEYS, MODULES } from '@/lib/module'
 import { MODULE_ICONS } from '@/lib/module-icons'
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
@@ -14,8 +14,13 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
     const { t } = useTranslation()
     const { compactMode } = useCompactMode()
 
-    // Derived from module keys (in compact mode only the monitoring modules are shown)
-    const navMain = MODULE_KEYS.filter((key) => !compactMode || COMPACT_MODULE_KEYS.includes(key)).map((key) => {
+    // Derived from module keys (in compact mode only the monitoring modules are shown;
+    // modules with a `hiddenWhen` predicate are excluded when the predicate returns true)
+    const navMain = MODULE_KEYS.filter((key) => {
+        if (compactMode && !COMPACT_MODULE_KEYS.includes(key)) return false
+        if (isModuleHidden(key, user)) return false
+        return true
+    }).map((key) => {
         const Icon = MODULE_ICONS[key]
         return {
             key,

@@ -6,6 +6,8 @@
  *  - path:        the URL the module lives at
  *  - permissions: the set of permission keys valid for this module
  *  - compact:     whether the module is surfaced in compact (owner oversight) mode
+ *  - hiddenWhen:  optional predicate (receives the current user) that hides the module
+ *                 from sidebar/permission matrix when it returns true
  *
  * Order in MODULES = order in the sidebar / role matrix / form-module-map.
  *
@@ -23,11 +25,20 @@
  *   - `permission.tsx`            → hasRoutePermission
  */
 
+import type { Session } from '@/lib/api'
+
 // ---------- 1. Canonical permission keys (kebab-case, API-friendly) ----------
 export const COMMON_PERMISSIONS = ['create', 'update'] as const
 
 // ---------- 2. Module registry ----------
-export const MODULES = {
+type ModuleEntry = {
+    path: string
+    permissions: readonly string[]
+    compact: boolean
+    hiddenWhen?: (user: Session['user']) => boolean
+}
+
+export const MODULES: { [K in string]: ModuleEntry } = {
     dashboard: {
         path: '/',
         permissions: ['stat-cards', 'revenue-overview', 'recent-bookings'],
@@ -83,6 +94,12 @@ export const MODULES = {
         permissions: COMMON_PERMISSIONS,
         compact: false,
     },
+    managers: {
+        path: '/manager',
+        permissions: COMMON_PERMISSIONS,
+        compact: false,
+        hiddenWhen: (user) => user.isManager === true,
+    },
     reviews: {
         path: '/reviews',
         permissions: COMMON_PERMISSIONS,
@@ -112,12 +129,14 @@ export type ModulePath<M extends ModuleKey = ModuleKey> = (typeof MODULES)[M]['p
 export type ModulePermission<M extends ModuleKey = ModuleKey> = (typeof MODULES)[M]['permissions'][number]
 
 // ---------- 4. Iteration / lookup helpers ----------
-export const MODULE_KEYS = Object.keys(MODULES) as ModuleKey[]
+export const MODULE_KEYS = Object.keys(MODULES)
 
 /** Modules surfaced in compact ("owner oversight") mode. */
 export const COMPACT_MODULE_KEYS = MODULE_KEYS.filter((key) => MODULES[key].compact)
 
+/** Returns true when the module should be hidden for the given user. */
+export const isModuleHidden = (key: ModuleKey, user: Session['user']): boolean => MODULES[key].hiddenWhen?.(user) ?? false
+
 export const getModule = <M extends ModuleKey>(key: M): (typeof MODULES)[M] => MODULES[key]
 
-export const getModuleByPath = (path: string): ModuleKey | undefined =>
-    (MODULE_KEYS as ModuleKey[]).find((key) => MODULES[key].path === path)
+export const getModuleByPath = (path: string): ModuleKey | undefined => MODULE_KEYS.find((key) => MODULES[key].path === path)
